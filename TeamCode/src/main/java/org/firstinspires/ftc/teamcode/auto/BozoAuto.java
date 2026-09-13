@@ -167,7 +167,7 @@ public abstract class BozoAuto extends OpMode {
         // sendInitTime = true; is only for init()
         if (sendInitTime) {
             telemetryM.addLine("INIT COMPLETE: READY TO START");
-            telemetryM.debug("init time (millis): " + loopTimer.get(TimeUnit.SECONDS)); // i don't think addData works in init()
+            telemetryM.debug("init time (millis): " + loopTimer.get(TimeUnit.SECONDS)); // I don't think addData works in init()
         }
 
         // state
