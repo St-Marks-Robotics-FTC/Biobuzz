@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.auto;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.paths.curves.*;
 import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
 import static com.pedropathing.api.Paths.*;
@@ -44,26 +43,26 @@ public abstract class BozoAuto extends OpMode {
 
     /** end vars that can change **/
     private Path // some of these can probably just be Paths, but whatever
-            path1,
-            path2,
-            path3,
-            path4,
-            path5,
-            path6;
+            startToShootLeft,
+            shootLeftToFlowerLeft,
+            flowerLeftToShootRight,
+            shootRightToFlowerRight,
+            flowerRightToShootRight,
+            shootRightToEnd;
 
     private void buildPaths() {
         // this path goes from the starting point to our scoring point
-        path1 = line(startPose, config.shootLeftPose).linear(startPose, config.shootLeftPose);
+        startToShootLeft = line(startPose, config.shootLeftPose).linear(startPose, config.shootLeftPose);
 
-        path2 = line(config.shootLeftPose, config.flowerLeftPose).linear(config.shootLeftPose, config.flowerLeftPose);
+        shootLeftToFlowerLeft = line(config.shootLeftPose, config.flowerLeftPose).linear(config.shootLeftPose, config.flowerLeftPose);
 
-        path3 = line(config.flowerLeftPose, config.shootRightPose).linear(config.flowerLeftPose, config.shootRightPose);
+        flowerLeftToShootRight = line(config.flowerLeftPose, config.shootRightPose).linear(config.flowerLeftPose, config.shootRightPose);
 
-        path4 = line(config.shootRightPose, config.flowerRightPose).linear(config.shootRightPose, config.flowerRightPose);
+        shootRightToFlowerRight = line(config.shootRightPose, config.flowerRightPose).linear(config.shootRightPose, config.flowerRightPose);
 
-        path5 = line(config.flowerRightPose, config.shootRightPose).linear(config.flowerRightPose, config.shootRightPose);
+        flowerRightToShootRight = line(config.flowerRightPose, config.shootRightPose).linear(config.flowerRightPose, config.shootRightPose);
 
-        path6 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
+        shootRightToEnd = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
     }
 
     // isn't as flexible as https://state-factory.gitbook.io/state-factory, but it should be good enough for now
@@ -71,25 +70,22 @@ public abstract class BozoAuto extends OpMode {
 
     private void autoPathUpdate() {
         switch (state) {
-            case START: //If we started
-                follower.follow(path1); //Go from the start position to the left shooting position
-                pastState = state; //Remembers the last state
+            case START:
+                follower.follow(startToShootLeft); // Start -> Shoot Left
+                pastState = state; // Remember last state
                 setPathState(State.SHOOTING);
                 break;
-            case SHOOTING: //If we are shooting
-                if (!follower.isBusy() && pastState == State.START ) { //Conditionals to set different paths
-                    //shoot function or sumfin
-                    follower.follow(path2);
+            case SHOOTING:
+                if (!follower.isBusy() && pastState == State.START ) {
+                    follower.follow(shootLeftToFlowerLeft);
                     pastState = State.SHOOTING;
-                    setPathState(State.GO_TO_LEFT_FLOWER); //The first shot, time to reload!
+                    setPathState(State.GO_TO_LEFT_FLOWER); // reloading
                 } else if (!follower.isBusy() && pastState == State.FIRST_PICKUP){
-                    //shoot function
-                    follower.follow(path4);
+                    follower.follow(shootRightToFlowerRight);
                     pastState = State.SHOOTING;
                     setPathState(State.GO_TO_RIGHT_FLOWER);
                 } else if (!follower.isBusy() && pastState == State.SECOND_PICKUP){
-                    //shoot function
-                    follower.follow(path6);
+                    follower.follow(shootRightToEnd);
                     pastState = State.SHOOTING;
                     setPathState(State.END);
                 }
@@ -100,14 +96,14 @@ public abstract class BozoAuto extends OpMode {
                 }
             case FIRST_PICKUP:
                 if (!follower.isBusy()) {
-                    follower.follow(path3);
+                    follower.follow(flowerLeftToShootRight);
                     pastState = State.FIRST_PICKUP;
                     setPathState(State.SHOOTING);
                 }
             case SECOND_PICKUP:
                 if (!follower.isBusy()) {
                     pastState = State.SECOND_PICKUP;
-                    follower.follow(path5);
+                    follower.follow(flowerRightToShootRight);
                     setPathState(State.SHOOTING);
                 }
             case GO_TO_RIGHT_FLOWER:
