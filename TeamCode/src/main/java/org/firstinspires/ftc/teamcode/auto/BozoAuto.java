@@ -29,9 +29,12 @@ public abstract class BozoAuto extends OpMode {
 
     private enum State {
         START,
-        RUN_PATH_1,
-        RUN_PATH_2,
-        RUN_PATH_3,
+        GO_TO_LEFT_SHOOTING,
+        SHOOTING,
+        GO_TO_RIGHT_SHOOTING,
+        GO_TO_LEFT_FLOWER,
+        GO_TO_RIGHT_FLOWER,
+        PICKUP,
         END
     }
 
@@ -44,15 +47,25 @@ public abstract class BozoAuto extends OpMode {
     private Path // some of these can probably just be Paths, but whatever
             path1,
             path2,
-            path3;
+            path3,
+            path4,
+            path5,
+            path6,
+            path7;
 
     private void buildPaths() {
         // this path goes from the starting point to our scoring point
-        path1 = line(startPose, config.pose1).linear(startPose, config.pose1);
+        path1 = line(startPose, config.shootLeftPose).linear(startPose, config.shootLeftPose);
 
-        path2 = line(config.pose1, config.pose2).linear(config.pose1, config.pose2);
+        path2 = line(config.shootLeftPose, config.flowerLeftPose).linear(config.shootLeftPose, config.flowerLeftPose);
 
-        path3 = line(config.pose2, config.pose3).linear(config.pose2, config.pose3);
+        path3 = line(config.flowerLeftPose, config.shootRightPose).linear(config.flowerLeftPose, config.shootRightPose);
+
+        path4 = line(config.shootRightPose, config.flowerRightPose).linear(config.shootRightPose, config.flowerRightPose);
+
+        path5 = line(config.flowerRightPose, config.shootRightPose).linear(config.flowerRightPose, config.shootRightPose);
+
+        path6 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
     }
 
     // isn't as flexible as https://state-factory.gitbook.io/state-factory, but it should be good enough for now
@@ -62,21 +75,33 @@ public abstract class BozoAuto extends OpMode {
         switch (state) {
             case START:
                 follower.follow(path1);
-                setPathState(State.RUN_PATH_1);
+                setPathState(State.GO_TO_LEFT_SHOOTING);
                 break;
-            case RUN_PATH_1:
+            case GO_TO_LEFT_SHOOTING:
                 if (!follower.isBusy()) {
                     follower.follow(path2);
-                    setPathState(State.RUN_PATH_2);
+                    setPathState(State.SHOOTING);
                 }
-            case RUN_PATH_2:
+            case SHOOTING:
+                if (!follower.isBusy()) { //Conditionals to set different paths
+                    setPathState(State.END); //This ends after shooting 3 times
+                }
+            case GO_TO_LEFT_FLOWER:
                 if (!follower.isBusy()) {
                     follower.follow(path3);
-                    setPathState(State.RUN_PATH_3);
+                    setPathState(State.PICKUP);
                 }
-            case RUN_PATH_3:
+            case PICKUP:
                 if (!follower.isBusy()) {
-                    setPathState(State.END);
+                    setPathState(State.GO_TO_RIGHT_SHOOTING);
+                }
+            case GO_TO_RIGHT_SHOOTING:
+                if (!follower.isBusy()) {
+                    setPathState(State.SHOOTING);
+                }
+            case GO_TO_RIGHT_FLOWER:
+                if (!follower.isBusy()) {
+                    setPathState(State.PICKUP);
                 }
             case END:
                 requestOpModeStop(); // request to stop our OpMode so it automatically transfers to TeleOp
