@@ -26,15 +26,14 @@ public abstract class BozoAuto extends OpMode {
     private Timer stateTimer, loopTimer;
     private TelemetryManager telemetryM;
     private Pose startPose;
-
+    private State pastState;
     private enum State {
         START,
-        GO_TO_LEFT_SHOOTING,
         SHOOTING,
-        GO_TO_RIGHT_SHOOTING,
         GO_TO_LEFT_FLOWER,
         GO_TO_RIGHT_FLOWER,
-        PICKUP,
+        FIRST_PICKUP,
+        SECOND_PICKUP,
         END
     }
 
@@ -50,8 +49,7 @@ public abstract class BozoAuto extends OpMode {
             path3,
             path4,
             path5,
-            path6,
-            path7;
+            path6;
 
     private void buildPaths() {
         // this path goes from the starting point to our scoring point
@@ -73,35 +71,48 @@ public abstract class BozoAuto extends OpMode {
 
     private void autoPathUpdate() {
         switch (state) {
-            case START:
-                follower.follow(path1);
-                setPathState(State.GO_TO_LEFT_SHOOTING);
+            case START: //If we started
+                follower.follow(path1); //Go from the start position to the left shooting position
+                pastState = state; //Remembers the last state
+                setPathState(State.SHOOTING);
                 break;
-            case GO_TO_LEFT_SHOOTING:
-                if (!follower.isBusy()) {
+            case SHOOTING: //If we are shooting
+                if (!follower.isBusy() && pastState == State.START ) { //Conditionals to set different paths
+                    //shoot function or sumfin
                     follower.follow(path2);
-                    setPathState(State.SHOOTING);
-                }
-            case SHOOTING:
-                if (!follower.isBusy()) { //Conditionals to set different paths
-                    setPathState(State.END); //This ends after shooting 3 times
+                    pastState = State.SHOOTING;
+                    setPathState(State.GO_TO_LEFT_FLOWER); //The first shot, time to reload!
+                } else if (!follower.isBusy() && pastState == State.FIRST_PICKUP){
+                    //shoot function
+                    follower.follow(path4);
+                    pastState = State.SHOOTING;
+                    setPathState(State.GO_TO_RIGHT_FLOWER);
+                } else if (!follower.isBusy() && pastState == State.SECOND_PICKUP){
+                    //shoot function
+                    follower.follow(path6);
+                    pastState = State.SHOOTING;
+                    setPathState(State.END);
                 }
             case GO_TO_LEFT_FLOWER:
+                if (!follower.isBusy() && pastState == State.SHOOTING) {
+                    pastState = State.GO_TO_LEFT_FLOWER;
+                    setPathState(State.FIRST_PICKUP);
+                }
+            case FIRST_PICKUP:
                 if (!follower.isBusy()) {
                     follower.follow(path3);
-                    setPathState(State.PICKUP);
+                    pastState = State.FIRST_PICKUP;
+                    setPathState(State.SHOOTING);
                 }
-            case PICKUP:
+            case SECOND_PICKUP:
                 if (!follower.isBusy()) {
-                    setPathState(State.GO_TO_RIGHT_SHOOTING);
-                }
-            case GO_TO_RIGHT_SHOOTING:
-                if (!follower.isBusy()) {
+                    pastState = State.SECOND_PICKUP;
+                    follower.follow(path5);
                     setPathState(State.SHOOTING);
                 }
             case GO_TO_RIGHT_FLOWER:
                 if (!follower.isBusy()) {
-                    setPathState(State.PICKUP);
+                    setPathState(State.SECOND_PICKUP);
                 }
             case END:
                 requestOpModeStop(); // request to stop our OpMode so it automatically transfers to TeleOp
