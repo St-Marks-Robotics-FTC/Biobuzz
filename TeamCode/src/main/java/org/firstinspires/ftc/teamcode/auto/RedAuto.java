@@ -1,22 +1,26 @@
-/** base red auto **/
-
 package org.firstinspires.ftc.teamcode.auto;
 
 import com.pedropathing.math.Pose;
 import com.bylazar.configurables.annotations.Configurable;
 
 @Configurable
-public abstract class RedAuto extends BozoAuto { // these positions override the base auto class
-    public static Pose pose1 = new Pose (0, 0, 0);
-    public static Pose pose2 = new Pose (0, 0, 0);
-    public static Pose pose3 = new Pose (0, 0, 0);
+public abstract class RedAuto extends BozoAuto {
+    public static Pose startPose = new Pose(0, 0, Math.toRadians(90));
+    public static Pose shootLeftPose = new Pose(0, 0, Math.toRadians(90));
+    public static Pose shootRightPose = new Pose(0, 0, Math.toRadians(90));
+    public static Pose flowerLeftPose = new Pose(0, 0, Math.toRadians(90));
+    public static Pose flowerRightPose = new Pose(0, 0, Math.toRadians(90));
+    public static Pose endPose = new Pose(0, 0, Math.toRadians(90));
 
     @Override
     protected AutoConfig buildConfig() {
         return new AutoConfig(
-                pose1,
-                pose2,
-                pose3
+                startPose,
+                shootLeftPose,
+                shootRightPose,
+                flowerLeftPose,
+                flowerRightPose,
+                endPose
         );
     }
 }
