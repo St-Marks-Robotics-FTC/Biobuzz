@@ -1,21 +1,28 @@
-/** this class is used to provide auto parameters **/
-
 package org.firstinspires.ftc.teamcode.auto;
 
 import com.pedropathing.math.Pose;
 
 public class AutoConfig {
-    public Pose pose1,
-            pose2,
-            pose3;
+    public Pose startPose,
+            shootLeftPose,
+            shootRightPose,
+            flowerLeftPose,
+            flowerRightPose,
+            endPose;
 
     public AutoConfig(
-            Pose pose1,
-            Pose pose2,
-            Pose pose3
+            Pose startPose,
+            Pose shootLeftPose,
+            Pose shootRightPose,
+            Pose flowerLeftPose,
+            Pose flowerRightPose,
+            Pose endPose
     ) {
-        this.pose1 = pose1;
-        this.pose2 = pose2;
-        this.pose3 = pose3;
+        this.startPose = startPose;
+        this.shootLeftPose = shootLeftPose;
+        this.shootRightPose = shootRightPose;
+        this.flowerLeftPose = flowerLeftPose;
+        this.flowerRightPose = flowerRightPose;
+        this.endPose = endPose;
     }
 }
