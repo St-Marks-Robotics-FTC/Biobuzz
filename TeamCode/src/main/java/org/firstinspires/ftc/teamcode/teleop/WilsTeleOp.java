@@ -1,4 +1,4 @@
-/** fully manual four-wheel drive: each joystick axis drives exactly one motor, no mixing **/
+/** mecanum drive: left stick strafes/drives, right stick x rotates **/
 
 package org.firstinspires.ftc.teamcode.teleop;
 
@@ -57,13 +57,18 @@ public class WilsTeleOp extends OpMode {
         // right trigger: held motors (commanded power ~0) brake instead of coasting;
         // motors that are actually being driven are unaffected either way since zero
         // power behavior only applies once their power drops to zero.
-        boolean brakeWhenStopped = gamepad1.right_trigger > 0.5;
+        boolean brakeWhenStopped = !gamepad1.left_bumper;
 
-        // each stick axis drives exactly one motor directly - no mecanum mixing.
-        double frontLeftPower = -gamepad1.left_stick_y * slowMode;   // left stick up/down -> front left
-        double frontRightPower = -gamepad1.right_stick_y * slowMode; // right stick up/down -> front right
-        double backLeftPower = gamepad1.left_stick_x * slowMode;     // left stick right = forward, left = backward
-        double backRightPower = -gamepad1.right_stick_x * slowMode;  // right stick left = forward, right = backward
+        // standard mecanum mixing: left stick drives/strafes, right stick x rotates.
+        double y = -gamepad1.left_stick_y;  // forward/backward
+        double x = gamepad1.left_stick_x * 1.1; // strafe, slight boost to counteract strafing friction
+        double rx = gamepad1.right_stick_x; // rotation
+
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
+        double frontLeftPower = (y + x + rx) / denominator * slowMode;
+        double frontRightPower = (y - x - rx) / denominator * slowMode;
+        double backLeftPower = (y - x + rx) / denominator * slowMode;
+        double backRightPower = (y + x - rx) / denominator * slowMode;
 
         frontLeftBehavior = applyPower(frontLeft, frontLeftPower, frontLeftBehavior, brakeWhenStopped);
         frontRightBehavior = applyPower(frontRight, frontRightPower, frontRightBehavior, brakeWhenStopped);
