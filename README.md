@@ -4,7 +4,7 @@
 
 if `adb devices` doesn't show any devices:
 1. close and reopen Android Studio
-2. connect to driver hub using wifi
+2. connect to driver hub using Wi-Fi
 3. run `adb kill-server && adb start-server`
 4. run `adb connect 192.168.43.1`
 5. now try `adb devices`
@@ -25,8 +25,6 @@ driver station config name: `v0`
 | `1`       | Pinpoint Odo Computer        | left side under control hub | `odo`         |
 | `2`       | *unused*                     | *unused*                    | *unused*      |
 | `3`       | *unused*                     | *unused*                    | *unused*      |
-
-the Brushland Labs color sensor should only be plugged into I2C for configuration. During competition it should be plugged into digital port 6/7.
 
 ### digital ports
 
