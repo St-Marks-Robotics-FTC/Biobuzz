@@ -6,6 +6,19 @@
  * https://docs.limelightvision.io/docs/docs-limelight/apis/ftc-programming
  * TODO:
  * - find whether garden side is up/down accurately
+ *
+ * PLAN:
+ * - only look at the tags of our team
+ * 4 pipelines
+ * - 2 blue (all blue tag IDs allowed)
+ *  - blue: audience side up field map
+ *  - blue: scoring side up field map
+ * - 2 red (all red tag IDs allowed)
+ *  - red: audience side up field map
+ *  - red: scoring side up field map
+ *
+ *  use fiducials to figure out which field map to use (which side is up)
+ *  use limelight to get our botpose
  */
 package org.firstinspires.ftc.teamcode.subsys;
 
@@ -92,8 +105,6 @@ public class Vision {
         Position pos = pose3D.getPosition();
         return Math.sqrt(Math.pow(pos.x, 2) + Math.pow(pos.y, 2) + Math.pow(pos.z, 2));
     }
-
-    public class
 
     private class AverageFinder {
         private double total;
