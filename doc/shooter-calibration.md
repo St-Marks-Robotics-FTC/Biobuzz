@@ -77,21 +77,49 @@ onward is noise.
 Shot-to-shot recovery is what actually kills scoring, not steady-state. Gate the trigger on
 "at speed" rather than trusting a timer.
 
+### Size the flywheel before you tune it
+
+A ball leaving at 5.7 m/s carries about 0.44 J. The flywheel pays for that out of its own stored
+energy, and speed drops as `sqrt(1 - E_ball / E_wheel)`. A light 4 in wheel — say 100 g — stores
+roughly 3 J at 2100 RPM, so **one ball costs it about 7% of its speed**, which is wider than the
+entire error budget. No controller recovers from that instantly.
+
+To hold the single-ball dip under 2% you need about 11 J stored, which at 4 in and 2100 RPM means
+roughly **175 g in the rim, or 350 g as a solid disc**. This is a conservative bound: the motor
+keeps supplying torque during the ~20 ms of contact, which offsets part of the dip. If your wheel
+is far under that, add mass or gear it up before spending time on PIDF — no gain schedule fixes
+missing inertia.
+
 ## Phase 2 — measure the speed line
 
 This is the phase that makes everything else work, and it's the one you asked about. You need at
 least **three RPM points per outtake**, spanning the range you'll actually use (roughly 1800–3000
 RPM at the current defaults), then fit a straight line through them.
 
-### Option A — chronograph (better)
+### Option A — phone slow-motion video (recommended)
 
-An airsoft chronograph is about $30 and reads muzzle velocity directly. Fire five balls at each of
-three or four RPM settings, average each, and least-squares fit speed against RPM. This decouples
-the launcher completely from the ballistics, so a bad Cd can't corrupt your speed line.
+Do **not** buy an airsoft chronograph. Their sensor aperture is around 1.5 in and POLLEN is 2.8 in;
+the ball will not fit through one. A phone at 240 fps does the job for free.
 
-If you can get one, do this. It turns Phase 3 into a check rather than a fit.
+1. Tape a metre stick horizontally in the plane of flight, level with the exit point. Camera on a
+   tripod perpendicular to that plane, 2–3 m back, 240 fps.
+2. Fire five balls at each of three or four RPM settings spanning 1800–3000.
+3. Step through frames. Count frames `n` between the ball crossing two marks a distance `s` apart
+   (use `s` = 1.0 m). Time is `t = n / 240`.
+4. **Correct for drag over the measured span** — at 5.7 m/s a POLLEN sheds about 2% across a metre,
+   which is half your whole error budget:
 
-### Option B — shoot and solve (no extra hardware)
+   ```
+   v0 = (exp(k * s) - 1) / (k * t)        k = 0.045 for POLLEN, 0.049 for NECTAR
+   ```
+
+   (As `k` goes to zero this collapses to the naive `s / t`, as it should.)
+5. Least-squares fit `v0` against RPM. Slope is `SpeedPerRpm`, intercept is `SpeedIntercept`.
+
+This measures the launcher alone, so a wrong Cd can't corrupt it — which leaves Phase 3 a
+well-conditioned one-parameter fit instead of three unknowns from three noisy shots.
+
+### Option B — shoot and solve (no phone tripod, worse conditioned)
 
 1. Park at a **measured 48 in** from the aperture centre. Tape-measure it; don't trust odometry
    yet. Close range keeps flight time short, so drag barely contributes and can't poison the fit.
@@ -128,6 +156,40 @@ to. This matters: at 96 in, sweeping Cd from 0.35 to 0.80 moves the answer 2517 
 
 If you need something outside 0.3–0.9, the problem isn't drag. Go back to Phase 2 — most likely
 the speed line was fit with a flywheel that hadn't recovered between shots.
+
+## Where to shoot from
+
+The three auto poses should sit on an **arc at a constant range** from the aperture, spread in
+bearing — skinny in range, wide in bearing. Two reasons.
+
+**1. There is a range where the required speed is flat.** Required muzzle speed falls, bottoms out,
+then rises with range. At the bottom, `d(speed)/d(range)` is zero, so being a few inches out of
+position costs you nothing. At 65° the bottom is 44 in, and a 6 in positioning error there costs
+0.5% of speed. At 72 in the same error costs 2.7% — more than half the budget at that distance.
+
+| Hood angle | Flat spot | Speed there | Entry quality | One RPM covers |
+|---:|---:|---:|---:|:---|
+| 58° | 58 in | 5.95 m/s | 0.87 | 50–76 in |
+| 60° | 54 in | 5.82 m/s | 0.88 | 47–70 in |
+| 62° | 50 in | 5.70 m/s | 0.88 | 44–65 in |
+| 65° | 44 in | 5.55 m/s | 0.87 | 39–57 in |
+| 70° | 34 in | 5.34 m/s | 0.87 | 31–43 in |
+
+Speed tolerance at the flat spot is about 5.4% for *every* angle — the flat spot is equally good
+wherever it lands. What changes is how far from it you can stray on one RPM, and shallower angles
+buy a wider band.
+
+**2. Bearing is nearly free.** The opening is 20 in wide and only about 12 in tall in the vertical,
+and bearing is handled by turning the robot. Spreading the vertices sideways costs almost nothing,
+so put the path freedom there rather than in range.
+
+**Recommended: 60° hood, three vertices on a 54 in arc**, spread roughly ±25° in bearing. That puts
+every vertex on the flat spot, gives entry quality 0.88, and one RPM covers 47–70 in — so all three
+score off a single flywheel setting even if a vertex ends up 10 in out of place.
+
+Go to 62°/50 in only if you have confirmed the robot can sit that close; the hive frame base is
+49.46 × 38.95 in and will block a bumper before the aperture does. Verify the closest reachable
+spot with a tape before committing the hood angle, since the hood is not adjustable once built.
 
 ## Phase 4 — verify across the triangle
 
