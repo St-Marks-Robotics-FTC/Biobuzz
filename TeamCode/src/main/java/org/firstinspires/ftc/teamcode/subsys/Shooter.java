@@ -36,6 +36,7 @@ public class Shooter {
         double target = shooting ? Tunables.shooterTargetRpm : 0.0;
         double maxStep = Tunables.shooterRampRpmPerSec * dt;
         double err = target - currentRpm;
+        //Set Velocity here
 
         if (Math.abs(err) <= maxStep) {
             currentRpm = target;
@@ -53,6 +54,7 @@ public class Shooter {
         if (lastShotNs != 0 && (now - lastShotNs) / 1e9 < interval) {
             return false;
         }
+        //Actually shoot the ball here
         lastShotNs = now;
         shotsFired++;
         return true;
