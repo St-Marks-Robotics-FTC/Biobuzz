@@ -179,6 +179,15 @@ the **start** button toggles between robot/field centric control
 
 - `Test`: TBD
 
+# shooter
+
+`subsys/physics.java` turns a field pose into a flywheel RPM. The hood angle is fixed; only the
+speed changes with range. All of its constants live in `Tunables` and are editable live from
+Panels.
+
+**Before this works on a real field, follow [doc/shooter-calibration.md](doc/shooter-calibration.md).**
+The defaults in `Tunables` are placeholders, not measurements.
+
 # vision
 
 We are using a Limelight 3A
