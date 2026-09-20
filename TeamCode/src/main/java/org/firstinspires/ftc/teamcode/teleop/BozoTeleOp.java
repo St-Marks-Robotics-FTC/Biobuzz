@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
@@ -26,6 +27,8 @@ public abstract class BozoTeleOp extends OpMode {
     @Override
     public void init() {
         loopTimer = new Timer();
+
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // must come before any telemetryM call
 
         robot = new Robot(hardwareMap);
         follower = Constants.create(hardwareMap);

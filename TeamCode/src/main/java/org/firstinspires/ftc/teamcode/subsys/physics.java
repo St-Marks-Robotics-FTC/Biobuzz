@@ -44,6 +44,7 @@ public class physics {
         }
     }
 
+    /** physical ball properties, straight from the manual; these are facts, not tunables **/
     public enum Ball {
         POLLEN(0.027, 0.0711),
         NECTAR(0.041, 0.0914);
@@ -55,10 +56,64 @@ public class physics {
             this.diameter = diameter;
         }
 
-        public double dragK() { // drag deceleration is dragK * speed^2
+        public double dragK(double cd) { // drag deceleration is dragK * speed^2
             double area = Math.PI * diameter * diameter / 4.0;
-            return 0.5 * RHO * Tunables.ballDragCoefficient * area / mass;
+            return 0.5 * RHO * cd * area / mass;
         }
+    }
+
+    /* One per launcher. Outtake 1 shoots POLLEN, outtake 2 shoots NECTAR. Each has its own hood,
+     * wheel and feed, so nothing is shared: separate angle, exit point, speed line and drag fit.
+     * Drag belongs to the ball, but the fit is stored per outtake since the pairing is one to one. */
+    public enum Outtake {
+        POLLEN(Ball.POLLEN),
+        NECTAR(Ball.NECTAR);
+
+        public final Ball ball;
+
+        Outtake(Ball ball) {
+            this.ball = ball;
+        }
+
+        public double angleDeg() {
+            return this == POLLEN ? Tunables.pollenLaunchAngleDeg : Tunables.nectarLaunchAngleDeg;
+        }
+
+        public double heightIn() {
+            return this == POLLEN ? Tunables.pollenLaunchHeightIn : Tunables.nectarLaunchHeightIn;
+        }
+
+        public double offsetIn() {
+            return this == POLLEN ? Tunables.pollenLaunchOffsetIn : Tunables.nectarLaunchOffsetIn;
+        }
+
+        public double speedPerRpm() {
+            return this == POLLEN ? Tunables.pollenSpeedPerRpm : Tunables.nectarSpeedPerRpm;
+        }
+
+        public double speedIntercept() {
+            return this == POLLEN ? Tunables.pollenSpeedIntercept : Tunables.nectarSpeedIntercept;
+        }
+
+        public double dragCoefficient() {
+            return this == POLLEN ? Tunables.pollenDragCoefficient : Tunables.nectarDragCoefficient;
+        }
+
+        /** muzzle speed this outtake produces at a given RPM **/
+        public double speedAtRpm(double rpm) {
+            return speedPerRpm() * rpm + speedIntercept();
+        }
+
+        /** RPM needed for a muzzle speed; NaN if the speed line has not been calibrated **/
+        public double rpmForSpeed(double speed) {
+            double slope = speedPerRpm();
+            return slope > 1e-9 ? (speed - speedIntercept()) / slope : Double.NaN;
+        }
+    }
+
+    /** starting guess for speedPerRpm from wheel geometry, before you have measured the line **/
+    public static double seedSpeedPerRpm(double wheelDiameterIn, double transfer) {
+        return transfer * Math.PI * wheelDiameterIn * IN / 60.0;
     }
 
     /** a solved shot; check feasible before using rpm **/
@@ -85,21 +140,21 @@ public class physics {
         }
     }
 
-    public static Shot solve(Pose robot, Cell cell, Ball ball) {
+    public static Shot solve(Pose robot, Cell cell, Outtake outtake) {
         double dx = cell.x - robot.x();
         double dy = cell.y - robot.y();
-        return solve(Math.sqrt(dx * dx + dy * dy), ball, Math.atan2(dy, dx));
+        return solve(Math.sqrt(dx * dx + dy * dy), outtake, Math.atan2(dy, dx));
     }
 
-    public static Shot solve(double rangeIn, Ball ball) {
-        return solve(rangeIn, ball, Double.NaN);
+    public static Shot solve(double rangeIn, Outtake outtake) {
+        return solve(rangeIn, outtake, Double.NaN);
     }
 
-    private static Shot solve(double rangeIn, Ball ball, double headingRad) {
-        double d = (rangeIn - Tunables.launchOffsetIn) * IN;
-        double dz = (APERTURE_CENTER_IN - Tunables.launchHeightIn) * IN;
-        double angle = Math.toRadians(Tunables.launchAngleDeg);
-        double k = ball.dragK();
+    private static Shot solve(double rangeIn, Outtake outtake, double headingRad) {
+        double d = (rangeIn - outtake.offsetIn()) * IN;
+        double dz = (APERTURE_CENTER_IN - outtake.heightIn()) * IN;
+        double angle = Math.toRadians(outtake.angleDeg());
+        double k = outtake.ball.dragK(outtake.dragCoefficient());
         double[] out = new double[4];
 
         // arrival height rises monotonically with muzzle speed, so bisection always converges
@@ -120,10 +175,10 @@ public class physics {
         boolean converged = d > 0 && v > V_MIN + 1e-3 && v < V_MAX - 1e-3
                 && Math.abs(out[0] - dz) < 0.01;
 
-        double surface = v / Tunables.flywheelTransfer;
-        double rpm = 60.0 * surface / (Math.PI * Tunables.flywheelDiameterIn * IN);
+        double rpm = outtake.rpmForSpeed(v);
 
-        return new Shot(converged && frac > 0, rpm, v, out[3], entry, frac, rangeIn, headingRad);
+        return new Shot(converged && frac > 0 && !Double.isNaN(rpm) && rpm > 0,
+                rpm, v, out[3], entry, frac, rangeIn, headingRad);
     }
 
     /** RK4 out to horizontal distance dTarget; out = {z, vx, vz, t} on arrival **/

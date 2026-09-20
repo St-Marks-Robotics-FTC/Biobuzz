@@ -69,15 +69,18 @@ public abstract class BozoAuto extends OpMode {
                     follower.follow(path2);
                     setPathState(State.RUN_PATH_2);
                 }
+                break;
             case RUN_PATH_2:
                 if (!follower.isBusy()) {
                     follower.follow(path3);
                     setPathState(State.RUN_PATH_3);
                 }
+                break;
             case RUN_PATH_3:
                 if (!follower.isBusy()) {
                     setPathState(State.END);
                 }
+                break;
             case END:
                 requestOpModeStop(); // request to stop our OpMode so it automatically transfers to TeleOp
                 break;
