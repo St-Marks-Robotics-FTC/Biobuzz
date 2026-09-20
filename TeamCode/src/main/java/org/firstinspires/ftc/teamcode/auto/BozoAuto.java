@@ -8,12 +8,10 @@ import com.pedropathing.paths.Path;
 import static com.pedropathing.api.Paths.*;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
-
 import java.util.concurrent.TimeUnit;
 
 public abstract class BozoAuto extends OpMode {
@@ -25,7 +23,7 @@ public abstract class BozoAuto extends OpMode {
     private Timer stateTimer, loopTimer;
     private TelemetryManager telemetryM;
     private Pose startPose;
-    private State pastState;
+    private State pastState = State.START;
     private enum State {
         START,
         SHOOTING,
@@ -35,16 +33,8 @@ public abstract class BozoAuto extends OpMode {
         SECOND_PICKUP,
         END
     }
-
     State state = State.START;
-
-    private Path
-            path1,
-            path2,
-            path3,
-            path4,
-            path5,
-            path6;
+    private Path path1, path2, path3, path4, path5, path6;
 
     private void buildPaths() {
         path1 = line(startPose, config.shootLeftPose).linear(startPose, config.shootLeftPose);
@@ -54,7 +44,16 @@ public abstract class BozoAuto extends OpMode {
         path5 = line(config.flowerRightPose, config.shootRightPose).linear(config.flowerRightPose, config.shootRightPose);
         path6 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
     }
-    //Everything is first DO SOMETHING and then MOVE
+
+    private boolean actionDone(long dwellMs) {
+        if (stateTimer.get(TimeUnit.MILLISECONDS) < dwellMs && !timedOut()) return false;
+        return !follower.isBusy() || timedOut();
+    }
+
+    private boolean timedOut() {
+        return stateTimer.get(TimeUnit.MILLISECONDS) > Tunables.pathTimeoutMs;
+    }
+
     private void autoPathUpdate() {
         switch (state) {
             case START:
@@ -63,54 +62,48 @@ public abstract class BozoAuto extends OpMode {
                 setPathState(State.SHOOTING);
                 break;
             case SHOOTING:
-                if (!follower.isBusy() && pastState == State.START) {
-                    //shoot function
+                if (actionDone(Tunables.shootTimeMs) && pastState == State.START) {
                     follower.follow(path2);
                     pastState = State.SHOOTING;
                     setPathState(State.GO_TO_LEFT_FLOWER);
-                } else if (!follower.isBusy() && pastState == State.FIRST_PICKUP) {
-                    //shoot function
+                } else if (actionDone(Tunables.shootTimeMs) && pastState == State.FIRST_PICKUP) {
                     follower.follow(path4);
                     pastState = State.SHOOTING;
                     setPathState(State.GO_TO_RIGHT_FLOWER);
-                } else if (!follower.isBusy() && pastState == State.SECOND_PICKUP) {
-                    //shoot function
+                } else if (actionDone(Tunables.shootTimeMs) && pastState == State.SECOND_PICKUP) {
                     follower.follow(path6);
                     pastState = State.SHOOTING;
                     setPathState(State.END);
                 }
                 break;
             case GO_TO_LEFT_FLOWER:
-                if (!follower.isBusy() && pastState == State.SHOOTING) {
-                    //Telemetry to know that we are at the flower
+                if (!follower.isBusy() || timedOut()) {
                     pastState = State.GO_TO_LEFT_FLOWER;
                     setPathState(State.FIRST_PICKUP);
                 }
                 break;
             case FIRST_PICKUP:
-                if (!follower.isBusy()) {
-                    //Intake the nectar
+                if (actionDone(Tunables.intakeTimeMs)) {
                     follower.follow(path3);
                     pastState = State.FIRST_PICKUP;
                     setPathState(State.SHOOTING);
                 }
                 break;
             case SECOND_PICKUP:
-                if (!follower.isBusy()) {
-                    //Intake the nectar
+                if (actionDone(Tunables.intakeTimeMs)) {
                     pastState = State.SECOND_PICKUP;
                     follower.follow(path5);
                     setPathState(State.SHOOTING);
                 }
                 break;
             case GO_TO_RIGHT_FLOWER:
-                if (!follower.isBusy()) {
-                    //Telemetry: "At the flower on the right"
+                if (!follower.isBusy() || timedOut()) {
+                    pastState = State.GO_TO_RIGHT_FLOWER;
                     setPathState(State.SECOND_PICKUP);
                 }
                 break;
             case END:
-                if (!follower.isBusy()) { //End the process
+                if (!follower.isBusy() || timedOut()) {
                     requestOpModeStop();
                 }
                 break;
@@ -142,11 +135,11 @@ public abstract class BozoAuto extends OpMode {
         stateTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = new Robot(hardwareMap);
-        telemetryM.debug("Creating follower... (this may take a while)");
+        telemetryM.debug("Creating follower");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
         startPose = getStartPose();
-        telemetryM.debug("Building paths... (this may take a while)");
+        telemetryM.debug("Building paths");
         telemetryM.update(telemetry);
         buildPaths();
         follower.setPose(startPose);
@@ -176,13 +169,13 @@ public abstract class BozoAuto extends OpMode {
 
     public void sendTelemetry(boolean sendInitTime) {
         if (sendInitTime) {
-            telemetryM.addLine("INIT COMPLETE: READY TO START");
-            telemetryM.debug("Init time (millis): " + loopTimer.get(TimeUnit.SECONDS));
+            telemetryM.addLine("INIT COMPLETE");
+            telemetryM.debug("Init " + loopTimer.get(TimeUnit.MILLISECONDS));
         }
-        telemetryM.debug("Path state: " + state);
+        telemetryM.debug("State " + state);
         telemetryM.addData("x", follower.pose().x());
         telemetryM.addData("y", follower.pose().y());
         telemetryM.addData("Heading", follower.pose().heading());
-        telemetryM.debug("OpMode time (seconds): " + getRuntime());
+        telemetryM.debug("Time " + getRuntime());
     }
 }

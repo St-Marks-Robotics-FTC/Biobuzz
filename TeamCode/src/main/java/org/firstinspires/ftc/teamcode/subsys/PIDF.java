@@ -1,13 +1,9 @@
-/** general PIDF controller to use for pointing robot towards goal april tag **/
-// taken from: https://roboftc.github.io/code/pidf.html
-
 package org.firstinspires.ftc.teamcode.subsys;
 
 public class PIDF {
-    // PIDF coefficients
     public double kP, kI, kD, kF;
-
-    // State variables
+    public double integralLimit = Double.POSITIVE_INFINITY;
+    public double outputLimit = Double.POSITIVE_INFINITY;
     private double sumError = 0;
     private double lastError = 0;
     private double lastTime = 0;
@@ -33,32 +29,35 @@ public class PIDF {
     }
 
     public double calc(double target, double current) {
+        return calcError(target - current, target);
+    }
+
+    public double calcAngle(double target, double current) {
+        return calcError(wrapAngle(target - current), target);
+    }
+
+    public static double wrapAngle(double radians) {
+        return Math.atan2(Math.sin(radians), Math.cos(radians));
+    }
+
+    private double calcError(double error, double target) {
         double currentTime = System.nanoTime() / 1e9;
         double deltaTime = (lastTime == 0) ? 0 : (currentTime - lastTime);
-
-        double error = target - current;
-
-        // Proportional
         double P = kP * error;
-
-        // Integral
         if (deltaTime > 0) {
             sumError += error * deltaTime;
+            if (sumError > integralLimit) sumError = integralLimit;
+            else if (sumError < -integralLimit) sumError = -integralLimit;
         }
         double I = kI * sumError;
-
-        // Derivative
         double derivative = (deltaTime > 0) ? (error - lastError) / deltaTime : 0;
         double D = kD * derivative;
-
-        // Feedforward
         double F = kF * target;
-
-        // Store for next loop
         lastError = error;
         lastTime = currentTime;
-
-        // Total output
-        return P + I + D + F;
+        double out = P + I + D + F;
+        if (out > outputLimit) return outputLimit;
+        if (out < -outputLimit) return -outputLimit;
+        return out;
     }
 }

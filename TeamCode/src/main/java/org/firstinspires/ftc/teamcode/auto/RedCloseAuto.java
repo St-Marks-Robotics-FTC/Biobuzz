@@ -7,7 +7,6 @@ import com.pedropathing.math.Pose;
 public class RedCloseAuto extends RedAuto {
     @Override
     public Pose getStartPose() {
-        // Start pose of the robot for this variant.
-        return new Pose(0, 0, Math.toRadians(0));
+        return startPose;
     }
 }
