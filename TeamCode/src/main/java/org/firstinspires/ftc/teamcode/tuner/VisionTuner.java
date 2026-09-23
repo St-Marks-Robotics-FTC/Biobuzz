@@ -23,7 +23,7 @@ public class VisionTuner extends LinearOpMode {
         TuneMode mode0 = TuneMode.values()[0];
         TuneMode mode1 = TuneMode.values()[1];
 
-        vision.startPipeline(Vision.Pipeline.BLUE_TEAM);
+        vision.startPipeline(Vision.Pipeline.BLUE_AUDIENCE_HIGH);
 
         waitForStart();
 
