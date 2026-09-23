@@ -31,6 +31,10 @@ public abstract class BozoTeleOp extends OpMode {
 
     private PIDF headingPID = new PIDF(1.2, 0.0, 0.08, 0.0); // tune kP/kD on the real robot
     private boolean wasAiming = false;
+    private double lastAimTurnPower = 0.0; // for slew-rate limiting (smoothing) the aim turn output
+
+    private static final double AIM_HEADING_DEADBAND_DEG = 1.0; // stop correcting once within this many degrees of the goal
+    private static final double AIM_TURN_SLEW_RATE = 0.06; // max change in turn power per loop (smooths/slows the approach)
 
     @Override
     public void init() {
@@ -59,7 +63,10 @@ public abstract class BozoTeleOp extends OpMode {
         boolean isAiming = gamepad1.a; // hold a to snap toward nearest in-range goal
         FieldConstants.Goal aimGoal = isAiming ? pickAimGoal(isBlueTeam()) : null;
 
-        if (!wasAiming && isAiming) headingPID.reset();
+        if (!wasAiming && isAiming) {
+            headingPID.reset();
+            lastAimTurnPower = 0.0;
+        }
         wasAiming = isAiming;
 
         if (isRobotCentric) { // robot-centric control
@@ -144,9 +151,25 @@ public abstract class BozoTeleOp extends OpMode {
     private double aimTurnPower(FieldConstants.Goal goal) {
         double targetHeading  = GoalTargeting.bearingToGoal(follower.pose(), goal);
         double error = GoalTargeting.wrapAngle(targetHeading - follower.pose().heading());
-        double turnPower = headingPID.calc(0, -Math.toDegrees(error));
+        double errorDeg = Math.toDegrees(error);
 
-        return Math.max(-1.0, Math.min(1.0, turnPower));
+        double turnPower;
+        if (Math.abs(errorDeg) <= AIM_HEADING_DEADBAND_DEG) {
+            // close enough: stop correcting so we don't chatter around the setpoint
+            turnPower = 0.0;
+        } else {
+            turnPower = headingPID.calc(0, -errorDeg);
+            turnPower = Math.max(-1.0, Math.min(1.0, turnPower));
+        }
+
+        // slew-rate limit: smooths the output and slows turning as we approach the target
+        // instead of snapping straight to the PID output (which caused the spasming).
+        double delta = turnPower - lastAimTurnPower;
+        if (delta > AIM_TURN_SLEW_RATE) delta = AIM_TURN_SLEW_RATE;
+        if (delta < -AIM_TURN_SLEW_RATE) delta = -AIM_TURN_SLEW_RATE;
+        lastAimTurnPower += delta;
+
+        return lastAimTurnPower;
     }
 }
 
