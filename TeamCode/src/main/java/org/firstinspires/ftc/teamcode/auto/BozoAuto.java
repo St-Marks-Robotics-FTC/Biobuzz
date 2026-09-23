@@ -106,6 +106,7 @@ public abstract class BozoAuto extends OpMode {
             case GO_TO_RIGHT_FLOWER:
                 if (!follower.isBusy()) {
                     //Telemetry: "At the flower on the right"
+                    pastState = State.GO_TO_RIGHT_FLOWER;
                     setPathState(State.SECOND_PICKUP);
                 }
                 break;
@@ -146,6 +147,7 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
         startPose = getStartPose();
+        config.startPose = startPose;
         telemetryM.debug("Building paths... (this may take a while)");
         telemetryM.update(telemetry);
         buildPaths();
@@ -171,7 +173,9 @@ public abstract class BozoAuto extends OpMode {
     }
 
     public void updateHandoff() {
-        HandoffState.pose = follower.pose();
+        if (follower != null) {
+            HandoffState.pose = follower.pose();
+        }
     }
 
     public void sendTelemetry(boolean sendInitTime) {
