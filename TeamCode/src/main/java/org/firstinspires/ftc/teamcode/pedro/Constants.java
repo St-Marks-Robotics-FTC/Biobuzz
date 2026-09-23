@@ -31,10 +31,10 @@ public class Constants {
                 c.backLeftName.set("backLeft");
                 c.backRightName.set("backRight");
 
-                c.frontLeftDirection.set(DcMotorSimple.Direction.FORWARD);
-                c.frontRightDirection.set(DcMotorSimple.Direction.REVERSE);
-                c.backLeftDirection.set(DcMotorSimple.Direction.FORWARD);
-                c.backRightDirection.set(DcMotorSimple.Direction.REVERSE);
+                c.frontLeftDirection.set(DcMotorSimple.Direction.REVERSE);
+                c.frontRightDirection.set(DcMotorSimple.Direction.FORWARD);
+                c.backLeftDirection.set(DcMotorSimple.Direction.REVERSE);
+                c.backRightDirection.set(DcMotorSimple.Direction.FORWARD);
 
                 c.manualBrakeMode.set(true);
             }
@@ -73,7 +73,7 @@ public class Constants {
                 c.linearBrakeCoefficients.set(Matrix.diag(0.03455284940917896, 0.14132737182904553));
                 c.quadraticBrakeCoefficients.set(Matrix.diag(0.004243572376591928, 5.841031988782842E-4));
 
-                c.maxAchievableForwardVelocity.set(0.0);
+                c.maxAchievableForwardVelocity.set(30.0);
                 c.maxAchievableStrafeVelocity.set(46.61974609410268);
                 c.naturalForwardDeceleration.set(32.41950525436732);
                 c.naturalStrafeDeceleration.set(32.845809731388336);
