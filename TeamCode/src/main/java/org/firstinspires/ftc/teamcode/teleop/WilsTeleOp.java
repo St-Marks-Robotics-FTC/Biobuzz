@@ -62,7 +62,7 @@ public class WilsTeleOp extends OpMode {
         // standard mecanum mixing: left stick drives/strafes, right stick x rotates.
         double y = -gamepad1.left_stick_y;  // forward/backward
         double x = gamepad1.left_stick_x * 1.1; // strafe, slight boost to counteract strafing friction
-        double rx = gamepad1.right_stick_x; // rotation
+        double rx = -gamepad1.right_stick_x; // rotation
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
         double frontLeftPower = (y + x + rx) / denominator * slowMode;
