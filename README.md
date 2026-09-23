@@ -142,7 +142,7 @@ the **start** button toggles between robot/field centric control
 ## buttons
 
 ### face buttons
-- **A**: *unused*
+- **A**: hold to auto-aim at nearest in-range alliance goal
 - **B**: *unused*
 - **Y**: *unused*
 - **X**: *unused*
