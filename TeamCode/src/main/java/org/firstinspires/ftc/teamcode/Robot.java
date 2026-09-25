@@ -15,7 +15,7 @@ public class Robot {
         // initialize everything here
 
         controlHub = hw.get(LynxModule.class, "Control Hub");
-        //expansionHub = hw.get(LynxModule.class, "Expansion Hub 2"); // I believe this starts at 2
+        expansionHub = hw.get(LynxModule.class, "Expansion Hub 2"); // I believe this starts at 2
 
         controlHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         //expansionHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
