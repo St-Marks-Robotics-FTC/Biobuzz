@@ -5,18 +5,19 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import static org.firstinspires.ftc.teamcode.Tunables.*;
+
 public class Flywheel {
     private static final double TICKS_PER_REV = 28; // bare motor encoder resolution, adjust for actual flywheel motor
 
     private final DcMotorEx motor;
-    private final PIDF pidf;
     private double targetRPM = 0;
-
+    private final PIDF pidf;
     public Flywheel(HardwareMap hw) {
         motor = hw.get(DcMotorEx.class, "flywheel");
         motor.setDirection(DcMotorSimple.Direction.FORWARD);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        pidf = new PIDF(0, 0, 0, 0); // tune once flywheel is mounted
+        pidf = new PIDF(flywheelP, flywheelI, flywheelD, flywheelF); // tune once flywheel is mounted
     }
 
     public void setRPM(double rpm) {
@@ -32,6 +33,7 @@ public class Flywheel {
     }
 
     public void update() {
+        pidf.updateTerms(flywheelP, flywheelI, flywheelD, flywheelF);
         motor.setPower(pidf.calc(targetRPM, getRPM()));
     }
 }
