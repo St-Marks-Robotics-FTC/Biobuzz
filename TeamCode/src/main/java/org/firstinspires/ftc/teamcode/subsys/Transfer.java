@@ -1,14 +1,12 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
+import static org.firstinspires.ftc.teamcode.Tunables.*;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Transfer {
     public enum State {OPEN, CLOSED}
-
-    // placeholder positions, tune once the servo is mounted
-    private static final double OPEN_POSITION = 1.0;
-    private static final double CLOSED_POSITION = 0.0;
 
     private final Servo servo;
     private State state = State.CLOSED;
@@ -24,11 +22,11 @@ public class Transfer {
 
     public void open() {
         state = State.OPEN;
-        servo.setPosition(OPEN_POSITION);
+        servo.setPosition(transferOpen);
     }
 
     public void close() {
         state = State.CLOSED;
-        servo.setPosition(CLOSED_POSITION);
+        servo.setPosition(transferClosed);
     }
 }
