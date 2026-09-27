@@ -222,7 +222,8 @@ public class physics {
         out[3] = pt + f * (t - pt);
     }
 
-    private static double mag(double a, double b) {
+    private static double mag(double a, double b)
+    {
         return Math.sqrt(a * a + b * b);
     }
 }
