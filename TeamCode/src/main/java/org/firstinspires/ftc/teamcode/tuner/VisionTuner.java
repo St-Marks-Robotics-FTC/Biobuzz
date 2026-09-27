@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode.tuner;
 
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.subsys.Vision;
@@ -42,10 +44,18 @@ public class VisionTuner extends LinearOpMode {
                 case FIDUCIALS:
                     LLResult result = vision.getLatestResult();
 
-                    // print fiducials stuff
+                    for (LLResultTypes.FiducialResult fiducial : result.getFiducialResults()) {
+                        telemetryM.addLine("id: " + fiducial.getFiducialId());
+                        Pose pose = vision.translateLLPoseToField(fiducial.getRobotPoseFieldSpace());
+                        telemetryM.addLine("pose: " + pose.toString());
+                    }
                     break;
                 case BOTPOSE:
                     // print botpose
+                    vision.update();
+                    telemetryM.addData("last botpose", vision.getLastBotPose().toString());
+                    telemetryM.addData("staleness", vision.getStaleness());
+                    telemetryM.addData("pipeline", vision.getPipeline());
                     break;
             }
 

@@ -146,7 +146,7 @@ public class Vision {
         return Math.sqrt(Math.pow(pos.x, 2) + Math.pow(pos.y, 2));
     }
 
-    private Pose translateLLPoseToField(Pose3D rawPose3D) {
+    public Pose translateLLPoseToField(Pose3D rawPose3D) {
         Position rawPos = rawPose3D.getPosition().toUnit(DistanceUnit.INCH); // ensure we are using inches
         double rawX = rawPos.y + 72;
         double rawY = 72 - rawPos.x;
@@ -154,6 +154,9 @@ public class Vision {
         return new Pose(rawX, rawY); // doesn't have heading
     }
 
+    public Pose getLastBotPose () {
+        return lastBotPose;
+    }
     private class AverageFinder {
         private double total;
         private int num;
