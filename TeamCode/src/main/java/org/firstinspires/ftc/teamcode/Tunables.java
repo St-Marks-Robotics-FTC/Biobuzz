@@ -21,6 +21,12 @@ public class Tunables {
     public static double flywheelD = 0;
     public static double flywheelF = 0;
 
+    // shooting sequence, used in auto/BozoAuto.java
+    public static double shootRPM = 3000; // target flywheel RPM while lined up to shoot
+    public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
+    public static long feedDurationMillis = 1500; // how long to run the transfer + intake to feed balls through the flywheel
+    public static long refuelDurationMillis = 1500; // how long to intake while driving through the refuel line
+
     // Transfer Servo open/closed positions
     public static double transferOpen = 1.0;
     public static double transferClosed = 0.0;

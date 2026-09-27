@@ -25,21 +25,29 @@ public abstract class BozoAuto extends OpMode {
     private Timer stateTimer, loopTimer;
     private TelemetryManager telemetryM;
     private Pose startPose;
-    private State pastState;
+
+    /** how many times we have driven to the shoot pose and fed our full hopper of balls through the flywheel **/
+    private int shotsCompleted = 0;
+    private static final int TOTAL_SHOTS = 2; // preload, then one reload from the refuel line
+
     private enum State {
-        START,
-        SHOOTING,
-        REFUELING,
-        END
+        START,            // waiting for OpMode to begin
+        TRAVEL_TO_SHOOT,  // driving to the shoot pose; flywheel spinning up
+        SPIN_UP,          // holding at the shoot pose until the flywheel reaches target RPM
+        FEED,             // transfer open + intake running, feeding balls through the flywheel
+        TRAVEL_TO_REFUEL, // driving to the refuel line
+        REFUEL,           // intake running while sitting on the refuel line to pick up balls
+        TRAVEL_TO_END,    // driving to the parking pose
+        END               // done, request OpMode stop
     }
 
     State state = State.START;
 
     private Path
-            path1,
-            path2,
-            path3,
-            path4;
+            path1, // start -> shoot
+            path2, // shoot -> refuel
+            path3, // refuel -> shoot
+            path4; // shoot -> end
 
     private void buildPaths() {
         path1 = line(startPose, config.shootRightPose).linear(startPose, config.shootRightPose);
@@ -47,37 +55,64 @@ public abstract class BozoAuto extends OpMode {
         path3 = line(config.refuelPose, config.shootRightPose).linear(config.refuelPose, config.shootRightPose);
         path4 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
     }
-    //Everything is first DO SOMETHING and then MOVE
+
+    // Everything is first DO SOMETHING and then MOVE
     private void autoPathUpdate() {
         switch (state) {
             case START:
                 follower.follow(path1);
-                pastState = state;
-                setPathState(State.SHOOTING);
+                robot.flywheel.setRPM(Tunables.shootRPM); // spin up while we drive so it's ready when we arrive
+                setPathState(State.TRAVEL_TO_SHOOT);
                 break;
-            case SHOOTING:
-                if (!follower.isBusy() && pastState == State.START) {
-                    //shoot function
-                    follower.follow(path2);
-                    pastState = State.SHOOTING;
-                    setPathState(State.REFUELING);
-                } else if (!follower.isBusy() && pastState == State.REFUELING) {
-                    //shoot function
-                    follower.follow(path4);
-                    pastState = State.SHOOTING;
+            case TRAVEL_TO_SHOOT:
+                if (!follower.isBusy()) {
+                    setPathState(State.SPIN_UP);
+                }
+                break;
+            case SPIN_UP:
+                if (robot.flywheel.isWithinMargin()) { // don't feed balls until we're actually at speed
+                    robot.transfer.open();
+                    robot.intake.forward();
+                    setPathState(State.FEED);
+                }
+                break;
+            case FEED:
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
+                    robot.transfer.close();
+                    robot.intake.off();
+                    robot.flywheel.setRPM(0);
+                    shotsCompleted++;
+
+                    if (shotsCompleted >= TOTAL_SHOTS) {
+                        follower.follow(path4);
+                        setPathState(State.TRAVEL_TO_END);
+                    } else {
+                        follower.follow(path2);
+                        setPathState(State.TRAVEL_TO_REFUEL);
+                    }
+                }
+                break;
+            case TRAVEL_TO_REFUEL:
+                if (!follower.isBusy()) {
+                    robot.intake.forward();
+                    setPathState(State.REFUEL);
+                }
+                break;
+            case REFUEL:
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
+                    robot.intake.off();
+                    follower.follow(path3);
+                    robot.flywheel.setRPM(Tunables.shootRPM); // spin back up on the way back to the shoot pose
+                    setPathState(State.TRAVEL_TO_SHOOT);
+                }
+                break;
+            case TRAVEL_TO_END:
+                if (!follower.isBusy()) {
                     setPathState(State.END);
                 }
                 break;
-            case REFUELING:
-                if (!follower.isBusy()) {
-                    //Intake the nectar
-                    follower.follow(path3);
-                    pastState = State.REFUELING;
-                    setPathState(State.SHOOTING);
-                }
-                break;
             case END:
-                if (!follower.isBusy()) { //End the process
+                if (!follower.isBusy()) { // End the process
                     requestOpModeStop();
                 }
                 break;
@@ -93,6 +128,7 @@ public abstract class BozoAuto extends OpMode {
     public void loop() {
         loopTimer.reset();
         follower.update();
+        robot.flywheel.update();
         updateHandoff();
         autoPathUpdate();
         if (Tunables.isDebugging) {
@@ -148,8 +184,13 @@ public abstract class BozoAuto extends OpMode {
         if (sendInitTime) {
             telemetryM.addLine("INIT COMPLETE: READY TO START");
             telemetryM.debug("Init time (millis): " + loopTimer.get(TimeUnit.SECONDS));
+        } else {
+            if (!robot.flywheel.isWithinMargin()) telemetryM.debug("WARNING: FLYWHEEL OUT OF MARGIN");
         }
         telemetryM.debug("Path state: " + state);
+        telemetryM.addData("shotsCompleted", shotsCompleted);
+        telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
+        telemetryM.addData("flywheel target RPM", robot.flywheel.getTargetRPM());
         telemetryM.addData("x", follower.pose().x());
         telemetryM.addData("y", follower.pose().y());
         telemetryM.addData("Heading", follower.pose().heading());

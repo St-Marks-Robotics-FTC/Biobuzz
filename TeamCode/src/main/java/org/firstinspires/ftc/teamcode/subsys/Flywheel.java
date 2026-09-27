@@ -32,6 +32,12 @@ public class Flywheel {
         return (motor.getVelocity() / TICKS_PER_REV) * 60.0;
     }
 
+    /** true once our current RPM is within {@link Tunables#flywheelRPMMargin} of the target RPM.
+     * always false while the target RPM is 0 (flywheel not spun up / commanded to shoot). **/
+    public boolean isWithinMargin() {
+        return targetRPM > 0 && Math.abs(getRPM() - targetRPM) <= flywheelRPMMargin;
+    }
+
     public void update() {
         pidf.updateTerms(flywheelP, flywheelI, flywheelD, flywheelF);
         motor.setPower(pidf.calc(targetRPM, getRPM()));
