@@ -11,6 +11,10 @@ if `adb devices` doesn't show any devices:
 
 it may take a second for the control hub to show up in Android Studio
 
+## Pedro Pathing Tuning
+
+Using Panels interferes with Pedro Pathing's auto tuner so in order to tune Pedro Pathing you must switch to the `pedro-tuner` branch
+
 # hardware map
 
 driver station config name: `v0`
