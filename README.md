@@ -93,7 +93,7 @@ make sure to connect every motor with the correct polarity; the reversing is don
 | motor port   | motor type              | verbatim name | encoder?    |
 |:-------------|-------------------------|:--------------|:------------|
 | `0`          | GoBILDA 5202/3/4 series | `intakeMotor` | ✅           |
-| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ✅           |
+| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ❌           |
 | `2`          | *unused*                | *unused*      | ❌           |
 | `3`          | *unused*                | *unused*      | ❌           |
 
