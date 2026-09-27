@@ -11,21 +11,18 @@ public class physics {
     private static final double G = 9.80665;
     private static final double RHO = 1.225; // air density, kg/m^3
     private static final double IN = 0.0254;
+    private static final double V_MIN = 1.0, V_MAX = 25.0; // muzzle speed search bracket, m/s
 
     /* The raised CELL opening runs 53.5 in -> 65.6 in above the TILES and measures 20 in x 14 in.
      * 65.6 - 53.5 = 12.1 = 14*sin(60), so the opening plane sits 60 deg off horizontal and its
      * normal points outward and 30 deg above horizontal. A ball entering along that normal, i.e.
-     * descending at 30 deg, sees the whole opening. */
+     * descending at 30 deg, sees the whole opening. Centre height is the midpoint of that run. */
     public static final double APERTURE_CENTER_IN = 59.55;
-    public static final double APERTURE_LOW_IN = 53.5;
-    public static final double APERTURE_HIGH_IN = 65.6;
     public static final double APERTURE_NORMAL_DEG = 30.0;
 
     /* Pivot is 43.95 in above the TILES and the two HIVES are 25.5 in apart. The aperture centre
      * sits 31.2 in out along the arm, which at the 30 deg tip is 15.77 in horizontally from its
      * own pivot. Verify the axis and signs against your field before trusting the Cell poses. */
-    private static final double V_MIN = 1.0, V_MAX = 25.0; // muzzle speed search bracket, m/s
-
     private static final double FIELD_CENTER_IN = 72.0;
     private static final double HIVE_OFFSET_IN = 12.75;
     private static final double CELL_OFFSET_IN = 15.77;
@@ -44,35 +41,18 @@ public class physics {
         }
     }
 
-    /** physical ball properties, straight from the manual; these are facts, not tunables **/
-    public enum Ball {
+    /* One per launcher: outtake 1 shoots POLLEN, outtake 2 shoots NECTAR. Mass and diameter are
+     * facts from the manual and never change. Everything else is yours and lives in Tunables, so
+     * it can be edited live from Panels. */
+    public enum Outtake {
         POLLEN(0.027, 0.0711),
         NECTAR(0.041, 0.0914);
 
         public final double mass, diameter; // kg, m
 
-        Ball(double mass, double diameter) {
+        Outtake(double mass, double diameter) {
             this.mass = mass;
             this.diameter = diameter;
-        }
-
-        public double dragK(double cd) { // drag deceleration is dragK * speed^2
-            double area = Math.PI * diameter * diameter / 4.0;
-            return 0.5 * RHO * cd * area / mass;
-        }
-    }
-
-    /* One per launcher. Outtake 1 shoots POLLEN, outtake 2 shoots NECTAR. Each has its own hood,
-     * wheel and feed, so nothing is shared: separate angle, exit point, speed line and drag fit.
-     * Drag belongs to the ball, but the fit is stored per outtake since the pairing is one to one. */
-    public enum Outtake {
-        POLLEN(Ball.POLLEN),
-        NECTAR(Ball.NECTAR);
-
-        public final Ball ball;
-
-        Outtake(Ball ball) {
-            this.ball = ball;
         }
 
         public double angleDeg() {
@@ -99,21 +79,22 @@ public class physics {
             return this == POLLEN ? Tunables.pollenDragCoefficient : Tunables.nectarDragCoefficient;
         }
 
-        /** muzzle speed this outtake produces at a given RPM **/
+        /** muzzle speed this outtake produces at a given RPM, from your measured line **/
         public double speedAtRpm(double rpm) {
             return speedPerRpm() * rpm + speedIntercept();
         }
 
-        /** RPM needed for a muzzle speed; NaN if the speed line has not been calibrated **/
+        /** RPM needed for a muzzle speed; NaN until the line has been measured **/
         public double rpmForSpeed(double speed) {
             double slope = speedPerRpm();
             return slope > 1e-9 ? (speed - speedIntercept()) / slope : Double.NaN;
         }
-    }
 
-    /** starting guess for speedPerRpm from wheel geometry, before you have measured the line **/
-    public static double seedSpeedPerRpm(double wheelDiameterIn, double transfer) {
-        return transfer * Math.PI * wheelDiameterIn * IN / 60.0;
+        /** drag deceleration is dragK * speed^2 **/
+        public double dragK() {
+            double area = Math.PI * diameter * diameter / 4.0;
+            return 0.5 * RHO * dragCoefficient() * area / mass;
+        }
     }
 
     /** a solved shot; check feasible before using rpm **/
@@ -154,7 +135,7 @@ public class physics {
         double d = (rangeIn - outtake.offsetIn()) * IN;
         double dz = (APERTURE_CENTER_IN - outtake.heightIn()) * IN;
         double angle = Math.toRadians(outtake.angleDeg());
-        double k = outtake.ball.dragK(outtake.dragCoefficient());
+        double k = outtake.dragK();
         double[] out = new double[4];
 
         // arrival height rises monotonically with muzzle speed, so bisection always converges
@@ -179,6 +160,30 @@ public class physics {
 
         return new Shot(converged && frac > 0 && !Double.isNaN(rpm) && rpm > 0,
                 rpm, v, out[3], entry, frac, rangeIn, headingRad);
+    }
+
+    /** Muzzle speed from a slow-motion clip, for measuring the rpm -> speed line.
+     *
+     *  Film the shot side-on against a horizontal ruler and read how long the ball took to travel
+     *  horizontalSpan metres downrange. This inverts the same trajectory the solver uses, so both
+     *  gravity along the flight path and drag are accounted for. At a 65 degree hood gravity is by
+     *  far the bigger of the two, and hand arithmetic that ignores it will be badly wrong.
+     *
+     *  Use a span around 0.5 m. Much shorter and frame-counting noise dominates; much longer and
+     *  the ball is high and slow, where a small timing error becomes a large speed error. **/
+    public static double muzzleSpeedFromVideo(double horizontalSpan, double seconds, Outtake o) {
+        double angle = Math.toRadians(o.angleDeg());
+        double k = o.dragK();
+        double[] out = new double[4];
+        // a faster ball crosses the span sooner, so crossing time falls monotonically with speed
+        double lo = V_MIN, hi = V_MAX;
+        for (int i = 0; i < 40; i++) {
+            double mid = 0.5 * (lo + hi);
+            fly(mid, angle, k, horizontalSpan, out);
+            if (out[3] > seconds) lo = mid;
+            else hi = mid;
+        }
+        return 0.5 * (lo + hi);
     }
 
     /** RK4 out to horizontal distance dTarget; out = {z, vx, vz, t} on arrival **/
@@ -222,8 +227,7 @@ public class physics {
         out[3] = pt + f * (t - pt);
     }
 
-    private static double mag(double a, double b)
-    {
+    private static double mag(double a, double b) {
         return Math.sqrt(a * a + b * b);
     }
 }

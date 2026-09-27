@@ -19,16 +19,16 @@ public class Tunables {
      * zero, which makes the solver refuse to return an RPM until you have measured them. */
 
     // outtake 1, POLLEN
-    public static double pollenLaunchAngleDeg = 60.0; // hood angle above horizontal, degrees
-    public static double pollenLaunchHeightIn = 12.0; // ball exit height above the TILES, inches
+    public static double pollenLaunchAngleDeg = 65.0; // hood angle above horizontal, degrees
+    public static double pollenLaunchHeightIn = 10.704; // ball exit height above the TILES, inches
     public static double pollenLaunchOffsetIn = 0.0; // exit point ahead of the odo centre, inches
     public static double pollenSpeedPerRpm = 0.0; // m/s per RPM, slope of your measured line
     public static double pollenSpeedIntercept = 0.0; // m/s at zero RPM, its intercept
     public static double pollenDragCoefficient = 0.5;
 
     // outtake 2, NECTAR
-    public static double nectarLaunchAngleDeg = 60.0;
-    public static double nectarLaunchHeightIn = 12.0;
+    public static double nectarLaunchAngleDeg = 65.0;
+    public static double nectarLaunchHeightIn = 10.704;
     public static double nectarLaunchOffsetIn = 0.0;
     public static double nectarSpeedPerRpm = 0.0;
     public static double nectarSpeedIntercept = 0.0;

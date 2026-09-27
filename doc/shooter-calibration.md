@@ -61,20 +61,27 @@ Three or four RPM points per outtake, spanning what you'll actually use, then a 
 **Use a phone at 240 fps.** Don't buy an airsoft chronograph — the sensor aperture is about 1.5 in
 and POLLEN is 2.8 in, so the ball will not fit through one.
 
-1. Tape a metre stick horizontally in the plane of flight, level with the exit point. Phone on a
-   tripod perpendicular to that plane, 2–3 m back, 240 fps.
+1. Tape a ruler horizontally at the exit height, marked at 0 and 0.5 m downrange. Phone on a
+   tripod square to the flight plane, 2–3 m back, 240 fps.
 2. Five balls at each of three or four RPM settings.
-3. Step through frames. Count frames `n` between the ball crossing two marks `s` apart (use
-   `s` = 1.0 m). Time is `t = n / 240`.
-4. **Correct for drag across the measured span.** At 5.8 m/s a POLLEN sheds about 2% over a metre,
-   and 2% is a large fraction of your whole budget:
+3. Count frames `n` between the ball passing the two marks. `t = n / 240`.
+4. Convert with the solver, which inverts the real trajectory:
 
-   ```
-   v0 = (exp(k * s) - 1) / (k * t)      k = 0.045 POLLEN, 0.049 NECTAR
+   ```java
+   double v0 = physics.muzzleSpeedFromVideo(0.5, n / 240.0, physics.Outtake.POLLEN);
    ```
 
-   As `k` goes to zero this collapses to the naive `s / t`, as it should.
 5. Least-squares fit `v0` against RPM. Slope → `*SpeedPerRpm`, intercept → `*SpeedIntercept`.
+
+**Do not compute this by hand as span ÷ time.** At a 65° hood that gives you the *horizontal*
+speed, which is only `cos(65°)` = 0.42 of the muzzle speed, and gravity has already bled off a
+chunk of it by the far mark. A 5.80 m/s shot reads as 2.39 m/s that way — 59% low. Correcting for
+drag alone barely helps (2.42 m/s). `muzzleSpeedFromVideo` handles the launch angle, gravity along
+the path and drag together, and round-trips exactly.
+
+Cd does not have to be right yet: across the whole plausible range of 0.3 to 0.8 the recovered
+speed moves only about 1%, because over half a metre drag has barely acted. So measure the line
+first and fit Cd afterwards — there's no circularity.
 
 The intercept is not decoration. The ball slips before it grips, so the line does not pass through
 the origin; forcing it through zero biases you low at low RPM and high at high RPM.
@@ -100,21 +107,29 @@ flywheel that had recovered between shots.
 
 This is physical and no amount of tuning substitutes for it.
 
-A ball leaving at 5.8 m/s carries about **0.44 J**, paid out of the flywheel's stored energy, and
-speed drops as `sqrt(1 - E_ball / E_wheel)`. A light 4 in wheel — say 100 g — stores roughly 3 J at
-2200 RPM, so **one ball costs it about 7% of its speed**, wider than the whole error budget. No
-controller recovers from that instantly.
+Flywheel mass does **not** change the rpm → speed line. That line is measured, and it maps the
+actual RPM at the instant of firing to the speed that comes out; the wheel's inertia is already
+baked into it. Mass matters for exactly one reason: whether the actual RPM at firing equals the
+RPM you commanded.
 
-To hold the single-ball dip under 2% you want about 11 J stored: roughly **175 g in the rim, or
-350 g as a solid disc** at 4 in. Conservative, since the motor keeps supplying torque through the
-~20 ms of contact. If your wheel is far under that, **add mass or gear it up before touching
-PIDF** — no gain schedule fixes missing inertia.
+A ball leaving at 5.8 m/s carries about 0.44 J out of the wheel's stored energy, and speed drops as
+`sqrt(1 - E_ball / E_wheel)`. A 100 g solid wheel at 4 in stores roughly 3.5 J at 2200 RPM, so one
+ball knocks about 6–7% off it. Fire the next ball into that dip and the line faithfully gives you a
+slow shot.
 
-Then close the loop on velocity with `subsys/PIDF.java`, one controller per outtake with its own
-gains. `kF` does most of the work, `kP` cleans up, integral usually just winds up during spin-down.
+**So gate the trigger on measured RPM, not on a timer.** Do that and mass stops being an accuracy
+problem and becomes a cycle-time one: recovery costs roughly `0.44 J / surplus motor power`, which
+is tens of milliseconds with any reasonable headroom. Only if that wait is longer than the cycle
+time you want does adding rim mass or gearing up become worth it — and measure it before deciding.
 
-**Gate:** ±1% steady state, and recovery to ±1% within 0.75 s after each ball. Graph it in Panels
-through a 5-ball burst. Gate the trigger on measured "at speed", never on a timer.
+What actually needs headroom is the motor: run the flywheel well below its free speed so there is
+torque left to recover with. A wheel spinning near free speed recovers slowly no matter how light.
+
+Close the loop on velocity with `subsys/PIDF.java`, one controller per outtake with its own gains.
+`kF` does most of the work, `kP` cleans up, integral usually just winds up during spin-down.
+
+**Gate:** ±1% steady state, and back within ±1% before the next ball is fed. Graph it in Panels
+through a 5-ball burst and read the recovery time off the plot — that number sets your cycle.
 
 ## Step 5 — target geometry
 
