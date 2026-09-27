@@ -12,7 +12,7 @@ public class Transfer {
     private State state = State.CLOSED;
 
     public Transfer(HardwareMap hw) {
-        servo = hw.get(Servo.class, "transfer");
+        servo = hw.get(Servo.class, "transferServo");
         close();
     }
 

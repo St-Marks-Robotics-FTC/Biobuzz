@@ -10,7 +10,7 @@ public class Intake {
     private State state = State.OFF;
 
     public Intake(HardwareMap hw) {
-        motor = hw.get(DcMotor.class, "intake");
+        motor = hw.get(DcMotor.class, "intakeMotor");
     }
 
     public State getState() {

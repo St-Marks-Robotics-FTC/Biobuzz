@@ -12,9 +12,10 @@ public class Flywheel {
 
     private final DcMotorEx motor;
     private double targetRPM = 0;
+    public boolean isRunning = false;
     private final PIDF pidf;
     public Flywheel(HardwareMap hw) {
-        motor = hw.get(DcMotorEx.class, "flywheel");
+        motor = hw.get(DcMotorEx.class, "launchMotor");
         motor.setDirection(DcMotorSimple.Direction.FORWARD);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         pidf = new PIDF(flywheelP, flywheelI, flywheelD, flywheelF); // tune once flywheel is mounted
@@ -32,7 +33,7 @@ public class Flywheel {
         return (motor.getVelocity() / TICKS_PER_REV) * 60.0;
     }
 
-    /** true once our current RPM is within {@link Tunables#flywheelRPMMargin} of the target RPM.
+    /** true once our current RPM is within {@link org.firstinspires.ftc.teamcode.Tunables#flywheelRPMMargin} of the target RPM.
      * always false while the target RPM is 0 (flywheel not spun up / commanded to shoot). **/
     public boolean isWithinMargin() {
         return targetRPM > 0 && Math.abs(getRPM() - targetRPM) <= flywheelRPMMargin;
