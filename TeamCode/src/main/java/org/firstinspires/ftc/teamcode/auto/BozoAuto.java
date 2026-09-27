@@ -29,10 +29,7 @@ public abstract class BozoAuto extends OpMode {
     private enum State {
         START,
         SHOOTING,
-        GO_TO_LEFT_FLOWER,
-        GO_TO_RIGHT_FLOWER,
-        FIRST_PICKUP,
-        SECOND_PICKUP,
+        REFUELING,
         END
     }
 
@@ -42,17 +39,13 @@ public abstract class BozoAuto extends OpMode {
             path1,
             path2,
             path3,
-            path4,
-            path5,
-            path6;
+            path4;
 
     private void buildPaths() {
-        path1 = line(startPose, config.shootLeftPose).linear(startPose, config.shootLeftPose);
-        path2 = line(config.shootLeftPose, config.flowerLeftPose).linear(config.shootLeftPose, config.flowerLeftPose);
-        path3 = line(config.flowerLeftPose, config.shootRightPose).linear(config.flowerLeftPose, config.shootRightPose);
-        path4 = line(config.shootRightPose, config.flowerRightPose).linear(config.shootRightPose, config.flowerRightPose);
-        path5 = line(config.flowerRightPose, config.shootRightPose).linear(config.flowerRightPose, config.shootRightPose);
-        path6 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
+        path1 = line(startPose, config.shootRightPose).linear(startPose, config.shootRightPose);
+        path2 = line(config.shootRightPose, config.refuelPose).linear(config.shootRightPose, config.refuelPose);
+        path3 = line(config.refuelPose, config.shootRightPose).linear(config.refuelPose, config.shootRightPose);
+        path4 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
     }
     //Everything is first DO SOMETHING and then MOVE
     private void autoPathUpdate() {
@@ -67,47 +60,20 @@ public abstract class BozoAuto extends OpMode {
                     //shoot function
                     follower.follow(path2);
                     pastState = State.SHOOTING;
-                    setPathState(State.GO_TO_LEFT_FLOWER);
-                } else if (!follower.isBusy() && pastState == State.FIRST_PICKUP) {
+                    setPathState(State.REFUELING);
+                } else if (!follower.isBusy() && pastState == State.REFUELING) {
                     //shoot function
                     follower.follow(path4);
-                    pastState = State.SHOOTING;
-                    setPathState(State.GO_TO_RIGHT_FLOWER);
-                } else if (!follower.isBusy() && pastState == State.SECOND_PICKUP) {
-                    //shoot function
-                    follower.follow(path6);
                     pastState = State.SHOOTING;
                     setPathState(State.END);
                 }
                 break;
-            case GO_TO_LEFT_FLOWER:
-                if (!follower.isBusy() && pastState == State.SHOOTING) {
-                    //Telemetry to know that we are at the flower
-                    pastState = State.GO_TO_LEFT_FLOWER;
-                    setPathState(State.FIRST_PICKUP);
-                }
-                break;
-            case FIRST_PICKUP:
+            case REFUELING:
                 if (!follower.isBusy()) {
                     //Intake the nectar
                     follower.follow(path3);
-                    pastState = State.FIRST_PICKUP;
+                    pastState = State.REFUELING;
                     setPathState(State.SHOOTING);
-                }
-                break;
-            case SECOND_PICKUP:
-                if (!follower.isBusy()) {
-                    //Intake the nectar
-                    pastState = State.SECOND_PICKUP;
-                    follower.follow(path5);
-                    setPathState(State.SHOOTING);
-                }
-                break;
-            case GO_TO_RIGHT_FLOWER:
-                if (!follower.isBusy()) {
-                    //Telemetry: "At the flower on the right"
-                    pastState = State.GO_TO_RIGHT_FLOWER;
-                    setPathState(State.SECOND_PICKUP);
                 }
                 break;
             case END:
