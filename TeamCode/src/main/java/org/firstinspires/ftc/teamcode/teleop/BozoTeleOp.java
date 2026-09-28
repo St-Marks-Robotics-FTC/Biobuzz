@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
@@ -21,29 +22,45 @@ public abstract class BozoTeleOp extends OpMode {
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
-    private boolean isRobotCentric = false; // start in field-centric mode
+    private boolean isRobotCentric = true; // start in field-centric mode
+    private double setRPM = 3000;
 
     @Override
     public void init() {
         loopTimer = new Timer();
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
         robot = new Robot(hardwareMap);
         follower = Constants.create(hardwareMap);
 
         follower.setPose(HandoffState.pose);
 
-        telemetryM.debug("init time: " + loopTimer.get(TimeUnit.MILLISECONDS) + "ms");
+        telemetryM.addLine("init time: " + loopTimer.milliseconds() + "ms");
         telemetryM.update(telemetry);
     }
 
     @Override
-    public void start() {
-
-    }
+    public void start() { }
 
     @Override
     public void loop() {
         loopTimer.reset();
+
+        handleDrive();
+        handleFlywheel();
+        handleIntake();
+        handleTransfer();
+
+        follower.update();
+
+        if (Tunables.isDebugging) updateTelemetry();
+
+        telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
+        telemetryM.update(telemetry);
+    }
+
+    private void handleDrive() {
+        if (gamepad1.startWasPressed()) isRobotCentric = !isRobotCentric;
 
         double slowModeMultiplier = (gamepad1.left_trigger - 1) * -1; // amount to multiply for by slow mode
 
@@ -67,16 +84,33 @@ public abstract class BozoTeleOp extends OpMode {
 
             follower.manual(powers);
         }
+    }
 
-        follower.update();
+    private void handleFlywheel() {
+        if (gamepad1.dpadUpWasPressed()) setRPM += Tunables.adjustRPM; // increment by adjustRPM
+        if (gamepad1.dpadDownWasPressed()) setRPM -= Tunables.adjustRPM; // decrement by adjustRPM
+        if (gamepad1.dpadLeftWasPressed()) setRPM -= (Tunables.adjustRPM / 2.0); // decrement by half of adjustRPM
+        if (gamepad1.dpadRightWasPressed()) setRPM += (Tunables.adjustRPM / 2.0); // increment by half of adjustRPM
 
-        if (Tunables.isDebugging) updateTelemetry();
+        if (setRPM < 0) setRPM = 0;
 
-        telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
-        telemetryM.update(telemetry);
+        robot.flywheel.update(setRPM);
+    }
+
+    private void handleIntake() {
+        if (gamepad1.aWasPressed()) robot.intake.toggle();
+        if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
+    }
+
+    private void handleTransfer() {
+        if (gamepad1.rightBumperWasPressed()) robot.transfer.toggle();
     }
 
     private void updateTelemetry() {
+        // flywheel
+        telemetryM.addData("desired RPM", setRPM);
+        telemetryM.addData("current RPM", robot.flywheel.getRPM());
+
         // odo
         telemetryM.debug("current heading: " + follower.pose().heading());
         telemetryM.addData("odo x", follower.pose().x());
