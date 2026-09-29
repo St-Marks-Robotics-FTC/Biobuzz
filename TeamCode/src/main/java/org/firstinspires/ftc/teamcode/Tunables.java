@@ -30,9 +30,14 @@ public class Tunables {
     /** intake tunables (used in Intake.java) **/
 
     public static double intakeForwardPower = 1;
+    public static double intakeForwardLaunchingPower = 0.5;
 
     /** transfer tunables (used in Transfer.java) **/
 
     public static double transferOpen = 0.254;
     public static double transferClosed = 0.00;
+
+    /** robot tunables (used in Robot.java) **/
+    public static double launchOpenTime = 100;
+    public static double flywheelMarginRPM = 100;
 }

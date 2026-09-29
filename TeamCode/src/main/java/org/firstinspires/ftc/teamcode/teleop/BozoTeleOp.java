@@ -23,7 +23,7 @@ public abstract class BozoTeleOp extends OpMode {
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
     private boolean isRobotCentric = true; // start in field-centric mode
-    private double setRPM = 3000;
+    private double setRPM = 4500;
 
     @Override
     public void init() {
@@ -40,7 +40,9 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     @Override
-    public void start() { }
+    public void start() {
+        robot.intake.forward();
+    }
 
     @Override
     public void loop() {
@@ -103,7 +105,9 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleTransfer() {
-        if (gamepad1.rightBumperWasPressed()) robot.transfer.toggle();
+        if (gamepad1.rightBumperWasPressed()) robot.launchBalls(1);
+        if (gamepad1.yWasPressed()) robot.launchBalls(3);
+        robot.updateLaunch(setRPM);
     }
 
     private void updateTelemetry() {

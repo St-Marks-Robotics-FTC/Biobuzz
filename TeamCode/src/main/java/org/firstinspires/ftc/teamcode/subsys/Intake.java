@@ -10,6 +10,7 @@ public class Intake {
     private enum State {
         OFF,
         FORWARD,
+        FORWARD_LAUNCHING,
         REVERSE
     }
 
@@ -35,6 +36,13 @@ public class Intake {
     public void forward() {
         if (state != State.FORWARD) {
             motor.setPower(Tunables.intakeForwardPower);
+            state = State.FORWARD;
+        }
+    }
+
+    public void forwardLaunching() {
+        if (state != State.FORWARD_LAUNCHING) {
+            motor.setPower(Tunables.intakeForwardLaunchingPower);
             state = State.FORWARD;
         }
     }
