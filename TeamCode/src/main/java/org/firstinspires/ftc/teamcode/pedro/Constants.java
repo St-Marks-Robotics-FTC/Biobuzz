@@ -36,6 +36,8 @@ public class Constants {
                 c.backLeftDirection.set(DcMotorSimple.Direction.REVERSE);
                 c.backRightDirection.set(DcMotorSimple.Direction.FORWARD);
 
+                c.powerThreshold.set(0.05); // increase motor caching
+
                 c.manualBrakeMode.set(true);
             }
     );

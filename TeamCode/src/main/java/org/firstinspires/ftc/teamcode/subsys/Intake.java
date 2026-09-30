@@ -7,7 +7,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
 
 public class Intake {
-    private enum State {
+    public enum State {
         OFF,
         FORWARD,
         FORWARD_LAUNCHING,
@@ -43,7 +43,7 @@ public class Intake {
     public void forwardLaunching() {
         if (state != State.FORWARD_LAUNCHING) {
             motor.setPower(Tunables.intakeForwardLaunchingPower);
-            state = State.FORWARD;
+            state = State.FORWARD_LAUNCHING;
         }
     }
 
@@ -83,6 +83,7 @@ public class Intake {
         return state == State.REVERSE;
     }
 
+    public State getState() { return state; }
     public double getCurrent() { return motor.getCurrent(CurrentUnit.AMPS); } // return intake current in amps
     public double getVelocity() { return motor.getVelocity(); } // get velocity in tps
 }

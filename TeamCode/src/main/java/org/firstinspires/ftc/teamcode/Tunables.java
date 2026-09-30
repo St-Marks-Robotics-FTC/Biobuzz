@@ -14,12 +14,12 @@ public class Tunables {
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
-    public static double adjustRPM = 100;
+    public static double adjustRPM = 50;
 
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.001;
+    public static double flywheelP = 0.006;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
@@ -29,7 +29,7 @@ public class Tunables {
 
     /** intake tunables (used in Intake.java) **/
 
-    public static double intakeForwardPower = 1;
+    public static double intakeForwardPower = 1.0;
     public static double intakeForwardLaunchingPower = 0.5;
 
     /** transfer tunables (used in Transfer.java) **/
