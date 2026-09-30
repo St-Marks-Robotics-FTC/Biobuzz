@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.tuner;
 
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -9,6 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 @TeleOp(name="VisionTuner", group="Tuner")
@@ -22,6 +24,8 @@ public class VisionTuner extends LinearOpMode {
     public void runOpMode() {
         Vision vision = new Vision(hardwareMap, true);
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+        Follower follower = Constants.create(hardwareMap);
+        follower.setPose(new Pose(72, 72)); // start in center of field
 
         TuneMode mode = TuneMode.BOTPOSE;
 
@@ -33,6 +37,7 @@ public class VisionTuner extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
+            follower.update();
             telemetryM.addLine("select your tuning mode using the gampead:");
             telemetryM.addLine("(A): " + mode0);
             telemetryM.addLine("(B): " + mode1);
@@ -57,6 +62,7 @@ public class VisionTuner extends LinearOpMode {
                     Position rawPos = vision.getLatestResult().getBotpose().getPosition();
                     telemetryM.addData("raw position", rawPos.toString());
                     telemetryM.addData("last botpose", vision.getLastBotPose().toString());
+                    telemetryM.addData("odo pos", follower.pose().toString());
                     telemetryM.addData("pipeline", vision.getPipeline());
                     break;
             }
