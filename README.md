@@ -11,6 +11,10 @@ if `adb devices` doesn't show any devices:
 
 it may take a second for the control hub to show up in Android Studio
 
+## Pedro Pathing Tuning
+
+Using Panels interferes with Pedro Pathing's auto tuner so in order to tune Pedro Pathing you must switch to the `pedro-tuner` branch
+
 # hardware map
 
 driver station config name: `v0`
@@ -90,12 +94,12 @@ make sure to connect every motor with the correct polarity; the reversing is don
 
 ### DC motors
 
-| motor port   | motor type | verbatim name | encoder?  |
-|:-------------|------------|:--------------|:----------|
-| `0`          | *unused*   | *unused*      | ❌         |
-| `1`          | *unused*   | *unused*      | ❌         |
-| `2`          | *unused*   | *unused*      | ❌         |
-| `3`          | *unused*   | *unused*      | ❌         |
+| motor port   | motor type              | verbatim name | encoder?    |
+|:-------------|-------------------------|:--------------|:------------|
+| `0`          | GoBILDA 5202/3/4 series | `intakeMotor` | ✅           |
+| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ❌           |
+| `2`          | *unused*                | *unused*      | ❌           |
+| `3`          | *unused*                | *unused*      | ❌           |
 
 ## servo hub
 
@@ -104,14 +108,14 @@ make sure to connect every motor with the correct polarity; the reversing is don
 
 ### servos
 
-| servo port   | servo type | verbatim name   |
-|:-------------|------------|:----------------|
-| `0`          | *unused*   | *unused*        |
-| `1`          | *unused*   | *unused*        |
-| `2`          | *unused*   | *unused*        |
-| `3`          | *unused*   | *unused*        |
-| `4`          | *unused*   | *unused*        |
-| `5`          | *unused*   | *unused*        |
+| servo port   | servo type   | verbatim name   |
+|:-------------|--------------|:----------------|
+| `0`          | Servo        | `transferServo` |
+| `1`          | *unused*     | *unused*        |
+| `2`          | *unused*     | *unused*        |
+| `3`          | *unused*     | *unused*        |
+| `4`          | *unused*     | *unused*        |
+| `5`          | *unused*     | *unused*        |
 
 # controller map
 
