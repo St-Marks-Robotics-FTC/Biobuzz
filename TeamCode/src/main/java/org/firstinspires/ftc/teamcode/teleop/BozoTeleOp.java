@@ -12,6 +12,7 @@ import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsys.Intake;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +24,8 @@ public abstract class BozoTeleOp extends OpMode {
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
     private boolean isRobotCentric = true; // start in field-centric mode
-    private double setRPM = 4500;
+    private double setRPM = 3600;
+    private boolean flywheelOn = true;
 
     @Override
     public void init() {
@@ -89,6 +91,8 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleFlywheel() {
+        if (gamepad1.bWasPressed()) flywheelOn = !flywheelOn;
+
         if (gamepad1.dpadUpWasPressed()) setRPM += Tunables.adjustRPM; // increment by adjustRPM
         if (gamepad1.dpadDownWasPressed()) setRPM -= Tunables.adjustRPM; // decrement by adjustRPM
         if (gamepad1.dpadLeftWasPressed()) setRPM -= (Tunables.adjustRPM / 2.0); // decrement by half of adjustRPM
@@ -96,7 +100,11 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (setRPM < 0) setRPM = 0;
 
-        robot.flywheel.update(setRPM);
+        if (flywheelOn) {
+            robot.flywheel.update(setRPM);
+        } else {
+            robot.flywheel.update(0);
+        }
     }
 
     private void handleIntake() {
@@ -105,15 +113,22 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleTransfer() {
-        if (gamepad1.rightBumperWasPressed()) robot.launchBalls(1);
-        if (gamepad1.yWasPressed()) robot.launchBalls(3);
-        robot.updateLaunch(setRPM);
+        if (gamepad1.right_bumper) {
+            robot.transfer.open();
+            robot.intake.forwardLaunching();
+        } else {
+            robot.transfer.close();
+            if (robot.intake.getState() == Intake.State.FORWARD_LAUNCHING) {
+                robot.intake.forward();
+            }
+        }
     }
 
     private void updateTelemetry() {
         // flywheel
         telemetryM.addData("desired RPM", setRPM);
         telemetryM.addData("current RPM", robot.flywheel.getRPM());
+        telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
 
         // odo
         telemetryM.debug("current heading: " + follower.pose().heading());
