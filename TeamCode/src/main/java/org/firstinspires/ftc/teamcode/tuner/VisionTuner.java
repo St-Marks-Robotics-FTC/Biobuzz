@@ -6,9 +6,12 @@ import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
+@TeleOp(name="VisionTuner", group="Tuner")
 public class VisionTuner extends LinearOpMode {
     private enum TuneMode {
         FIDUCIALS,
@@ -20,12 +23,12 @@ public class VisionTuner extends LinearOpMode {
         Vision vision = new Vision(hardwareMap, true);
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
-        TuneMode mode = TuneMode.FIDUCIALS;
+        TuneMode mode = TuneMode.BOTPOSE;
 
         TuneMode mode0 = TuneMode.values()[0];
         TuneMode mode1 = TuneMode.values()[1];
 
-        vision.startPipeline(Vision.Pipeline.BLUE_AUDIENCE_HIGH);
+        vision.startPipeline(Vision.Pipeline.BLUE);
 
         waitForStart();
 
@@ -46,15 +49,14 @@ public class VisionTuner extends LinearOpMode {
 
                     for (LLResultTypes.FiducialResult fiducial : result.getFiducialResults()) {
                         telemetryM.addLine("id: " + fiducial.getFiducialId());
-                        Pose pose = vision.translateLLPoseToField(fiducial.getRobotPoseFieldSpace());
-                        telemetryM.addLine("pose: " + pose.toString());
                     }
                     break;
                 case BOTPOSE:
                     // print botpose
-                    vision.update();
+                    vision.getBotPose();
+                    Position rawPos = vision.getLatestResult().getBotpose().getPosition();
+                    telemetryM.addData("raw position", rawPos.toString());
                     telemetryM.addData("last botpose", vision.getLastBotPose().toString());
-                    telemetryM.addData("staleness", vision.getStaleness());
                     telemetryM.addData("pipeline", vision.getPipeline());
                     break;
             }
