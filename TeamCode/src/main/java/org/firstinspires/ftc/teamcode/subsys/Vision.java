@@ -4,21 +4,8 @@
  * blue tag IDs are 38-45
  * https://docs.photonvision.org/en/latest/docs/apriltag-pipelines/coordinate-systems.html
  * https://docs.limelightvision.io/docs/docs-limelight/apis/ftc-programming
- * TODO:
- * - find whether garden side is up/down accurately
  *
- * PLAN:
- * - only look at the tags of our team
- * 4 pipelines
- * - 2 blue (all blue tag IDs allowed)
- *  - blue: audience side up field map
- *  - blue: scoring side up field map
- * - 2 red (all red tag IDs allowed)
- *  - red: audience side up field map
- *  - red: scoring side up field map
  *
- *  use fiducials to figure out which field map to use (which side is up)
- *  use limelight to get our botpose
  */
 
 package org.firstinspires.ftc.teamcode.subsys;
@@ -34,20 +21,21 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.nio.channels.Pipe;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Vision {
+    private double HIVE_PIVOT_HEIGHT = 43.95; // hive pivot height in inches
+    private double HIVE_PIVOT_Y = 70; // y-coordinate of hive pivot
+
     public static Limelight3A limelight;
 
     public enum Pipeline { // expression of our limelight pipelines; order and elements must match exactly with pipeline indices on camera
-        BLUE_AUDIENCE_HIGH, // pipeline index: 0
-        BLUE_SCORING_HIGH, // pipeline index: 1
-        RED_AUDIENCE_HIGH, // pipeline index: 2
-        RED_SCORING_HIGH, // pipeline index: 3
-        FAILURE // can't identify which is necessary
+        BLUE, // pipeline index: 0
+        RED   // pipeline index: 1
     }
 
     private boolean started = false;
@@ -64,10 +52,6 @@ public class Vision {
     public void startPipeline(Pipeline pipeline) {
         if (!started) limelight.start();
 
-        if (pipeline == Pipeline.FAILURE) {
-            throw new RuntimeException("do not set to Pipeline.FAILURE");
-        }
-
         limelight.pipelineSwitch(pipeline.ordinal()); // convert from Pipeline enum to ordinal/index
     }
 
@@ -77,102 +61,56 @@ public class Vision {
     // return staleness of botpose in milliseconds
     public double getStaleness() { return staleTimer.get(TimeUnit.MILLISECONDS);}
 
-    public Pose update() {
-        LLResult result = getLatestResult();
-        Pipeline currentPipeline = getPipeline();
-        Pipeline neededPipeline = getNeededPipeline(result);
-        if (result != null && result.isValid() && neededPipeline != Pipeline.FAILURE) {
-            if (currentPipeline == neededPipeline) {
-                lastBotPose = translateLLPoseToField(result.getBotpose());
-                staleTimer.reset();
-            } else {
-                startPipeline(neededPipeline);
-            }
-        }
-        return lastBotPose;
-    }
-
-    public Pipeline getNeededPipeline(LLResult result) {
+    public Pose getBotPose() {
+        /**
+         *         pivot ●
+         *               |\
+         *               | \
+         *             h |  \  dToHive  (distance from pivot to robot)
+         *               |   \
+         *               |    \
+         *         floor ●-----● robot
+         *               horizontal
+         */
+        LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
-            List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+            Position botpose = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH);
+            double x = botpose.y + 72; // convert to pedro units
+            double y = 72 - botpose.x; // convert to pedro units
+            double z = botpose.z;
 
-            // compute which tag group is closer based on average distances
+            double relativeY = y - HIVE_PIVOT_Y;
+            double relativeZ = z - HIVE_PIVOT_HEIGHT;
 
-            AverageFinder scoringTags = new AverageFinder(); // side closer to scoring zone
-            AverageFinder audienceTags = new AverageFinder(); // side closer to audience
+            double dToHive = Math.sqrt(Math.pow(relativeY, 2) + Math.pow(relativeZ, 2));
 
-            for (LLResultTypes.FiducialResult fiducial : fiducials) {
-                int id = fiducial.getFiducialId();
-                Pose3D pose = fiducial.getRobotPoseFieldSpace();
-                double dst = XYDstFromPose3D(pose);
+            double horizontalSquared = dToHive * dToHive - HIVE_PIVOT_HEIGHT * HIVE_PIVOT_HEIGHT;
 
-                if (isBlueTeam) { // use blue team IDs
-                    if (42 <= id && id <= 45) {
-                        scoringTags.add(dst);
-                    } else if (38 <= id && id <= 41) {
-                        audienceTags.add(dst);
-                    }
-                } else { // use red team IDs
-                    if (30 <= id && id <= 33) {
-                        scoringTags.add(dst);
-                    } else if (34 <= id && id <= 37) {
-                        audienceTags.add(dst);
-                    }
-                }
-            }
+            double realY = HIVE_PIVOT_Y + Math.sqrt(Math.abs(horizontalSquared)) * Math.signum(relativeY);
 
-            double scoringAvg = scoringTags.calc();
-            double audienceAvg = audienceTags.calc();
-
-            if (scoringAvg == 0 && audienceAvg == 0) return Pipeline.FAILURE;
-
-            if (audienceAvg < scoringAvg) {
-                if (isBlueTeam)  return Pipeline.BLUE_AUDIENCE_HIGH;
-                else return Pipeline.RED_AUDIENCE_HIGH;
-            } else {
-                if (isBlueTeam)  return Pipeline.BLUE_SCORING_HIGH;
-                else return Pipeline.RED_SCORING_HIGH;
-            }
+            lastBotPose = new Pose(x, realY);
+            return lastBotPose;
         }
-        return Pipeline.FAILURE;
+        else return null;
     }
 
     public LLResult getLatestResult() {
         return limelight.getLatestResult();
     }
 
-    private double XYDstFromPose3D(Pose3D pose3D) {
-        Position pos = pose3D.getPosition();
-        return Math.sqrt(Math.pow(pos.x, 2) + Math.pow(pos.y, 2));
-    }
-
-    public Pose translateLLPoseToField(Pose3D rawPose3D) {
-        Position rawPos = rawPose3D.getPosition().toUnit(DistanceUnit.INCH); // ensure we are using inches
-        double rawX = rawPos.y + 72;
-        double rawY = 72 - rawPos.x;
-
-        return new Pose(rawX, rawY); // doesn't have heading
-    }
-
     public Pose getLastBotPose () {
         return lastBotPose;
     }
-    private class AverageFinder {
-        private double total;
-        private int num;
-        public AverageFinder() {
-            total = 0;
-            num = 0;
-        }
 
-        public void add(double entry) {
-            total += entry;
-            num++;
-        }
+    public Pose3D translateLLPoseToPedro(Pose3D rawPose3D) {
+        Position rawPos = rawPose3D.getPosition().toUnit(DistanceUnit.INCH); // ensure we are using inches
+        YawPitchRollAngles rawOrientation = rawPose3D.getOrientation();
+        double newX = rawPos.y + 72;
+        double newY = 72 - rawPos.x;
+        double newZ = rawPos.z; // shouldn't need to translate this
 
-        public double calc() { // return the average
-            if (num == 0) return 0;
-            return total / num;
-        }
+        Position newPos = new Position(DistanceUnit.INCH, newX, newY, newZ, rawPos.acquisitionTime);
+
+        return new Pose3D(newPos, rawOrientation);
     }
 }
