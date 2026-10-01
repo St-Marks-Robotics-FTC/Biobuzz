@@ -38,6 +38,4 @@ public class Tunables {
     public static double transferClosed = 0.00;
 
     /** robot tunables (used in Robot.java) **/
-    public static double launchOpenTime = 100;
-    public static double flywheelMarginRPM = 100;
 }
