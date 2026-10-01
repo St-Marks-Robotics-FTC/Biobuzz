@@ -189,11 +189,13 @@ We are using a Limelight 3A
 
 ## pipelines
 
-| filename        | index  | allowed tag IDs | purpose                                       |
-|:----------------|--------|:----------------|:----------------------------------------------|
-| *unused*        | `0`    | *unused*        | *unused*                                      |
+| filename                                  | fieldmap                                        | index  | allowed tag IDs | purpose                |
+|:------------------------------------------|-------------------------------------------------|--------|:----------------|:-----------------------|
+| [`Blue.vpr`](limelight/pipeline/Blue.vpr) | [`HiveBlue.fmap`](limelight/fmap/HiveBlue.fmap) | `0`    | 38-45           | blue team localization |
+| [`Red.vpr`](limelight/pipeline/Red.vpr)   | [`HiveRed.fmap`](limelight/fmap/HiveRed.fmap)   | `1`    | 30-37           | red team localization  |
 
-pipeline files are saved in the [limelight folder](limelight/)
+Many thanks to [Team 19725](https://github.com/BluePowerRobotics/Team19725_BIOBUZZ) for providing their `.fmap` files for localization!
+Our localization approach is largely based off of theirs, but we use trigonometry instead of transformation matrices.
 
 # telemetry IPs
 
