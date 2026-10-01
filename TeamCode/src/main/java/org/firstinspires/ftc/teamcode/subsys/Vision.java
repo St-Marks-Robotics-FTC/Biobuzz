@@ -74,7 +74,7 @@ public class Vision {
     // return staleness of botpose in milliseconds
     public double getStaleness() { return staleTimer.get(TimeUnit.MILLISECONDS);}
 
-    public Pose getBotPose() {
+    public void update() {
         /**
          *         pivot ●
          *               |\
@@ -98,7 +98,7 @@ public class Vision {
 
             double dToHive = Math.sqrt(Math.pow(relativeY, 2) + Math.pow(relativeZ, 2));
 
-            if (dToHive < HIVE_PIVOT_HEIGHT) return null; // impossible state -> reject data
+            if (dToHive < HIVE_PIVOT_HEIGHT) return; // impossible state -> reject data
 
             double horizontalSquared = dToHive * dToHive - HIVE_PIVOT_HEIGHT * HIVE_PIVOT_HEIGHT;
 
@@ -114,16 +114,15 @@ public class Vision {
             } else if (0 < hiveTilt && hiveTilt < HIVE_MAX_TILT) {
                 lastHiveState = HiveState.SCORING_UP;
             } else {
-                return null; // hive is at an impossible tilt
+                return; // hive is at an impossible tilt
             }
 
             double realY = HIVE_PIVOT_Y + trueRelativeY;
 
             lastBotPose = new Pose(x, realY);
             staleTimer.reset();
-            return lastBotPose;
         }
-        else return null;
+        else return;
     }
 
     public LLResult getLatestResult() {
