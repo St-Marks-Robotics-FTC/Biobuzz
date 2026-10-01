@@ -52,8 +52,7 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addLine("");
             telemetryM.addLine("current testing mode is: " + mode);
 
-            // print botpose
-            vision.getBotPose();
+            vision.update();
 
             Position rawPos = vision.getLatestResult().getBotpose().getPosition();
 
