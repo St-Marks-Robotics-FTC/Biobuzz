@@ -18,6 +18,7 @@ import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 public class Vision {
     private double HIVE_PIVOT_HEIGHT = 43.95; // hive pivot height in inches
     private double HIVE_PIVOT_Y = 70; // y-coordinate of hive pivot
+    private double HIVE_MAX_TILT = Math.toRadians(35); // max tilt of hive in radians
 
     public static Limelight3A limelight;
 
@@ -38,15 +40,26 @@ public class Vision {
         RED   // pipeline index: 1
     }
 
+    public enum HiveState {
+        UNKNOWN,
+        AUDIENCE_UP,
+        SCORING_UP
+    }
+
     private boolean started = false;
     private boolean isBlueTeam;
-    private Pose lastBotPose;
+    private Pose lastBotPose = new Pose(0, 0);
+    private HiveState lastHiveState = HiveState.UNKNOWN;
+
     private Timer staleTimer; // how stale lastBotPose is
 
     public Vision(HardwareMap hw, boolean isBlueTeam) {
         limelight = hw.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
         this.isBlueTeam = isBlueTeam;
+        if (isBlueTeam) startPipeline(Pipeline.BLUE);
+        else startPipeline(Pipeline.RED);
+        staleTimer = new Timer();
     }
 
     public void startPipeline(Pipeline pipeline) {
@@ -73,6 +86,7 @@ public class Vision {
          *               horizontal
          */
         LLResult result = limelight.getLatestResult();
+
         if (result != null && result.isValid()) {
             Position botpose = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH);
             double x = botpose.y + 72; // convert to pedro units
@@ -84,11 +98,29 @@ public class Vision {
 
             double dToHive = Math.sqrt(Math.pow(relativeY, 2) + Math.pow(relativeZ, 2));
 
+            if (dToHive < HIVE_PIVOT_HEIGHT) return null; // impossible state -> reject data
+
             double horizontalSquared = dToHive * dToHive - HIVE_PIVOT_HEIGHT * HIVE_PIVOT_HEIGHT;
 
-            double realY = HIVE_PIVOT_Y + Math.sqrt(Math.abs(horizontalSquared)) * Math.signum(relativeY);
+            double trueRelativeY = Math.sqrt(Math.abs(horizontalSquared)) * Math.signum(relativeY);
+
+            double reportedAngle = Math.atan2(relativeZ, relativeY);
+            double trueAngle = Math.atan2(-HIVE_PIVOT_HEIGHT, trueRelativeY);
+
+            double hiveTilt = AngleUnit.normalizeRadians(trueAngle - reportedAngle);
+
+            if (-HIVE_MAX_TILT < hiveTilt && hiveTilt < 0) {
+                lastHiveState = HiveState.AUDIENCE_UP;
+            } else if (0 < hiveTilt && hiveTilt < HIVE_MAX_TILT) {
+                lastHiveState = HiveState.SCORING_UP;
+            } else {
+                return null; // hive is at an impossible tilt
+            }
+
+            double realY = HIVE_PIVOT_Y + trueRelativeY;
 
             lastBotPose = new Pose(x, realY);
+            staleTimer.reset();
             return lastBotPose;
         }
         else return null;
@@ -102,15 +134,7 @@ public class Vision {
         return lastBotPose;
     }
 
-    public Pose3D translateLLPoseToPedro(Pose3D rawPose3D) {
-        Position rawPos = rawPose3D.getPosition().toUnit(DistanceUnit.INCH); // ensure we are using inches
-        YawPitchRollAngles rawOrientation = rawPose3D.getOrientation();
-        double newX = rawPos.y + 72;
-        double newY = 72 - rawPos.x;
-        double newZ = rawPos.z; // shouldn't need to translate this
-
-        Position newPos = new Position(DistanceUnit.INCH, newX, newY, newZ, rawPos.acquisitionTime);
-
-        return new Pose3D(newPos, rawOrientation);
+    public HiveState getLastHiveState() {
+        return lastHiveState;
     }
 }
