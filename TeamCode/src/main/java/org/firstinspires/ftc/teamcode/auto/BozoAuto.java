@@ -23,17 +23,24 @@ public abstract class BozoAuto extends OpMode {
     private Timer stateTimer, loopTimer;
     private TelemetryManager telemetryM;
     private Pose startPose;
-    private State pastState = State.START;
+    private double initMs;
+
+    // Every DRIVE_* state waits for the follower to settle; every action state then dwells at that pose.
     private enum State {
-        START,
-        SHOOTING,
-        GO_TO_LEFT_FLOWER,
-        GO_TO_RIGHT_FLOWER,
-        FIRST_PICKUP,
-        SECOND_PICKUP,
-        END
+        DRIVE_TO_SHOOT_LEFT,
+        SHOOT_PRELOAD,
+        DRIVE_TO_LEFT_FLOWER,
+        LEFT_PICKUP,
+        DRIVE_TO_SHOOT_RIGHT,
+        SHOOT_LEFT_FLOWER,
+        DRIVE_TO_RIGHT_FLOWER,
+        RIGHT_PICKUP,
+        DRIVE_BACK_TO_SHOOT_RIGHT,
+        SHOOT_RIGHT_FLOWER,
+        PARK,
+        DONE
     }
-    State state = State.START;
+    State state = State.DRIVE_TO_SHOOT_LEFT;
     private Path path1, path2, path3, path4, path5, path6;
 
     private void buildPaths() {
@@ -45,67 +52,58 @@ public abstract class BozoAuto extends OpMode {
         path6 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
     }
 
-    private boolean actionDone(long dwellMs) {
-        if (stateTimer.get(TimeUnit.MILLISECONDS) < dwellMs && !timedOut()) return false;
-        return !follower.isBusy() || timedOut();
+    private boolean arrived() {
+        return !follower.isBusy() || stateTimer.get(TimeUnit.MILLISECONDS) > Tunables.pathTimeoutMs;
     }
 
-    private boolean timedOut() {
-        return stateTimer.get(TimeUnit.MILLISECONDS) > Tunables.pathTimeoutMs;
+    private boolean dwelled(long dwellMs) {
+        return stateTimer.get(TimeUnit.MILLISECONDS) >= dwellMs;
+    }
+
+    private void followThen(Path path, State next) {
+        follower.follow(path);
+        setPathState(next);
     }
 
     private void autoPathUpdate() {
         switch (state) {
-            case START:
-                follower.follow(path1);
-                pastState = state;
-                setPathState(State.SHOOTING);
+            case DRIVE_TO_SHOOT_LEFT:
+                if (arrived()) setPathState(State.SHOOT_PRELOAD);
                 break;
-            case SHOOTING:
-                if (actionDone(Tunables.shootTimeMs) && pastState == State.START) {
-                    follower.follow(path2);
-                    pastState = State.SHOOTING;
-                    setPathState(State.GO_TO_LEFT_FLOWER);
-                } else if (actionDone(Tunables.shootTimeMs) && pastState == State.FIRST_PICKUP) {
-                    follower.follow(path4);
-                    pastState = State.SHOOTING;
-                    setPathState(State.GO_TO_RIGHT_FLOWER);
-                } else if (actionDone(Tunables.shootTimeMs) && pastState == State.SECOND_PICKUP) {
-                    follower.follow(path6);
-                    pastState = State.SHOOTING;
-                    setPathState(State.END);
-                }
+            case SHOOT_PRELOAD:
+                if (dwelled(Tunables.shootTimeMs)) followThen(path2, State.DRIVE_TO_LEFT_FLOWER);
                 break;
-            case GO_TO_LEFT_FLOWER:
-                if (!follower.isBusy() || timedOut()) {
-                    pastState = State.GO_TO_LEFT_FLOWER;
-                    setPathState(State.FIRST_PICKUP);
-                }
+            case DRIVE_TO_LEFT_FLOWER:
+                if (arrived()) setPathState(State.LEFT_PICKUP);
                 break;
-            case FIRST_PICKUP:
-                if (actionDone(Tunables.intakeTimeMs)) {
-                    follower.follow(path3);
-                    pastState = State.FIRST_PICKUP;
-                    setPathState(State.SHOOTING);
-                }
+            case LEFT_PICKUP:
+                if (dwelled(Tunables.intakeTimeMs)) followThen(path3, State.DRIVE_TO_SHOOT_RIGHT);
                 break;
-            case SECOND_PICKUP:
-                if (actionDone(Tunables.intakeTimeMs)) {
-                    pastState = State.SECOND_PICKUP;
-                    follower.follow(path5);
-                    setPathState(State.SHOOTING);
-                }
+            case DRIVE_TO_SHOOT_RIGHT:
+                if (arrived()) setPathState(State.SHOOT_LEFT_FLOWER);
                 break;
-            case GO_TO_RIGHT_FLOWER:
-                if (!follower.isBusy() || timedOut()) {
-                    pastState = State.GO_TO_RIGHT_FLOWER;
-                    setPathState(State.SECOND_PICKUP);
-                }
+            case SHOOT_LEFT_FLOWER:
+                if (dwelled(Tunables.shootTimeMs)) followThen(path4, State.DRIVE_TO_RIGHT_FLOWER);
                 break;
-            case END:
-                if (!follower.isBusy() || timedOut()) {
+            case DRIVE_TO_RIGHT_FLOWER:
+                if (arrived()) setPathState(State.RIGHT_PICKUP);
+                break;
+            case RIGHT_PICKUP:
+                if (dwelled(Tunables.intakeTimeMs)) followThen(path5, State.DRIVE_BACK_TO_SHOOT_RIGHT);
+                break;
+            case DRIVE_BACK_TO_SHOOT_RIGHT:
+                if (arrived()) setPathState(State.SHOOT_RIGHT_FLOWER);
+                break;
+            case SHOOT_RIGHT_FLOWER:
+                if (dwelled(Tunables.shootTimeMs)) followThen(path6, State.PARK);
+                break;
+            case PARK:
+                if (arrived()) {
+                    setPathState(State.DONE);
                     requestOpModeStop();
                 }
+                break;
+            case DONE:
                 break;
         }
     }
@@ -143,6 +141,7 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.update(telemetry);
         buildPaths();
         follower.setPose(startPose);
+        initMs = loopTimer.get(TimeUnit.MILLISECONDS);
         sendTelemetry(true);
         telemetryM.update(telemetry);
     }
@@ -155,7 +154,7 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void start() {
-        setPathState(State.START);
+        followThen(path1, State.DRIVE_TO_SHOOT_LEFT);
     }
 
     @Override
@@ -170,7 +169,7 @@ public abstract class BozoAuto extends OpMode {
     public void sendTelemetry(boolean sendInitTime) {
         if (sendInitTime) {
             telemetryM.addLine("INIT COMPLETE");
-            telemetryM.debug("Init " + loopTimer.get(TimeUnit.MILLISECONDS));
+            telemetryM.debug("Init " + initMs);
         }
         telemetryM.debug("State " + state);
         telemetryM.addData("x", follower.pose().x());

@@ -9,12 +9,13 @@ import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
 import org.firstinspires.ftc.teamcode.FieldGoals;
+import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
-import org.firstinspires.ftc.teamcode.subsys.AimController;
 import org.firstinspires.ftc.teamcode.subsys.Shooter;
-import org.firstinspires.ftc.teamcode.subsys.ShotEvaluator;
+import org.firstinspires.ftc.teamcode.subsys.autoTurn;
+
 import com.qualcomm.robotcore.util.Range;
 import java.util.concurrent.TimeUnit;
 
@@ -25,8 +26,8 @@ public abstract class BozoTeleOp extends OpMode {
     private Follower follower;
     private Timer loopTimer;
     private TelemetryManager telemetryM;
-    private AimController aim;
     private Shooter shooter;
+    private autoTurn aim;
     private boolean isRobotCentric = false;
     private int lastAimIndex = -1;
     private boolean lastA = false;
@@ -38,15 +39,14 @@ public abstract class BozoTeleOp extends OpMode {
         robot = new Robot(hardwareMap);
         follower = Constants.create(hardwareMap);
         follower.setPose(getStartPose());
-        aim = new AimController();
         shooter = new Shooter();
+        aim = new autoTurn();
         telemetryM.debug("init " + loopTimer.get(TimeUnit.MILLISECONDS) + "ms");
         telemetryM.update(telemetry);
     }
 
     @Override
     public void start() {
-        aim.reset();
         shooter.reset();
         lastAimIndex = -1;
         lastA = false;
@@ -66,22 +66,23 @@ public abstract class BozoTeleOp extends OpMode {
         String[] names = FieldGoals.allianceGoalNames(isBlueTeam());
         Pose goal0 = goals[0];
         Pose goal1 = goals[1];
-        double dist0 = ShotEvaluator.distance(robotPose, goal0);
-        double dist1 = ShotEvaluator.distance(robotPose, goal1);
-        double err0Deg = Math.toDegrees(ShotEvaluator.angleErrorRad(robotPose, goal0));
-        double err1Deg = Math.toDegrees(ShotEvaluator.angleErrorRad(robotPose, goal1));
+        double dist0 = aim.distance(robotPose, goal0);
+        double dist1 = aim.distance(robotPose, goal1);
+        double err0Deg = Math.toDegrees(aim.angleErrorRad(robotPose, goal0));
+        double err1Deg = Math.toDegrees(aim.angleErrorRad(robotPose, goal1));
 
-        double face0Deg = Math.toDegrees(ShotEvaluator.goalErrorRad(robotPose, goal0));
-        double face1Deg = Math.toDegrees(ShotEvaluator.goalErrorRad(robotPose, goal1));
+        double face0Deg = Math.toDegrees(aim.goalErrorRad(robotPose, goal0));
+        double face1Deg = Math.toDegrees(aim.goalErrorRad(robotPose, goal1));
 
-        boolean range0 = ShotEvaluator.inRange(robotPose, goal0);
-        boolean range1 = ShotEvaluator.inRange(robotPose, goal1);
+        boolean range0 = aim.inRange(robotPose, goal0);
+        boolean range1 = aim.inRange(robotPose, goal1);
 
-        boolean can0 = ShotEvaluator.canShoot(robotPose, goal0);
-        boolean can1 = ShotEvaluator.canShoot(robotPose, goal1);
+        boolean can0 = aim.canShoot(robotPose, goal0);
+        boolean can1 = aim.canShoot(robotPose, goal1);
 
         boolean want0 = gamepad1.left_bumper;
         boolean want1 = gamepad1.right_bumper;
+
         Pose aimGoal = null;
         int aimIndex = -1;
         if (want0 && want1) {
@@ -109,17 +110,17 @@ public abstract class BozoTeleOp extends OpMode {
         }
         boolean aiming = aimGoal != null;
         if (aiming && aimIndex != lastAimIndex) {
-            aim.reset();
+            shooter.reset();
         }
         if (!aiming && lastAimIndex != -1) {
-            aim.reset();
+            shooter.reset();
         }
         lastAimIndex = aimIndex;
         double turn;
         double targetHeading = 0.0;
         boolean onTarget = false;
         if (aiming) {
-            targetHeading = ShotEvaluator.bearingRad(robotPose, aimGoal);
+            targetHeading = aim.bearingRad(robotPose, aimGoal);
             turn = aim.turnPower(targetHeading, robotPose.heading());
             onTarget = aim.onTarget(targetHeading, robotPose.heading());
         } else {
@@ -135,9 +136,11 @@ public abstract class BozoTeleOp extends OpMode {
             follower.manual(powers);
         }
         boolean shootHeld = gamepad1.right_trigger > 0.5;
-        boolean aimReady = ShotEvaluator.aimAllowed(robotPose, aimGoal);
+        boolean aimReady = aiming && onTarget && (aimIndex == 0 ? can0 : can1);
+
         shooter.setShooting(shootHeld);
         shooter.tryFire(aimReady);
+
         shooter.update();
 
         follower.update();
@@ -145,7 +148,9 @@ public abstract class BozoTeleOp extends OpMode {
 
         telemetryM.addData("pose x", freshPose.x());
         telemetryM.addData("pose y", freshPose.y());
+
         telemetryM.addData("pose deg", Math.toDegrees(freshPose.heading()));
+
         telemetryM.addData(names[0] + " dist", dist0);
         telemetryM.addData(names[0] + " aimErr", err0Deg);
         telemetryM.addData(names[0] + " faceErr", face0Deg);
@@ -156,6 +161,7 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.addData(names[1] + " faceErr", face1Deg);
         telemetryM.addData(names[1] + " inRange", range1);
         telemetryM.addData(names[1] + " canShoot", can1);
+
         telemetryM.addData("aiming", aiming);
         telemetryM.addData("onTarget", onTarget);
         telemetryM.addData("shooter rpm", shooter.getCurrentRpm());
@@ -167,5 +173,10 @@ public abstract class BozoTeleOp extends OpMode {
             telemetryM.debug("centric " + isRobotCentric);
         }
         telemetryM.update(telemetry);
+    }
+
+    @Override
+    public void stop() {
+        HandoffState.pose = follower.pose();
     }
 }

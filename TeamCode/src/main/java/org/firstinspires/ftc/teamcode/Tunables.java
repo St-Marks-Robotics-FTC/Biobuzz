@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.bylazar.configurables.annotations.Configurable;
 
+
+
 @Configurable
 public class Tunables {
     public static boolean isDebugging = false;
@@ -10,10 +12,10 @@ public class Tunables {
     public static double minShootDistance = 30.0;
     public static double maxShootDistance = 45.0;
     public static double maxAngleErrorDeg = 35.0;
-    public static double aimP = 2.0; //PIDF can be tuned
-    public static double aimI = 0.0;
-    public static double aimD = 0.05;
-    public static double aimF = 0.0;
+    public static double shootP = 2.0; //PIDF can be tuned
+    public static double shootI = 0.0;
+    public static double shootD = 0.05;
+    public static double shootF = 0.0;
     public static double aimMaxPower = 0.8;
     public static double aimToleranceDeg = 2.0; //Gap between target and acceptable actual
     public static double aimIntegralLimit = 1.0;
