@@ -135,8 +135,8 @@ the **start** button toggles between robot/field centric control
 
 ## bumpers
 
-- **left bumper**: *unused*
-- **right bumper**: *unused*
+- **left bumper**: auto turn
+- **right bumper**: shoot all balls
 
 ## triggers
 
@@ -146,21 +146,21 @@ the **start** button toggles between robot/field centric control
 ## buttons
 
 ### face buttons
-- **A**: *unused*
-- **B**: *unused*
-- **Y**: *unused*
-- **X**: *unused*
+- **A**: toggle intake
+- **B**: toggle flywheel power
+- **Y**: toggle intake reverse
+- **X**: reset field centric heading
+  - make sure to orient the robot towards the top of the field (in between the goals)
 
 ### d-pad
-- **up**: *unused*
-- **down**: *unused*
-- **left**: *unused*
-- **right**: *unused*
+- **up**: increment flywheel RPM
+- **down**: decrement flywheel RPM
+- **left**: decrement flywheel RPM by half
+- **right**: increment flywheel RPM by half
 
 ### other buttons
 - **start**: toggle field/robot centric
-- **back**: reset field centric heading
-    - make sure to orient the robot towards the top of the field (in between the goals)
+- **back**: emergency exit from auto turn
 
 # OpModes
 
@@ -181,7 +181,9 @@ the **start** button toggles between robot/field centric control
 
 ## Tuner
 
-- `Test`: TBD
+- `FlywheelTuner`: tune flywheel PIDF
+- `ServoTuner`: tune servo positions
+- `VisionTuner`: tune vision
 
 # vision
 
