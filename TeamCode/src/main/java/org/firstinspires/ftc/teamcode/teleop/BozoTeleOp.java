@@ -68,6 +68,9 @@ public abstract class BozoTeleOp extends OpMode {
         handleIntake();
         handleShoot();
 
+        if (gamepad1.xWasPressed()) { // reset field centric heading
+            follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
+        }
 
         follower.update();
 
