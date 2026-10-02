@@ -87,7 +87,7 @@ public class Vision {
          */
         LLResult result = limelight.getLatestResult();
 
-        if (result != null && result.isValid()) {
+        if (isReasonable(result)) {
             Position botpose = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH);
             double x = botpose.y + 72; // convert to pedro units
             double y = 72 - botpose.x; // convert to pedro units
@@ -123,6 +123,10 @@ public class Vision {
             staleTimer.reset();
         }
         else return;
+    }
+
+    public boolean isReasonable(LLResult result) { // check if result is reasonable
+        return result != null && result.isValid();
     }
 
     public LLResult getLatestResult() {

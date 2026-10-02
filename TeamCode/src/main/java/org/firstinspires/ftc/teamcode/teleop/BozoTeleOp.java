@@ -32,6 +32,7 @@ public abstract class BozoTeleOp extends OpMode {
     private double setRPM = 3600;
     private boolean flywheelOn = true;
     private boolean isTurning = false;
+    private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
 
     @Override
     public void init() {
@@ -44,6 +45,8 @@ public abstract class BozoTeleOp extends OpMode {
         follower = Constants.create(hardwareMap);
 
         follower.setPose(HandoffState.pose);
+
+        robot.transfer.close();
 
         telemetryM.addLine("init time: " + loopTimer.milliseconds() + "ms");
         telemetryM.update(telemetry);
@@ -63,8 +66,8 @@ public abstract class BozoTeleOp extends OpMode {
         handleDrive();
         handleFlywheel();
         handleIntake();
-        handleTransfer();
-        handleAutoTurn();
+        handleShoot();
+
 
         follower.update();
 
@@ -101,8 +104,8 @@ public abstract class BozoTeleOp extends OpMode {
                 follower.manual(powers);
             }
         } else {
-            //if (gamepad1.leftBumperWasPressed() || !follower.isBusy()) isTurning = false;
-            if (gamepad1.backWasPressed()) isTurning = false;
+            // under what conditions to exit turning
+            if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) isTurning = false;
         }
     }
 
@@ -128,19 +131,13 @@ public abstract class BozoTeleOp extends OpMode {
         if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
     }
 
-    private void handleTransfer() {
-        if (gamepad1.right_bumper) {
-            robot.transfer.open();
-            robot.intake.forwardLaunching();
-        } else {
-            robot.transfer.close();
-            if (robot.intake.getState() == Intake.State.FORWARD_LAUNCHING) {
-                robot.intake.forward();
-            }
-        }
-    }
+    private void handleShoot() {
+        boolean shootPressed = gamepad1.rightBumperWasPressed();
 
-    private void handleAutoTurn() {
+        if (shootPressed) robot.startLaunch();
+
+        robot.updateLaunch();
+
         Field.ScoringData scoringData;
         if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
             scoringData = field.getScoringData(true, follower.pose());
@@ -154,8 +151,8 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (gamepad1.leftBumperWasPressed()) {
             // they got rid of follower.turnTo() so we have to make it ourselves
-            Pose turnPose = new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle());
-            follower.hold(turnPose);
+            lastTurnPose = new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle());
+            follower.hold(lastTurnPose);
             isTurning = true;
         }
     }
