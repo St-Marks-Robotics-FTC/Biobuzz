@@ -5,6 +5,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.bylazar.configurables.annotations.Configurable;
+import com.pedropathing.math.Pose;
 
 @Configurable
 public class Tunables {
@@ -15,6 +16,7 @@ public class Tunables {
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
     public static double adjustRPM = 50;
+    public static double shootHeadingMargin = Math.toRadians(5);
 
     /** flywheel tunables (used in Flywheel.java) **/
 
@@ -39,6 +41,16 @@ public class Tunables {
 
     /** robot tunables (used in Robot.java) **/
 
+    public static double launchOpenTime = 1500;
+
     /** field tunables (used in Field.java) **/
+
+    // goal poses
+    // headings should be to score a ball, not the direction that the goal faces
+    public static Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
+    public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
+    public static Pose redAudienceGoalPose = new Pose(59, 58, Math.toRadians(90));
+    public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
+
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
 }

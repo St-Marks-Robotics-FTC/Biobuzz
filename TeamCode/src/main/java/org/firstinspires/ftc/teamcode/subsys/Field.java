@@ -6,12 +6,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
 
 public class Field {
-    // goal poses
-    // headings should be to score a ball, not the direction that the goal faces
-    private Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
-    private Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
-    private Pose redAudienceGoalPose = new Pose(59, 58, Math.toRadians(90));
-    private Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
 
     private boolean isBlueTeam;
 
@@ -41,15 +35,15 @@ public class Field {
     private Pose getGoalPose(boolean isAudienceUp) {
         if (isBlueTeam) {
             if (isAudienceUp) {
-                return blueAudienceGoalPose;
+                return Tunables.blueAudienceGoalPose;
             } else {
-                return blueScoringGoalPose;
+                return Tunables.blueScoringGoalPose;
             }
         } else {
             if (isAudienceUp) {
-                return redAudienceGoalPose;
+                return Tunables.redAudienceGoalPose;
             } else {
-                return redScoringGoalPose;
+                return Tunables.redScoringGoalPose;
             }
         }
     }
