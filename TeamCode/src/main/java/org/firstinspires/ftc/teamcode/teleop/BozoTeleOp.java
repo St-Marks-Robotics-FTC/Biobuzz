@@ -5,6 +5,7 @@ import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.ManualDrive;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
 
@@ -12,7 +13,9 @@ import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsys.Field;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
+import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,12 +23,15 @@ import java.util.concurrent.TimeUnit;
 public abstract class BozoTeleOp extends OpMode {
     protected abstract boolean isBlueTeam();
     private Robot robot;
+    private Field field;
+    private Vision vision;
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
     private boolean isRobotCentric = true; // start in field-centric mode
     private double setRPM = 3600;
     private boolean flywheelOn = true;
+    private boolean isTurning = false;
 
     @Override
     public void init() {
@@ -33,6 +39,8 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
         robot = new Robot(hardwareMap);
+        field = new Field(isBlueTeam());
+        vision = new Vision(hardwareMap, isBlueTeam());
         follower = Constants.create(hardwareMap);
 
         follower.setPose(HandoffState.pose);
@@ -50,10 +58,13 @@ public abstract class BozoTeleOp extends OpMode {
     public void loop() {
         loopTimer.reset();
 
+        vision.update();
+
         handleDrive();
         handleFlywheel();
         handleIntake();
         handleTransfer();
+        handleAutoTurn();
 
         follower.update();
 
@@ -68,25 +79,30 @@ public abstract class BozoTeleOp extends OpMode {
 
         double slowModeMultiplier = (gamepad1.left_trigger - 1) * -1; // amount to multiply for by slow mode
 
-        if (isRobotCentric) { // robot-centric control
-            follower.manual(
-                    -gamepad1.left_stick_y * slowModeMultiplier,
-                    -gamepad1.left_stick_x * slowModeMultiplier,
-                    -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier // reduce speed by our turn rate
-            );
-        } else { // field-centric control
-            double flipControl;
-            if (isBlueTeam()) flipControl = -1; // blue team needs to be flipped
-            else flipControl = 1; // red team doesn't need to be flipped
+        if (!isTurning) {
+            if (isRobotCentric) { // robot-centric control
+                follower.manual(
+                        -gamepad1.left_stick_y * slowModeMultiplier,
+                        -gamepad1.left_stick_x * slowModeMultiplier,
+                        -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier // reduce speed by our turn rate
+                );
+            } else { // field-centric control
+                double flipControl;
+                if (isBlueTeam()) flipControl = -1; // blue team needs to be flipped
+                else flipControl = 1; // red team doesn't need to be flipped
 
-            DrivePowers powers = ManualDrive.fieldCentric(
-                    -gamepad1.left_stick_y * slowModeMultiplier * flipControl,
-                    -gamepad1.left_stick_x * slowModeMultiplier * flipControl,
-                    -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier, // reduce speed by our turn rate
-                    follower.pose().heading()
-            );
+                DrivePowers powers = ManualDrive.fieldCentric(
+                        -gamepad1.left_stick_y * slowModeMultiplier * flipControl,
+                        -gamepad1.left_stick_x * slowModeMultiplier * flipControl,
+                        -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier, // reduce speed by our turn rate
+                        follower.pose().heading()
+                );
 
-            follower.manual(powers);
+                follower.manual(powers);
+            }
+        } else {
+            //if (gamepad1.leftBumperWasPressed() || !follower.isBusy()) isTurning = false;
+            if (gamepad1.backWasPressed()) isTurning = false;
         }
     }
 
@@ -124,6 +140,26 @@ public abstract class BozoTeleOp extends OpMode {
         }
     }
 
+    private void handleAutoTurn() {
+        Field.ScoringData scoringData;
+        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
+            scoringData = field.getScoringData(true, follower.pose());
+        } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
+            scoringData = field.getScoringData(false, follower.pose());
+        } else {
+            return; // hive state unknown - can't auto turn
+        }
+
+        telemetryM.addLine(scoringData.toString());
+
+        if (gamepad1.leftBumperWasPressed()) {
+            // they got rid of follower.turnTo() so we have to make it ourselves
+            Pose turnPose = new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle());
+            follower.hold(turnPose);
+            isTurning = true;
+        }
+    }
+
     private void updateTelemetry() {
         // flywheel
         telemetryM.addData("desired RPM", setRPM);
@@ -131,7 +167,7 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
 
         // odo
-        telemetryM.debug("current heading: " + follower.pose().heading());
+        telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
         telemetryM.addData("odo x", follower.pose().x());
         telemetryM.addData("odo y", follower.pose().y());
     }
