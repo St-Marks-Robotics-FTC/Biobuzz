@@ -106,6 +106,8 @@ public abstract class BozoTeleOp extends OpMode {
         } else {
             // under what conditions to exit turning
             if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) isTurning = false;
+
+            if (gamepad1.backWasPressed()) isTurning = false; // emergency exit
         }
     }
 
