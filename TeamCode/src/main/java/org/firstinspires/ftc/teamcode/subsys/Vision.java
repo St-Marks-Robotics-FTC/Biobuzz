@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Vision {
     private double HIVE_PIVOT_HEIGHT = 43.95; // hive pivot height in inches
-    private double HIVE_PIVOT_Y = 70; // y-coordinate of hive pivot
+    private double HIVE_PIVOT_Y = 72; // y-coordinate of hive pivot
     private double HIVE_MAX_TILT = Math.toRadians(35); // max tilt of hive in radians
 
     public static Limelight3A limelight;
