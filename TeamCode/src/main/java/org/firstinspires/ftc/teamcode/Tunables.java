@@ -38,4 +38,7 @@ public class Tunables {
     public static double transferClosed = 0.00;
 
     /** robot tunables (used in Robot.java) **/
+
+    /** field tunables (used in Field.java) **/
+    public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
 }
