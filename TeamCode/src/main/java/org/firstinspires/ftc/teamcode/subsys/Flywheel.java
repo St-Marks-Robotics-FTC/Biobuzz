@@ -1,50 +1,96 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 
-import static org.firstinspires.ftc.teamcode.Tunables.*;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.subsys.PIDF;
 
 public class Flywheel {
-    private static final double TICKS_PER_REV = 28; // bare motor encoder resolution, adjust for actual flywheel motor
+    public static final int MOTOR_TICKS_PER_MOTOR_REV = 28; // encoder ticks per motor revolution
+    public static final double LAUNCH_RATIO = 1; // motor->flywheel ratio (output rotations / motor rotations)
 
-    private final DcMotorEx motor;
-    private double targetRPM = 0;
-    public boolean isRunning = false;
-    private final PIDF pidf;
+    /** hardware **/
+    private DcMotorEx launchMotor;
+
+    /** stuff that changes **/
+    private PIDF pidf;
+
     public Flywheel(HardwareMap hw) {
-        motor = hw.get(DcMotorEx.class, "launchMotor");
-        motor.setDirection(DcMotorSimple.Direction.FORWARD);
-        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        pidf = new PIDF(flywheelP, flywheelI, flywheelD, flywheelF); // tune once flywheel is mounted
+        // launch motors (all are DcMotorEx for current monitoring)
+        launchMotor = hw.get(DcMotorEx.class, "launchMotor");
+
+        // set up hardware
+        launchMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        launchMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
+
+        // set up PIDF
+        pidf = new PIDF(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF); // create our PIDF controller for our launch motors
     }
 
-    public void setRPM(double rpm) {
-        targetRPM = rpm;
+    public void update(double RPM) {
+        pidf.updateTerms(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF);
+        double currentTPS = getTPS();
+        double setpointTPS = RPMToTPS(RPM);
+        double newPower;
+
+        if (setpointTPS == 0) {
+            newPower = 0.0;
+        } else if (setpointTPS - currentTPS < Tunables.flywheelQuickStartThreshold) {
+            // small difference -> use PIDF
+            newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
+        } else {
+            // big difference -> full power
+            newPower = 1.0;
+            pidf.reset(); // keep the lastTime from growing too large and causing integral accumulation
+        }
+
+        double clippedPower = Range.clip(newPower, -Tunables.maxFlywheelBraking, 1.0);
+
+        launchMotor.setPower(clippedPower);
     }
 
-    public double getTargetRPM() {
-        return targetRPM;
+    public void powerUpdate(double newPower) {
+        double clippedPower = Range.clip(newPower, 0.0, 1.0);
+
+        launchMotor.setPower(clippedPower);
     }
+
+    /** internal methods **/
+
+    public double getTPS() {
+        // get TPS of flywheel in the fastest way while also being able to fall back between encoders
+        return Math.abs(launchMotor.getVelocity());
+    }
+
+    /** getter methods **/
 
     public double getRPM() {
-        return motor.getPower();
+        return TPSToRPM(launchMotor.getVelocity());
     }
 
-    /** true once our current RPM is within {@link org.firstinspires.ftc.teamcode.Tunables#flywheelRPMMargin} of the target RPM.
-     * always false while the target RPM is 0 (flywheel not spun up / commanded to shoot). **/
-    public boolean isWithinMargin() {
-        return targetRPM > 0 && Math.abs(getRPM() - targetRPM) <= flywheelRPMMargin;
+    // these should only be used for tuning
+    public double getPower() {
+        return launchMotor.getPower(); // doesn't mater which one we query for power - we're both setting them the same
     }
 
-    public void update() {
-        pidf.updateTerms(flywheelP, flywheelI, flywheelD, flywheelF);
-        if (targetRPM == 0) {
-            motor.setPower(targetRPM);
-        } else {
-            motor.setPower(pidf.calc(targetRPM, getRPM()));
-        }
+    public double getCurrent() { // return sum current in amps
+        return launchMotor.getCurrent(CurrentUnit.AMPS);
+    }
+
+    private static double getMotorTicksPerOutputRev() {
+        return MOTOR_TICKS_PER_MOTOR_REV / LAUNCH_RATIO;
+    }
+
+    public double TPSToRPM(double TPS) {
+        double ticksPerOutputRev = getMotorTicksPerOutputRev();
+        return (TPS / ticksPerOutputRev) * 60; // output RPM
+    }
+
+    public double RPMToTPS(double outputRPM) {
+        double ticksPerOutputRev = getMotorTicksPerOutputRev();
+        return (outputRPM / 60) * ticksPerOutputRev; // motor TPS
     }
 }

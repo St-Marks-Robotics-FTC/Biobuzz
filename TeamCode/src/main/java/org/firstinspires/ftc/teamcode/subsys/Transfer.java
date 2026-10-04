@@ -1,32 +1,50 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
-import static org.firstinspires.ftc.teamcode.Tunables.*;
-
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
-public class Transfer {
-    public enum State {OPEN, CLOSED}
+import org.firstinspires.ftc.teamcode.Tunables;
 
-    private final Servo servo;
+public class Transfer {
+    private Servo servo;
+
+    private enum State {
+        OPEN,
+        CLOSED
+    }
+
     private State state = State.CLOSED;
 
     public Transfer(HardwareMap hw) {
         servo = hw.get(Servo.class, "transferServo");
-        close();
+
+        servo.setPosition(Tunables.transferClosed); // start closed
     }
 
-    public State getState() {
-        return state;
+    public void toggle() {
+        if (isOpen()) close();
+        else open();
     }
 
     public void open() {
-        state = State.OPEN;
-        servo.setPosition(transferOpen);
+        if (state != State.OPEN) {
+            servo.setPosition(Tunables.transferOpen);
+            state = State.OPEN;
+        }
     }
 
     public void close() {
-        state = State.CLOSED;
-        servo.setPosition(transferClosed);
+        if (state != State.CLOSED) {
+            servo.setPosition(Tunables.transferClosed);
+            state = State.CLOSED;
+        }
+    }
+
+    public boolean isOpen() {
+        return state == State.OPEN;
+    }
+
+    public void setServoRaw(double pos) {
+        servo.setPosition(pos);
     }
 }

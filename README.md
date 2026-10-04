@@ -11,6 +11,10 @@ if `adb devices` doesn't show any devices:
 
 it may take a second for the control hub to show up in Android Studio
 
+## Pedro Pathing Tuning
+
+Using Panels interferes with Pedro Pathing's auto tuner so in order to tune Pedro Pathing you must switch to the `pedro-tuner` branch
+
 # hardware map
 
 driver station config name: `v0`
@@ -90,12 +94,12 @@ make sure to connect every motor with the correct polarity; the reversing is don
 
 ### DC motors
 
-| motor port   | motor type | verbatim name | encoder?  |
-|:-------------|------------|:--------------|:----------|
-| `0`          | *unused*   | *unused*      | ❌         |
-| `1`          | *unused*   | *unused*      | ❌         |
-| `2`          | *unused*   | *unused*      | ❌         |
-| `3`          | *unused*   | *unused*      | ❌         |
+| motor port   | motor type              | verbatim name | encoder?    |
+|:-------------|-------------------------|:--------------|:------------|
+| `0`          | GoBILDA 5202/3/4 series | `intakeMotor` | ✅           |
+| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ❌           |
+| `2`          | *unused*                | *unused*      | ❌           |
+| `3`          | *unused*                | *unused*      | ❌           |
 
 ## servo hub
 
@@ -104,14 +108,14 @@ make sure to connect every motor with the correct polarity; the reversing is don
 
 ### servos
 
-| servo port   | servo type | verbatim name   |
-|:-------------|------------|:----------------|
-| `0`          | *unused*   | *unused*        |
-| `1`          | *unused*   | *unused*        |
-| `2`          | *unused*   | *unused*        |
-| `3`          | *unused*   | *unused*        |
-| `4`          | *unused*   | *unused*        |
-| `5`          | *unused*   | *unused*        |
+| servo port   | servo type   | verbatim name   |
+|:-------------|--------------|:----------------|
+| `0`          | Servo        | `transferServo` |
+| `1`          | *unused*     | *unused*        |
+| `2`          | *unused*     | *unused*        |
+| `3`          | *unused*     | *unused*        |
+| `4`          | *unused*     | *unused*        |
+| `5`          | *unused*     | *unused*        |
 
 # controller map
 
@@ -131,8 +135,8 @@ the **start** button toggles between robot/field centric control
 
 ## bumpers
 
-- **left bumper**: *unused*
-- **right bumper**: *unused*
+- **left bumper**: auto turn
+- **right bumper**: shoot all balls
 
 ## triggers
 
@@ -142,21 +146,21 @@ the **start** button toggles between robot/field centric control
 ## buttons
 
 ### face buttons
-- **A**: hold to auto-aim at nearest in-range alliance goal
-- **B**: *unused*
-- **Y**: *unused*
-- **X**: *unused*
+- **A**: toggle intake
+- **B**: toggle flywheel power
+- **Y**: toggle intake reverse
+- **X**: reset field centric heading
+  - make sure to orient the robot towards the top of the field (in between the goals)
 
 ### d-pad
-- **up**: *unused*
-- **down**: *unused*
-- **left**: *unused*
-- **right**: *unused*
+- **up**: increment flywheel RPM
+- **down**: decrement flywheel RPM
+- **left**: decrement flywheel RPM by half
+- **right**: increment flywheel RPM by half
 
 ### other buttons
 - **start**: toggle field/robot centric
-- **back**: reset field centric heading
-    - make sure to orient the robot towards the top of the field (in between the goals)
+- **back**: emergency exit from auto turn
 
 # OpModes
 
@@ -177,7 +181,9 @@ the **start** button toggles between robot/field centric control
 
 ## Tuner
 
-- `Test`: TBD
+- `FlywheelTuner`: tune flywheel PIDF
+- `ServoTuner`: tune servo positions
+- `VisionTuner`: tune vision
 
 # vision
 
@@ -185,15 +191,22 @@ We are using a Limelight 3A
 
 ## pipelines
 
-| filename        | index  | allowed tag IDs | purpose                                       |
-|:----------------|--------|:----------------|:----------------------------------------------|
-| *unused*        | `0`    | *unused*        | *unused*                                      |
+| filename                                  | fieldmap                                        | index  | allowed tag IDs | purpose                |
+|:------------------------------------------|-------------------------------------------------|--------|:----------------|:-----------------------|
+| [`Blue.vpr`](limelight/pipeline/Blue.vpr) | [`HiveBlue.fmap`](limelight/fmap/HiveBlue.fmap) | `0`    | 38-45           | blue team localization |
+| [`Red.vpr`](limelight/pipeline/Red.vpr)   | [`HiveRed.fmap`](limelight/fmap/HiveRed.fmap)   | `1`    | 30-37           | red team localization  |
 
-pipeline files are saved in the [limelight folder](limelight/)
+Many thanks to [Team 19725](https://github.com/BluePowerRobotics/Team19725_BIOBUZZ) for providing their `.fmap` files for localization!
+Our localization approach is largely based off of theirs, but we use trigonometry instead of transformation matrices.
 
-# telemetry IPs
+# telemetry IPs and ports
 
 - Panels: [192.168.43.1:8001](http://192.168.43.1:8001)
 - robot controller: [192.168.43.1:8080](http://192.168.43.1:8080/)
 - Limelight video stream: [192.168.43.1:5800](http://192.168.43.1:5801/)
 - Limelight control: [192.168.43.1:5801](http://192.168.43.1:5800/)
+- Pedro auto tuner (only works on `pedro-tuner` branch): [192.168.43.1:10158](http://192.168.43.1:10158/)
+  - odometry tuning does not work reliably
+  - find the offsets manually using the CAD and the diagram below
+
+![odometry diagram](doc/media/odometry-dark.png)

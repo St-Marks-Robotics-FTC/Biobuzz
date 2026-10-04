@@ -30,6 +30,14 @@ public abstract class BozoAuto extends OpMode {
     private int shotsCompleted = 0;
     private static final int TOTAL_SHOTS = 2; // preload, then one reload from the refuel line
 
+    /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
+    private double targetRPM = 0;
+
+    /** true once the flywheel is within {@link Tunables#flywheelRPMMargin} of a nonzero target RPM **/
+    private boolean isFlywheelWithinMargin() {
+        return targetRPM > 0 && Math.abs(robot.flywheel.getRPM() - targetRPM) <= Tunables.flywheelRPMMargin;
+    }
+
     private enum State {
         START,            // waiting for OpMode to begin
         TRAVEL_TO_SHOOT,  // driving to the shoot pose; flywheel spinning up
@@ -61,7 +69,7 @@ public abstract class BozoAuto extends OpMode {
         switch (state) {
             case START:
                 follower.follow(path1);
-                robot.flywheel.setRPM(Tunables.shootRPM); // spin up while we drive so it's ready when we arrive
+                targetRPM = Tunables.shootRPM; // spin up while we drive so it's ready when we arrive
                 setPathState(State.TRAVEL_TO_SHOOT);
                 break;
             case TRAVEL_TO_SHOOT:
@@ -70,7 +78,7 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case SPIN_UP:
-                if (robot.flywheel.isWithinMargin()) { // don't feed balls until we're actually at speed
+                if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
                     robot.transfer.open();
                     robot.intake.forward();
                     setPathState(State.FEED);
@@ -80,7 +88,7 @@ public abstract class BozoAuto extends OpMode {
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
                     robot.transfer.close();
                     robot.intake.off();
-                    robot.flywheel.setRPM(0);
+                    targetRPM = 0;
                     shotsCompleted++;
 
                     if (shotsCompleted >= TOTAL_SHOTS) {
@@ -102,7 +110,7 @@ public abstract class BozoAuto extends OpMode {
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
                     robot.intake.off();
                     follower.follow(path3);
-                    robot.flywheel.setRPM(Tunables.shootRPM); // spin back up on the way back to the shoot pose
+                    targetRPM = Tunables.shootRPM; // spin back up on the way back to the shoot pose
                     setPathState(State.TRAVEL_TO_SHOOT);
                 }
                 break;
@@ -128,7 +136,7 @@ public abstract class BozoAuto extends OpMode {
     public void loop() {
         loopTimer.reset();
         follower.update();
-        robot.flywheel.update();
+        robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target
         updateHandoff();
         autoPathUpdate();
         if (Tunables.isDebugging) {
@@ -185,12 +193,12 @@ public abstract class BozoAuto extends OpMode {
             telemetryM.addLine("INIT COMPLETE: READY TO START");
             telemetryM.debug("Init time (millis): " + loopTimer.get(TimeUnit.SECONDS));
         } else {
-            if (!robot.flywheel.isWithinMargin()) telemetryM.debug("WARNING: FLYWHEEL OUT OF MARGIN");
+            if (!isFlywheelWithinMargin()) telemetryM.debug("WARNING: FLYWHEEL OUT OF MARGIN");
         }
         telemetryM.debug("Path state: " + state);
         telemetryM.addData("shotsCompleted", shotsCompleted);
         telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
-        telemetryM.addData("flywheel target RPM", robot.flywheel.getTargetRPM());
+        telemetryM.addData("flywheel target RPM", targetRPM);
         telemetryM.addData("x", follower.pose().x());
         telemetryM.addData("y", follower.pose().y());
         telemetryM.addData("Heading", follower.pose().heading());
