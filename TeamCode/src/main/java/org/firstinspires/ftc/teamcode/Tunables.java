@@ -16,7 +16,7 @@ public class Tunables {
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     // PIDF values for subsys/Flywheel.java
-    public static double flywheelP = 1;
+    public static double flywheelP = 0.01;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0;

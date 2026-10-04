@@ -30,7 +30,7 @@ public class Flywheel {
     }
 
     public double getRPM() {
-        return (motor.getVelocity() / TICKS_PER_REV) * 60.0;
+        return motor.getPower();
     }
 
     /** true once our current RPM is within {@link org.firstinspires.ftc.teamcode.Tunables#flywheelRPMMargin} of the target RPM.
@@ -41,6 +41,10 @@ public class Flywheel {
 
     public void update() {
         pidf.updateTerms(flywheelP, flywheelI, flywheelD, flywheelF);
-        motor.setPower(pidf.calc(targetRPM, getRPM()));
+        if (targetRPM == 0) {
+            motor.setPower(targetRPM);
+        } else {
+            motor.setPower(pidf.calc(targetRPM, getRPM()));
+        }
     }
 }
