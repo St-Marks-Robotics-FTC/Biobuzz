@@ -4,19 +4,13 @@ import com.pedropathing.math.Pose;
 
 public class AutoConfig {
     public Pose startPose,
-            shootRightPose,
-            refuelPose,
-            endPose;
+            refuelPose;
 
     public AutoConfig(
             Pose startPose,
-            Pose shootRightPose,
-            Pose refuelPose,
-            Pose endPose
+            Pose refuelPose
     ) {
         this.startPose = startPose;
-        this.shootRightPose = shootRightPose;
         this.refuelPose = refuelPose;
-        this.endPose = endPose;
     }
 }

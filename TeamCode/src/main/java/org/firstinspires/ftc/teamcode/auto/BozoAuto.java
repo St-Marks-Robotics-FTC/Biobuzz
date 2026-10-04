@@ -4,8 +4,6 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
-import com.pedropathing.paths.Path;
-import static com.pedropathing.api.Paths.*;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
@@ -16,6 +14,13 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Stationary autonomous: spin up the flywheel, shoot, refuel, shoot again, shut everything off.
+ * The robot never drives; the follower only exists to record the start pose for the TeleOp handoff.
+ *
+ * Sequence: SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> REFUEL -> SPIN_UP_SECOND_SHOOT
+ *           -> FEED_SECOND_SHOOT -> DONE
+ */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
@@ -35,112 +40,72 @@ public abstract class BozoAuto extends OpMode {
     }
 
     private enum State {
-        START,                  // waiting for OpMode to begin
-        TRAVEL_TO_FIRST_SHOOT,  // driving from the start pose to the shoot pose; flywheel spinning up
-        SPIN_UP_FIRST_SHOOT,    // holding at the shoot pose until the flywheel reaches target RPM
-        FEED_FIRST_SHOOT,       // transfer open + intake running, feeding the preload through the flywheel
-        TRAVEL_TO_REFUEL,       // driving to the refuel line
-        REFUEL,                 // intake running while sitting on the refuel line to pick up balls
-        TRAVEL_TO_SECOND_SHOOT, // driving back to the shoot pose; flywheel spinning up
-        SPIN_UP_SECOND_SHOOT,   // holding at the shoot pose until the flywheel reaches target RPM
-        FEED_SECOND_SHOOT,      // transfer open + intake running, feeding the refueled balls through the flywheel
-        TRAVEL_TO_END,          // driving to the parking pose
-        END                     // done, request OpMode stop
+        SPIN_UP_FIRST_SHOOT,   // flywheel spinning up; waiting to reach target RPM
+        FEED_FIRST_SHOOT,      // transfer open + intake running, feeding the preload through the flywheel
+        REFUEL,                // transfer closed, intake running to pick up more balls (flywheel keeps spinning)
+        SPIN_UP_SECOND_SHOOT,  // waiting for flywheel to be back at target RPM after refuel
+        FEED_SECOND_SHOOT,     // transfer open + intake running, feeding the refueled balls through the flywheel
+        DONE                   // everything off; waiting for the OpMode to be stopped
     }
 
-    State state = State.START;
+    private State state = State.SPIN_UP_FIRST_SHOOT;
 
-    private Path
-            startToShootPath,
-            shootToRefuelPath,
-            refuelToShootPath,
-            shootToEndPath;
-
-    private void buildPaths() {
-        startToShootPath = line(startPose, config.shootRightPose).linear(startPose, config.shootRightPose);
-        shootToRefuelPath = line(config.shootRightPose, config.refuelPose).linear(config.shootRightPose, config.refuelPose);
-        refuelToShootPath = line(config.refuelPose, config.shootRightPose).linear(config.refuelPose, config.shootRightPose);
-        shootToEndPath = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
-    }
-
-    // Everything is first DO SOMETHING and then MOVE
-    private void autoPathUpdate() {
+    /**
+     * Advances the state machine by one step.
+     * @precondition {@link #start()} has run, so stateTimer is reset and targetRPM is set for the first spin-up.
+     * @postcondition In DONE the flywheel target is 0, transfer is closed and intake is off.
+     */
+    private void autoUpdate() {
         switch (state) {
-            case START:
-                follower.follow(startToShootPath);
-                targetRPM = Tunables.shootRPM; // spin up while we drive so it's ready when we arrive
-                setPathState(State.TRAVEL_TO_FIRST_SHOOT);
-                break;
-            case TRAVEL_TO_FIRST_SHOOT:
-                if (!follower.isBusy()) {
-                    setPathState(State.SPIN_UP_FIRST_SHOOT);
-                }
-                break;
             case SPIN_UP_FIRST_SHOOT:
                 if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
-                    robot.transfer.open();
-                    robot.intake.forward();
-                    setPathState(State.FEED_FIRST_SHOOT);
+                    startFeeding();
+                    setState(State.FEED_FIRST_SHOOT);
                 }
                 break;
             case FEED_FIRST_SHOOT:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
                     robot.transfer.close();
-                    robot.intake.off();
-                    targetRPM = 0;
-                    follower.follow(shootToRefuelPath);
-                    setPathState(State.TRAVEL_TO_REFUEL);
-                }
-                break;
-            case TRAVEL_TO_REFUEL:
-                if (!follower.isBusy()) {
-                    robot.intake.forward();
-                    setPathState(State.REFUEL);
+                    robot.intake.forward(); // intake stays on to refuel; flywheel stays spinning
+                    setState(State.REFUEL);
                 }
                 break;
             case REFUEL:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
                     robot.intake.off();
-                    follower.follow(refuelToShootPath);
-                    targetRPM = Tunables.shootRPM; // spin back up on the way back to the shoot pose
-                    setPathState(State.TRAVEL_TO_SECOND_SHOOT);
-                }
-                break;
-            case TRAVEL_TO_SECOND_SHOOT:
-                if (!follower.isBusy()) {
-                    setPathState(State.SPIN_UP_SECOND_SHOOT);
+                    setState(State.SPIN_UP_SECOND_SHOOT);
                 }
                 break;
             case SPIN_UP_SECOND_SHOOT:
-                if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
-                    robot.transfer.open();
-                    robot.intake.forward();
-                    setPathState(State.FEED_SECOND_SHOOT);
+                if (isFlywheelWithinMargin()) {
+                    startFeeding();
+                    setState(State.FEED_SECOND_SHOOT);
                 }
                 break;
             case FEED_SECOND_SHOOT:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
-                    robot.transfer.close();
-                    robot.intake.off();
-                    targetRPM = 0;
-                    follower.follow(shootToEndPath);
-                    setPathState(State.TRAVEL_TO_END);
+                    shutOff();
+                    setState(State.DONE);
                 }
                 break;
-            case TRAVEL_TO_END:
-                if (!follower.isBusy()) {
-                    setPathState(State.END);
-                }
-                break;
-            case END:
-                if (!follower.isBusy()) { // End the process
-                    requestOpModeStop();
-                }
+            case DONE:
+                requestOpModeStop();
                 break;
         }
     }
 
-    private void setPathState(State newState) {
+    private void startFeeding() {
+        robot.transfer.open();
+        robot.intake.forward();
+    }
+
+    private void shutOff() {
+        robot.transfer.close();
+        robot.intake.off();
+        targetRPM = 0;
+    }
+
+    private void setState(State newState) {
         state = newState;
         stateTimer.reset();
     }
@@ -151,7 +116,7 @@ public abstract class BozoAuto extends OpMode {
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target
         updateHandoff();
-        autoPathUpdate();
+        autoUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
         }
@@ -171,9 +136,6 @@ public abstract class BozoAuto extends OpMode {
         follower = Constants.create(hardwareMap);
         startPose = getStartPose();
         config.startPose = startPose;
-        telemetryM.debug("Building paths... (this may take a while)");
-        telemetryM.update(telemetry);
-        buildPaths();
         follower.setPose(startPose);
         sendTelemetry(true);
         telemetryM.update(telemetry);
@@ -187,11 +149,16 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void start() {
-        setPathState(State.START);
+        targetRPM = Tunables.shootRPM; // begin spinning up immediately
+        setState(State.SPIN_UP_FIRST_SHOOT);
     }
 
     @Override
     public void stop() {
+        if (robot != null) {
+            shutOff();
+            robot.flywheel.update(0);
+        }
         updateHandoff();
     }
 
@@ -206,9 +173,9 @@ public abstract class BozoAuto extends OpMode {
             telemetryM.addLine("INIT COMPLETE: READY TO START");
             telemetryM.debug("Init time (millis): " + loopTimer.get(TimeUnit.SECONDS));
         } else {
-            if (!isFlywheelWithinMargin()) telemetryM.debug("WARNING: FLYWHEEL OUT OF MARGIN");
+            if (targetRPM > 0 && !isFlywheelWithinMargin()) telemetryM.debug("WARNING: FLYWHEEL OUT OF MARGIN");
         }
-        telemetryM.debug("Path state: " + state);
+        telemetryM.debug("State: " + state);
         telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
         telemetryM.addData("flywheel target RPM", targetRPM);
         telemetryM.addData("x", follower.pose().x());
