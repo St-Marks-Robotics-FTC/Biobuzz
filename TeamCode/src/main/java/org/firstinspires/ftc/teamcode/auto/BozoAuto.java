@@ -224,7 +224,6 @@ public abstract class BozoAuto extends OpMode {
         }
         updateHandoff();
     }
-
     public void updateHandoff() {
         if (follower != null) {
             HandoffState.pose = follower.pose();
