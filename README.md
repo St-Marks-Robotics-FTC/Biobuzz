@@ -199,9 +199,10 @@ We are using a Limelight 3A
 Many thanks to [Team 19725](https://github.com/BluePowerRobotics/Team19725_BIOBUZZ) for providing their `.fmap` files for localization!
 Our localization approach is largely based off of theirs, but we use trigonometry instead of transformation matrices.
 
-# telemetry IPs
+# telemetry IPs and ports
 
 - Panels: [192.168.43.1:8001](http://192.168.43.1:8001)
 - robot controller: [192.168.43.1:8080](http://192.168.43.1:8080/)
 - Limelight video stream: [192.168.43.1:5800](http://192.168.43.1:5801/)
 - Limelight control: [192.168.43.1:5801](http://192.168.43.1:5800/)
+- Pedro auto tuner (only works on `pedro-tuner` branch): [192.168.43.1:10158](http://192.168.43.1:10158/)
