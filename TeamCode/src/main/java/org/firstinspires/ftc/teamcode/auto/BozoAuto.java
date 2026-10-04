@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.auto;
 
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
-import com.pedropathing.algorithm.ForesightConfig;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import static com.pedropathing.api.Paths.*;
@@ -65,34 +64,6 @@ public abstract class BozoAuto extends OpMode {
         refuelToShootPath = line(config.refuelPose, startPose).linear(config.refuelPose, startPose);
     }
 
-    /**
-     * Path speed fraction for a given distance from the refuel pose: 1.0 at or beyond {@code slowdownDistance},
-     * falling linearly to {@code minFraction} at distance 0.
-     *
-     * @precondition {@code slowdownDistance > 0}, {@code 0 < minFraction <= 1}, {@code remainingDistance >= 0}
-     * @postcondition result is in [{@code minFraction}, 1.0] and is non-decreasing in {@code remainingDistance}
-     */
-    static double refuelSpeedFraction(double remainingDistance, double slowdownDistance, double minFraction) {
-        if (slowdownDistance <= 0) throw new IllegalArgumentException("slowdownDistance must be > 0: " + slowdownDistance);
-        if (minFraction <= 0 || minFraction > 1) throw new IllegalArgumentException("minFraction must be in (0, 1]: " + minFraction);
-        double t = Math.min(1.0, Math.max(0.0, remainingDistance / slowdownDistance));
-        return minFraction + (1.0 - minFraction) * t;
-    }
-
-    /**
-     * Limits the follower's speed for the current state: linearly slower as we approach the refuel pose,
-     * full speed in every other state (including the drive back to shoot).
-     * {@code maxPathSpeed} is a shared static config read by the follower every loop, so it must be reset when not refueling.
-     */
-    private void updatePathSpeedLimit() {
-        if (state == State.TRAVEL_TO_REFUEL && follower.isBusy()) {
-            Constants.foresightConfig.maxPathSpeed.set(refuelSpeedFraction(
-                    follower.remainingDistance(), Tunables.refuelSlowdownDistance, Tunables.refuelMinSpeedFraction));
-        } else {
-            Constants.foresightConfig.maxPathSpeed.set(ForesightConfig.Constraint.NONE);
-        }
-    }
-
     private void autoUpdate() {
         switch (state) {
             case SPIN_UP_FIRST_SHOOT:
@@ -152,7 +123,7 @@ public abstract class BozoAuto extends OpMode {
 
     private void startFeeding() {
         robot.transfer.open();
-        robot.intake.forward();
+        robot.intake.forwardLaunching();
     }
 
     private void shutOff() {
@@ -170,7 +141,6 @@ public abstract class BozoAuto extends OpMode {
     public void loop() {
         double lastLoopMillis = loopTimer.get(TimeUnit.MILLISECONDS);
         loopTimer.reset();
-        updatePathSpeedLimit(); // must precede follower.update(): the follower reads maxPathSpeed each update
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target
         autoUpdate();
@@ -192,7 +162,6 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
-        Constants.foresightConfig.maxPathSpeed.set(ForesightConfig.Constraint.NONE); // shared static; a previous run may have left a limit
         startPose = getStartPose();
         config.startPose = startPose;
         follower.setPose(startPose);
@@ -217,7 +186,6 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void stop() {
-        Constants.foresightConfig.maxPathSpeed.set(ForesightConfig.Constraint.NONE); // shared static; don't leak the limit into the next run
         if (robot != null) {
             shutOff();
             robot.flywheel.update(0);

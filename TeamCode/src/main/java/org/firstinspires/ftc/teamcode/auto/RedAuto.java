@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 public abstract class RedAuto extends BozoAuto {
     public static Pose startPose = new Pose(60, 6, Math.toRadians(90));
     public static Pose intermediatePose = new Pose(40, 6, Math.toRadians(180));
-    public static Pose refuelPose = new Pose(8, 8, Math.toRadians(180));
+    public static Pose refuelPose = new Pose(8, 6, Math.toRadians(180));
 
     @Override
     protected AutoConfig buildConfig() {
