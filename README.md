@@ -206,3 +206,7 @@ Our localization approach is largely based off of theirs, but we use trigonometr
 - Limelight video stream: [192.168.43.1:5800](http://192.168.43.1:5801/)
 - Limelight control: [192.168.43.1:5801](http://192.168.43.1:5800/)
 - Pedro auto tuner (only works on `pedro-tuner` branch): [192.168.43.1:10158](http://192.168.43.1:10158/)
+  - odometry tuning does not work reliably
+  - find the offsets manually using the CAD and the diagram below
+
+![odometry diagram](doc/media/odometry-dark.png)
