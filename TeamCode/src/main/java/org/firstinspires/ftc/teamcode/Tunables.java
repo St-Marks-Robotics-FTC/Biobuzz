@@ -53,4 +53,8 @@ public class Tunables {
     public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
 
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
+
+    /** vision tunables (used in Vision.java) **/
+
+    public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
 }

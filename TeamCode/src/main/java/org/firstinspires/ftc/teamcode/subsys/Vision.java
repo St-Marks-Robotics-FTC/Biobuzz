@@ -23,6 +23,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Tunables;
 
 import java.nio.channels.Pipe;
 import java.util.List;
@@ -48,8 +49,12 @@ public class Vision {
 
     private boolean started = false;
     private boolean isBlueTeam;
+
+    /** vars that change from update() **/
+
     private Pose lastBotPose = new Pose(0, 0);
     private HiveState lastHiveState = HiveState.UNKNOWN;
+    private int lastTagCount = 0; // number of tags seen in the last update
 
     private Timer staleTimer; // how stale lastBotPose is
 
@@ -126,7 +131,9 @@ public class Vision {
     }
 
     public boolean isReasonable(LLResult result) { // check if result is reasonable
-        return result != null && result.isValid();
+        lastTagCount = result.getBotposeTagCount();
+
+        return result != null && result.isValid() && lastTagCount >= Tunables.minTagCount;
     }
 
     public LLResult getLatestResult() {
@@ -139,5 +146,9 @@ public class Vision {
 
     public HiveState getLastHiveState() {
         return lastHiveState;
+    }
+
+    public int getLastTagCount() {
+        return lastTagCount;
     }
 }

@@ -59,6 +59,7 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addData("raw position", rawPos.toString());
             telemetryM.addData("last botpose", vision.getLastBotPose().toString());
             telemetryM.addData("last hive state", vision.getLastHiveState());
+            telemetryM.addData("last tag count", vision.getLastTagCount());
             telemetryM.addData("staleness", vision.getStaleness());
             telemetryM.addData("odo pos", follower.pose().toString());
             telemetryM.addData("pipeline", vision.getPipeline());
