@@ -2,8 +2,11 @@ package org.firstinspires.ftc.teamcode.auto;
 
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.algorithm.ForesightConfig;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
+import static com.pedropathing.api.Paths.*;
+import com.pedropathing.paths.Path;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
@@ -15,11 +18,11 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Stationary autonomous: spin up the flywheel, shoot, refuel, shoot again, shut everything off.
- * The robot never drives; the follower only exists to record the start pose for the TeleOp handoff.
+ * Autonomous: spin up the flywheel, shoot, drive linearly to an intermediate pose and then to the refuel pose
+ * to pick up balls, drive back to the start pose, shoot again, shut everything off.
  *
- * Sequence: SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> REFUEL -> SPIN_UP_SECOND_SHOOT
- *           -> FEED_SECOND_SHOOT -> DONE
+ * Sequence: SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE -> TRAVEL_TO_REFUEL -> REFUEL
+ *           -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT -> DONE
  */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
@@ -27,7 +30,7 @@ public abstract class BozoAuto extends OpMode {
     protected abstract Pose getStartPose();
     private Robot robot;
     private Follower follower;
-    private Timer stateTimer, loopTimer;
+    private Timer stateTimer, loopTimer, telemetryTimer;
     private TelemetryManager telemetryM;
     private Pose startPose;
 
@@ -40,21 +43,56 @@ public abstract class BozoAuto extends OpMode {
     }
 
     private enum State {
-        SPIN_UP_FIRST_SHOOT,   // flywheel spinning up; waiting to reach target RPM
+        SPIN_UP_FIRST_SHOOT,   // at the start pose; flywheel spinning up, waiting to reach target RPM
         FEED_FIRST_SHOOT,      // transfer open + intake running, feeding the preload through the flywheel
-        REFUEL,                // transfer closed, intake running to pick up more balls (flywheel keeps spinning)
-        SPIN_UP_SECOND_SHOOT,  // waiting for flywheel to be back at target RPM after refuel
+        TRAVEL_TO_INTERMEDIATE, // driving linearly to the intermediate pose with intake running; flywheel keeps spinning
+        TRAVEL_TO_REFUEL,      // driving linearly from the intermediate pose to the refuel pose with intake running
+        REFUEL,                // sitting on the refuel pose with intake running to pick up balls
+        TRAVEL_TO_SHOOT,       // driving back to the start pose; intake off, flywheel keeps spinning
+        SPIN_UP_SECOND_SHOOT,  // back at the start pose; waiting for flywheel to be at target RPM
         FEED_SECOND_SHOOT,     // transfer open + intake running, feeding the refueled balls through the flywheel
         DONE                   // everything off; waiting for the OpMode to be stopped
     }
 
     private State state = State.SPIN_UP_FIRST_SHOOT;
 
+    /** startPose -> intermediatePose -> refuelPose and back. The shoot pose is the start pose. Built in {@link #init()}. **/
+    private Path shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
+
+    private void buildPaths() {
+        shootToIntermediatePath = line(startPose, config.intermediatePose).linear(startPose, config.intermediatePose);
+        intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose).linear(config.intermediatePose, config.refuelPose);
+        refuelToShootPath = line(config.refuelPose, startPose).linear(config.refuelPose, startPose);
+    }
+
     /**
-     * Advances the state machine by one step.
-     * @precondition {@link #start()} has run, so stateTimer is reset and targetRPM is set for the first spin-up.
-     * @postcondition In DONE the flywheel target is 0, transfer is closed and intake is off.
+     * Path speed fraction for a given distance from the refuel pose: 1.0 at or beyond {@code slowdownDistance},
+     * falling linearly to {@code minFraction} at distance 0.
+     *
+     * @precondition {@code slowdownDistance > 0}, {@code 0 < minFraction <= 1}, {@code remainingDistance >= 0}
+     * @postcondition result is in [{@code minFraction}, 1.0] and is non-decreasing in {@code remainingDistance}
      */
+    static double refuelSpeedFraction(double remainingDistance, double slowdownDistance, double minFraction) {
+        if (slowdownDistance <= 0) throw new IllegalArgumentException("slowdownDistance must be > 0: " + slowdownDistance);
+        if (minFraction <= 0 || minFraction > 1) throw new IllegalArgumentException("minFraction must be in (0, 1]: " + minFraction);
+        double t = Math.min(1.0, Math.max(0.0, remainingDistance / slowdownDistance));
+        return minFraction + (1.0 - minFraction) * t;
+    }
+
+    /**
+     * Limits the follower's speed for the current state: linearly slower as we approach the refuel pose,
+     * full speed in every other state (including the drive back to shoot).
+     * {@code maxPathSpeed} is a shared static config read by the follower every loop, so it must be reset when not refueling.
+     */
+    private void updatePathSpeedLimit() {
+        if (state == State.TRAVEL_TO_REFUEL && follower.isBusy()) {
+            Constants.foresightConfig.maxPathSpeed.set(refuelSpeedFraction(
+                    follower.remainingDistance(), Tunables.refuelSlowdownDistance, Tunables.refuelMinSpeedFraction));
+        } else {
+            Constants.foresightConfig.maxPathSpeed.set(ForesightConfig.Constraint.NONE);
+        }
+    }
+
     private void autoUpdate() {
         switch (state) {
             case SPIN_UP_FIRST_SHOOT:
@@ -66,13 +104,31 @@ public abstract class BozoAuto extends OpMode {
             case FEED_FIRST_SHOOT:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
                     robot.transfer.close();
-                    robot.intake.forward(); // intake stays on to refuel; flywheel stays spinning
+                    robot.intake.forward(); // intake on while driving so we're collecting as we arrive
+                    follower.follow(shootToIntermediatePath);
+                    setState(State.TRAVEL_TO_INTERMEDIATE);
+                }
+                break;
+            case TRAVEL_TO_INTERMEDIATE:
+                if (!follower.isBusy()) {
+                    follower.follow(intermediateToRefuelPath);
+                    setState(State.TRAVEL_TO_REFUEL);
+                }
+                break;
+            case TRAVEL_TO_REFUEL:
+                if (!follower.isBusy()) {
                     setState(State.REFUEL);
                 }
                 break;
             case REFUEL:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
                     robot.intake.off();
+                    follower.follow(refuelToShootPath);
+                    setState(State.TRAVEL_TO_SHOOT);
+                }
+                break;
+            case TRAVEL_TO_SHOOT:
+                if (!follower.isBusy()) {
                     setState(State.SPIN_UP_SECOND_SHOOT);
                 }
                 break;
@@ -112,10 +168,11 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void loop() {
+        double lastLoopMillis = loopTimer.get(TimeUnit.MILLISECONDS);
         loopTimer.reset();
+        updatePathSpeedLimit(); // must precede follower.update(): the follower reads maxPathSpeed each update
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target
-        updateHandoff();
         autoUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
@@ -129,14 +186,17 @@ public abstract class BozoAuto extends OpMode {
         config = buildConfig();
         loopTimer = new Timer();
         stateTimer = new Timer();
+        telemetryTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = new Robot(hardwareMap);
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
+        Constants.foresightConfig.maxPathSpeed.set(ForesightConfig.Constraint.NONE); // shared static; a previous run may have left a limit
         startPose = getStartPose();
         config.startPose = startPose;
         follower.setPose(startPose);
+        buildPaths();
         sendTelemetry(true);
         telemetryM.update(telemetry);
     }
@@ -150,11 +210,14 @@ public abstract class BozoAuto extends OpMode {
     @Override
     public void start() {
         targetRPM = Tunables.shootRPM; // begin spinning up immediately
+        telemetryTimer.reset();
+        loopTimer.reset(); // so the first loop() doesn't report init time as loop time
         setState(State.SPIN_UP_FIRST_SHOOT);
     }
 
     @Override
     public void stop() {
+        Constants.foresightConfig.maxPathSpeed.set(ForesightConfig.Constraint.NONE); // shared static; don't leak the limit into the next run
         if (robot != null) {
             shutOff();
             robot.flywheel.update(0);
@@ -175,12 +238,13 @@ public abstract class BozoAuto extends OpMode {
         } else {
             if (targetRPM > 0 && !isFlywheelWithinMargin()) telemetryM.debug("WARNING: FLYWHEEL OUT OF MARGIN");
         }
+        Pose pose = follower.pose(); // read once; each call may allocate
         telemetryM.debug("State: " + state);
         telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
         telemetryM.addData("flywheel target RPM", targetRPM);
-        telemetryM.addData("x", follower.pose().x());
-        telemetryM.addData("y", follower.pose().y());
-        telemetryM.addData("Heading", follower.pose().heading());
+        telemetryM.addData("x", pose.x());
+        telemetryM.addData("y", pose.y());
+        telemetryM.addData("Heading", pose.heading());
         telemetryM.debug("OpMode time (seconds): " + getRuntime());
     }
 }

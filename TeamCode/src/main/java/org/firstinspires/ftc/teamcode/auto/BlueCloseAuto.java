@@ -7,6 +7,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 public class BlueCloseAuto extends BlueAuto {
     @Override
     public Pose getStartPose() {
-        return new Pose(9, 87, Math.toRadians(90));
+        return new Pose(84, 6, Math.toRadians(90));
     }
 }

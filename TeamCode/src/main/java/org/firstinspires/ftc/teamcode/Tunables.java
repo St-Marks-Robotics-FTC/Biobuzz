@@ -45,10 +45,13 @@ public class Tunables {
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
-    public static double shootRPM = 3000; // target flywheel RPM while lined up to shoot
+    public static double shootRPM = 4000; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
     public static long feedDurationMillis = 1500; // how long to run the transfer + intake to feed balls through the flywheel
     public static long refuelDurationMillis = 1500; // how long to intake while driving through the refuel line
+    public static double refuelSlowdownDistance = 24; // inches from the refuel pose at which we start slowing down linearly
+    public static double refuelMinSpeedFraction = 0.2; // fraction of full path speed (0-1] we slow to at the refuel pose; must be > 0
+    public static long telemetryIntervalMillis = 100; // minimum time between telemetry pushes in auto (telemetry is the slowest part of the loop)
 
     /** field tunables (used in Field.java) **/
 
