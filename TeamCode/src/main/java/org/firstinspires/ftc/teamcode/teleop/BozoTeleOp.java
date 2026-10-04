@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.field.FieldConstants;
 import org.firstinspires.ftc.teamcode.field.GoalTargeting;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
+import org.firstinspires.ftc.teamcode.subsys.Transfer;
 
 import java.util.concurrent.TimeUnit;
 
@@ -102,6 +103,13 @@ public abstract class BozoTeleOp extends OpMode {
                         robot.flywheel.getTargetRPM() - 20
                 );
             }
+        }
+
+        if (gamepad1.rightBumperWasPressed() && robot.transfer.getState() == Transfer.State.CLOSED) {
+            robot.transfer.open();
+        }
+        if (gamepad1.rightBumperWasReleased() && robot.transfer.getState() == Transfer.State.OPEN) {
+            robot.transfer.close();
         }
 
         robot.flywheel.update(); // re-run PID every loop so RPM actually converges on target
