@@ -7,7 +7,7 @@ import com.pedropathing.math.Pose;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 
-public class physics {
+public class Physics {
     private static final double G = 9.80665;
     private static final double RHO = 1.225; // air density, kg/m^3
     private static final double IN = 0.0254;

@@ -1,6 +1,6 @@
 # Shooter calibration
 
-What you have to do to make `subsys/physics.java` score. There are five things. Everything else in
+What you have to do to make `subsys/Physics.java` score. There are five things. Everything else in
 this file is detail on those five.
 
 1. **Measure the hood angle and the exit height.** Per outtake. Angle finder and a tape.
@@ -23,14 +23,14 @@ at [192.168.43.1:8001](http://192.168.43.1:8001) with no redeploy.
 
 Per outtake, six numbers. `pollen*` is outtake 1, `nectar*` is outtake 2.
 
-| Constant | Where it comes from | Step |
-|:---|:---|:---|
-| `*LaunchAngleDeg` | angle finder | 1 |
-| `*LaunchHeightIn` | tape measure | 1 |
-| `*LaunchOffsetIn` | tape measure, 0 is fine to start | 1 |
-| `*SpeedPerRpm` | slope of your measured line | 2 |
-| `*SpeedIntercept` | intercept of your measured line | 2 |
-| `*DragCoefficient` | one long shot | 3 |
+| Constant           | Where it comes from              | Step |
+|:-------------------|:---------------------------------|:-----|
+| `*LaunchAngleDeg`  | angle finder                     | 1    |
+| `*LaunchHeightIn`  | tape measure                     | 1    |
+| `*LaunchOffsetIn`  | tape measure, 0 is fine to start | 1    |
+| `*SpeedPerRpm`     | slope of your measured line      | 2    |
+| `*SpeedIntercept`  | intercept of your measured line  | 2    |
+| `*DragCoefficient` | one long shot                    | 3    |
 
 `SpeedPerRpm` and `SpeedIntercept` start at **zero**, and while they are zero the solver returns
 `feasible = false` and an RPM of NaN. That is deliberate — it refuses to invent a number before you
@@ -155,13 +155,13 @@ in bearing.
 zero, so being a few inches out of position costs nothing. At 60° the bottom is 54 in, and the
 required RPM barely moves between 50 in and 58 in.
 
-| Hood angle | Flat spot | Speed there | Entry quality | One RPM covers |
-|---:|---:|---:|---:|:---|
-| 58° | 58 in | 5.95 m/s | 0.87 | 50–76 in |
-| **60°** | **54 in** | **5.82 m/s** | **0.88** | **47–70 in** |
-| 62° | 50 in | 5.70 m/s | 0.88 | 44–65 in |
-| 65° | 44 in | 5.55 m/s | 0.87 | 39–57 in |
-| 70° | 34 in | 5.34 m/s | 0.87 | 31–43 in |
+|  Hood angle | Flat spot |  Speed there | Entry quality | One RPM covers |
+|------------:|----------:|-------------:|--------------:|:---------------|
+|         58° |     58 in |     5.95 m/s |          0.87 | 50–76 in       |
+|     **60°** | **54 in** | **5.82 m/s** |      **0.88** | **47–70 in**   |
+|         62° |     50 in |     5.70 m/s |          0.88 | 44–65 in       |
+|         65° |     44 in |     5.55 m/s |          0.87 | 39–57 in       |
+|         70° |     34 in |     5.34 m/s |          0.87 | 31–43 in       |
 
 Speed tolerance at the flat spot is about 5.4% for *every* angle, so the angle doesn't pick a better
 or worse spot — only where it lands and how far you can stray on one RPM. Shallower buys a wider
@@ -181,14 +181,14 @@ built.
 Five balls at each of six ranges across your triangle, per outtake. For every miss record whether
 it was **long or short** — that's the signal.
 
-| Symptom | Cause | Fix |
-|:---|:---|:---|
-| Same-sign bias at every range | `*SpeedIntercept` | Redo step 2 |
-| Bias grows with range | `*DragCoefficient` | Redo step 3 |
-| Bias grows *near* only | exit height or hood angle | Re-measure, step 1 |
-| One outtake good, one bad | constants copied between them | Redo step 1 for the bad one |
-| Random scatter, no pattern | flywheel recovery | Step 4 |
-| Left/right misses | heading, not speed | Step 5 |
+| Symptom                       | Cause                         | Fix                         |
+|:------------------------------|:------------------------------|:----------------------------|
+| Same-sign bias at every range | `*SpeedIntercept`             | Redo step 2                 |
+| Bias grows with range         | `*DragCoefficient`            | Redo step 3                 |
+| Bias grows *near* only        | exit height or hood angle     | Re-measure, step 1          |
+| One outtake good, one bad     | constants copied between them | Redo step 1 for the bad one |
+| Random scatter, no pattern    | flywheel recovery             | Step 4                      |
+| Left/right misses             | heading, not speed            | Step 5                      |
 
 Accept at 4/5 or better at every vertex. The opening is 20 in wide and about 12 in tall, so almost
 every genuine miss is a speed problem, not an aiming one.
@@ -205,6 +205,6 @@ every genuine miss is a speed problem, not an aiming one.
 
 ## Log
 
-| Date | Outtake | Angle | Exit ht | Offset | SpeedPerRpm | Intercept | Cd | Notes |
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| | | | | | | | | |
+| Date | Outtake | Angle | Exit ht | Offset | SpeedPerRpm | Intercept | Cd  | Notes |
+|:-----|:--------|:------|:--------|:-------|:------------|:----------|:----|:------|
+|      |         |       |         |        |             |           |     |       |
