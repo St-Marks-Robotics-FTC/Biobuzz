@@ -9,7 +9,8 @@ public class AutoConfig {
 
     /**
      * @param intermediatePose waypoint the robot drives to (linear heading interpolation) after the first shoot
-     *                         and before continuing to {@code refuelPose}
+     *                         and before continuing to {@code refuelPose}. Its heading is the angle the robot holds
+     *                         while approaching {@code refuelPose}; it then turns to {@code refuelPose}'s heading near the end.
      */
     public AutoConfig(
             Pose startPose,

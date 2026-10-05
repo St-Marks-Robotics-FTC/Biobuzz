@@ -6,6 +6,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import static com.pedropathing.api.Paths.*;
 import com.pedropathing.paths.Path;
+import com.pedropathing.paths.interpolator.Interpolator;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
@@ -58,9 +59,14 @@ public abstract class BozoAuto extends OpMode {
     /** startPose -> intermediatePose -> refuelPose and back. The shoot pose is the start pose. Built in {@link #init()}. **/
     private Path shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
 
+    private static final double REFUEL_ROTATE_START = 0.7;
+
     private void buildPaths() {
         shootToIntermediatePath = line(startPose, config.intermediatePose).linear(startPose, config.intermediatePose);
-        intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose).linear(config.intermediatePose, config.refuelPose)
+        intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose)
+                .heading(Interpolator.piecewise()
+                        .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
+                        .until(1.0, Interpolator.linear(config.intermediatePose, config.refuelPose)))
                 .with(
                         Constants.foresightConfig.maxPathSpeed.at(0.3)
                 );
