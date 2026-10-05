@@ -9,6 +9,7 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
@@ -54,9 +55,7 @@ public class VisionTuner extends LinearOpMode {
 
             vision.update();
 
-            Position rawPos = vision.getLatestResult().getBotpose().getPosition();
-
-            telemetryM.addData("raw position", rawPos.toString());
+            telemetryM.addData("raw position (Pedro)", vision.convertToPedro(vision.getLatestResult().getBotpose()));
             telemetryM.addData("last botpose", vision.getLastBotPose().toString());
             telemetryM.addData("last hive state", vision.getLastHiveState());
             telemetryM.addData("last tag count", vision.getLastTagCount());

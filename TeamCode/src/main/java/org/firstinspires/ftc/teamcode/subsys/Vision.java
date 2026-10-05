@@ -93,9 +93,10 @@ public class Vision {
         LLResult result = limelight.getLatestResult();
 
         if (isReasonable(result)) {
-            Position botpose = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH);
-            double x = botpose.y + 72; // convert to pedro units
-            double y = 72 - botpose.x; // convert to pedro units
+            Position botpose = convertToPedro(result.getBotpose());
+
+            double x = botpose.x;
+            double y = botpose.y;
             double z = botpose.z;
 
             double relativeY = y - HIVE_PIVOT_Y;
@@ -128,6 +129,15 @@ public class Vision {
             staleTimer.reset();
         }
         else return;
+    }
+
+    public Position convertToPedro(Pose3D rawPos) { // convert from Limelight coordinates to Pedro
+        Position botpose = rawPos.getPosition().toUnit(DistanceUnit.INCH);
+        double x = botpose.y + 72; // convert to pedro units
+        double y = 72 - botpose.x; // convert to pedro units
+        double z = botpose.z;
+
+        return new Position(DistanceUnit.INCH, x, y, z, botpose.acquisitionTime);
     }
 
     public boolean isReasonable(LLResult result) { // check if result is reasonable
