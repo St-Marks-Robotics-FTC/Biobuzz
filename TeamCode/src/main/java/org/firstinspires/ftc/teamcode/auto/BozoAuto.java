@@ -68,7 +68,7 @@ public abstract class BozoAuto extends OpMode {
                         .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
                         .until(1.0, Interpolator.linear(config.intermediatePose, config.refuelPose)))
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(0.3)
+                        Constants.foresightConfig.maxPathSpeed.at(0.15)
                 );
         refuelToShootPath = line(config.refuelPose, startPose).linear(config.refuelPose, startPose);
     }
