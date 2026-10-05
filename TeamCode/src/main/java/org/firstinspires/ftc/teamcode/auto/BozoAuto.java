@@ -60,7 +60,10 @@ public abstract class BozoAuto extends OpMode {
 
     private void buildPaths() {
         shootToIntermediatePath = line(startPose, config.intermediatePose).linear(startPose, config.intermediatePose);
-        intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose).linear(config.intermediatePose, config.refuelPose);
+        intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose).linear(config.intermediatePose, config.refuelPose)
+                .with(
+                        Constants.foresightConfig.maxPathSpeed.at(0.3)
+                );
         refuelToShootPath = line(config.refuelPose, startPose).linear(config.refuelPose, startPose);
     }
 
@@ -139,7 +142,6 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void loop() {
-        double lastLoopMillis = loopTimer.get(TimeUnit.MILLISECONDS);
         loopTimer.reset();
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target
