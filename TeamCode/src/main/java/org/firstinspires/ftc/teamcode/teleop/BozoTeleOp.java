@@ -8,175 +8,170 @@ import com.pedropathing.follower.ManualDrive;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
-import org.firstinspires.ftc.teamcode.FieldGoals;
+
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
-import org.firstinspires.ftc.teamcode.subsys.Shooter;
-import org.firstinspires.ftc.teamcode.subsys.autoTurn;
+import org.firstinspires.ftc.teamcode.subsys.Field;
+import org.firstinspires.ftc.teamcode.subsys.Intake;
+import org.firstinspires.ftc.teamcode.subsys.Vision;
 
-import com.qualcomm.robotcore.util.Range;
 import java.util.concurrent.TimeUnit;
+
 
 public abstract class BozoTeleOp extends OpMode {
     protected abstract boolean isBlueTeam();
-    protected abstract Pose getStartPose();
     private Robot robot;
+    private Field field;
+    private Vision vision;
     private Follower follower;
-    private Timer loopTimer;
+    private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
-    private Shooter shooter;
-    private autoTurn aim;
-    private boolean isRobotCentric = false;
-    private int lastAimIndex = -1;
-    private boolean lastA = false;
+    private boolean isRobotCentric = true; // start in field-centric mode
+    private double setRPM = 3600;
+    private boolean flywheelOn = true;
+    private boolean isTurning = false;
+    private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
 
     @Override
     public void init() {
         loopTimer = new Timer();
-        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
+
         robot = new Robot(hardwareMap);
+        field = new Field(isBlueTeam());
+        vision = new Vision(hardwareMap, isBlueTeam());
         follower = Constants.create(hardwareMap);
-        follower.setPose(getStartPose());
-        shooter = new Shooter();
-        aim = new autoTurn();
-        telemetryM.debug("init " + loopTimer.get(TimeUnit.MILLISECONDS) + "ms");
+
+        follower.setPose(HandoffState.pose);
+
+        robot.transfer.close();
+
+        telemetryM.addLine("init time: " + loopTimer.milliseconds() + "ms");
         telemetryM.update(telemetry);
     }
 
     @Override
     public void start() {
-        shooter.reset();
-        lastAimIndex = -1;
-        lastA = false;
+        robot.intake.forward();
     }
 
     @Override
     public void loop() {
         loopTimer.reset();
-        boolean aNow = gamepad1.a;
-        if (aNow && !lastA) {
-            isRobotCentric = !isRobotCentric;
+
+        vision.update();
+
+        handleDrive();
+        handleFlywheel();
+        handleIntake();
+        handleShoot();
+
+        if (gamepad1.xWasPressed()) { // reset field centric heading
+            follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
         }
-        lastA = aNow;
-        double slow = Range.scale(gamepad1.left_trigger, 0.0, 1.0, 1.0, Tunables.slowModeMin);
-        Pose robotPose = follower.pose();
-        Pose[] goals = FieldGoals.allianceGoals(isBlueTeam());
-        String[] names = FieldGoals.allianceGoalNames(isBlueTeam());
-        Pose goal0 = goals[0];
-        Pose goal1 = goals[1];
-        double dist0 = aim.distance(robotPose, goal0);
-        double dist1 = aim.distance(robotPose, goal1);
-        double err0Deg = Math.toDegrees(aim.angleErrorRad(robotPose, goal0));
-        double err1Deg = Math.toDegrees(aim.angleErrorRad(robotPose, goal1));
-
-        double face0Deg = Math.toDegrees(aim.goalErrorRad(robotPose, goal0));
-        double face1Deg = Math.toDegrees(aim.goalErrorRad(robotPose, goal1));
-
-        boolean range0 = aim.inRange(robotPose, goal0);
-        boolean range1 = aim.inRange(robotPose, goal1);
-
-        boolean can0 = aim.canShoot(robotPose, goal0);
-        boolean can1 = aim.canShoot(robotPose, goal1);
-
-        boolean want0 = gamepad1.left_bumper;
-        boolean want1 = gamepad1.right_bumper;
-
-        Pose aimGoal = null;
-        int aimIndex = -1;
-        if (want0 && want1) {
-            if (range0 && range1) {
-                if (Math.abs(err0Deg) <= Math.abs(err1Deg)) {
-                    aimGoal = goal0;
-                    aimIndex = 0;
-                } else {
-                    aimGoal = goal1;
-                    aimIndex = 1;
-                }
-            } else if (range0) {
-                aimGoal = goal0;
-                aimIndex = 0;
-            } else if (range1) {
-                aimGoal = goal1;
-                aimIndex = 1;
-            }
-        } else if (want0 && range0) {
-            aimGoal = goal0;
-            aimIndex = 0;
-        } else if (want1 && range1) {
-            aimGoal = goal1;
-            aimIndex = 1;
-        }
-        boolean aiming = aimGoal != null;
-        if (aiming && aimIndex != lastAimIndex) {
-            shooter.reset();
-        }
-        if (!aiming && lastAimIndex != -1) {
-            shooter.reset();
-        }
-        lastAimIndex = aimIndex;
-        double turn;
-        double targetHeading = 0.0;
-        boolean onTarget = false;
-        if (aiming) {
-            targetHeading = aim.bearingRad(robotPose, aimGoal);
-            turn = aim.turnPower(targetHeading, robotPose.heading());
-            onTarget = aim.onTarget(targetHeading, robotPose.heading());
-        } else {
-            turn = -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slow;
-        }
-        double tx = -gamepad1.left_stick_y * slow;
-        double ty = -gamepad1.left_stick_x * slow;
-        if (isRobotCentric) {
-            follower.manual(tx, ty, turn);
-        } else {
-            double flip = isBlueTeam() ? -1.0 : 1.0;
-            DrivePowers powers = ManualDrive.fieldCentric(tx * flip, ty * flip, turn, robotPose.heading());
-            follower.manual(powers);
-        }
-        boolean shootHeld = gamepad1.right_trigger > 0.5;
-        boolean aimReady = aiming && onTarget && (aimIndex == 0 ? can0 : can1);
-
-        shooter.setShooting(shootHeld);
-        shooter.tryFire(aimReady);
-
-        shooter.update();
 
         follower.update();
-        Pose freshPose = follower.pose();
 
-        telemetryM.addData("pose x", freshPose.x());
-        telemetryM.addData("pose y", freshPose.y());
+        if (Tunables.isDebugging) updateTelemetry();
 
-        telemetryM.addData("pose deg", Math.toDegrees(freshPose.heading()));
-
-        telemetryM.addData(names[0] + " dist", dist0);
-        telemetryM.addData(names[0] + " aimErr", err0Deg);
-        telemetryM.addData(names[0] + " faceErr", face0Deg);
-        telemetryM.addData(names[0] + " inRange", range0);
-        telemetryM.addData(names[0] + " canShoot", can0);
-        telemetryM.addData(names[1] + " dist", dist1);
-        telemetryM.addData(names[1] + " aimErr", err1Deg);
-        telemetryM.addData(names[1] + " faceErr", face1Deg);
-        telemetryM.addData(names[1] + " inRange", range1);
-        telemetryM.addData(names[1] + " canShoot", can1);
-
-        telemetryM.addData("aiming", aiming);
-        telemetryM.addData("onTarget", onTarget);
-        telemetryM.addData("shooter rpm", shooter.getCurrentRpm());
-        telemetryM.addData("shooter ready", shooter.isAtSpeed());
-        telemetryM.addData("loop ms", loopTimer.get(TimeUnit.MILLISECONDS));
-
-        if (Tunables.isDebugging) {
-            telemetryM.debug("target " + Math.toDegrees(targetHeading));
-            telemetryM.debug("centric " + isRobotCentric);
-        }
+        telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
         telemetryM.update(telemetry);
     }
 
-    @Override
-    public void stop() {
-        HandoffState.pose = follower.pose();
+    private void handleDrive() {
+        if (gamepad1.startWasPressed()) isRobotCentric = !isRobotCentric;
+
+        double slowModeMultiplier = (gamepad1.left_trigger - 1) * -1; // amount to multiply for by slow mode
+
+        if (!isTurning) {
+            if (isRobotCentric) { // robot-centric control
+                follower.manual(
+                        -gamepad1.left_stick_y * slowModeMultiplier,
+                        -gamepad1.left_stick_x * slowModeMultiplier,
+                        -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier // reduce speed by our turn rate
+                );
+            } else { // field-centric control
+                double flipControl;
+                if (isBlueTeam()) flipControl = -1; // blue team needs to be flipped
+                else flipControl = 1; // red team doesn't need to be flipped
+
+                DrivePowers powers = ManualDrive.fieldCentric(
+                        -gamepad1.left_stick_y * slowModeMultiplier * flipControl,
+                        -gamepad1.left_stick_x * slowModeMultiplier * flipControl,
+                        -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier, // reduce speed by our turn rate
+                        follower.pose().heading()
+                );
+
+                follower.manual(powers);
+            }
+        } else {
+            // under what conditions to exit turning
+            if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) isTurning = false;
+
+            if (gamepad1.backWasPressed()) isTurning = false; // emergency exit
+        }
+    }
+
+    private void handleFlywheel() {
+        if (gamepad1.bWasPressed()) flywheelOn = !flywheelOn;
+
+        if (gamepad1.dpadUpWasPressed()) setRPM += Tunables.adjustRPM; // increment by adjustRPM
+        if (gamepad1.dpadDownWasPressed()) setRPM -= Tunables.adjustRPM; // decrement by adjustRPM
+        if (gamepad1.dpadLeftWasPressed()) setRPM -= (Tunables.adjustRPM / 2.0); // decrement by half of adjustRPM
+        if (gamepad1.dpadRightWasPressed()) setRPM += (Tunables.adjustRPM / 2.0); // increment by half of adjustRPM
+
+        if (setRPM < 0) setRPM = 0;
+
+        if (flywheelOn) {
+            robot.flywheel.update(setRPM);
+        } else {
+            robot.flywheel.update(0);
+        }
+    }
+
+    private void handleIntake() {
+        if (gamepad1.aWasPressed()) robot.intake.toggle();
+        if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
+    }
+
+    private void handleShoot() {
+        boolean shootPressed = gamepad1.rightBumperWasPressed();
+
+        if (shootPressed) robot.startLaunch();
+
+        robot.updateLaunch();
+
+        Field.ScoringData scoringData;
+        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
+            scoringData = field.getScoringData(true, follower.pose());
+        } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
+            scoringData = field.getScoringData(false, follower.pose());
+        } else {
+            return; // hive state unknown - can't auto turn
+        }
+
+        telemetryM.addLine(scoringData.toString());
+
+        if (gamepad1.leftBumperWasPressed()) {
+            // they got rid of follower.turnTo() so we have to make it ourselves
+            lastTurnPose = new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle());
+            follower.hold(lastTurnPose);
+            isTurning = true;
+        }
+    }
+
+    private void updateTelemetry() {
+        // flywheel
+        telemetryM.addData("desired RPM", setRPM);
+        telemetryM.addData("current RPM", robot.flywheel.getRPM());
+        telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
+
+        // odo
+        telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
+        telemetryM.addData("odo x", follower.pose().x());
+        telemetryM.addData("odo y", follower.pose().y());
     }
 }
+
