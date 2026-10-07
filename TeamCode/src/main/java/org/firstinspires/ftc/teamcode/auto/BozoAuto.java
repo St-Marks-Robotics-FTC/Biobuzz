@@ -68,7 +68,7 @@ public abstract class BozoAuto extends OpMode {
                         .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
                         .until(1.0, Interpolator.linear(config.intermediatePose, config.refuelPose)))
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(0.15)
+                        Constants.foresightConfig.maxPathSpeed.at(0.3)
                 );
         refuelToShootPath = line(config.refuelPose, startPose).linear(config.refuelPose, startPose);
     }
@@ -102,7 +102,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case REFUEL:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
-                    robot.intake.off();
+                    robot.intake.forward();
                     follower.follow(refuelToShootPath);
                     setState(State.TRAVEL_TO_SHOOT);
                 }
