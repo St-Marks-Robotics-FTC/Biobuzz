@@ -68,7 +68,7 @@ public abstract class BozoAuto extends OpMode {
                         .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
                         .until(1.0, Interpolator.linear(config.intermediatePose, config.refuelPose)))
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(0.3)
+                        Constants.foresightConfig.maxPathSpeed.at(0.4)
                 );
         refuelToShootPath = line(config.refuelPose, startPose).linear(config.refuelPose, startPose);
     }
@@ -77,11 +77,13 @@ public abstract class BozoAuto extends OpMode {
         switch (state) {
             case SPIN_UP_FIRST_SHOOT:
                 if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
-                    startFeeding();
+                    startShooting();
                     setState(State.FEED_FIRST_SHOOT);
                 }
                 break;
             case FEED_FIRST_SHOOT:
+                // FEEDING IS HERE
+                // the if statement below represents AFTER we've fed the balls
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
                     robot.transfer.close();
                     robot.intake.forward(); // intake on while driving so we're collecting as we arrive
@@ -114,11 +116,13 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case SPIN_UP_SECOND_SHOOT:
                 if (isFlywheelWithinMargin()) {
-                    startFeeding();
+                    startShooting();
                     setState(State.FEED_SECOND_SHOOT);
                 }
                 break;
             case FEED_SECOND_SHOOT:
+                // FEEDING IS HERE
+                // the if statement below represents AFTER we've fed the balls
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
                     shutOff();
                     setState(State.DONE);
@@ -130,7 +134,7 @@ public abstract class BozoAuto extends OpMode {
         }
     }
 
-    private void startFeeding() {
+    private void startShooting() {
         robot.transfer.open();
         robot.intake.forwardLaunching();
     }

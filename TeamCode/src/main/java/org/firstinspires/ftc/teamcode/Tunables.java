@@ -32,7 +32,7 @@ public class Tunables {
     /** intake tunables (used in Intake.java) **/
 
     public static double intakeForwardPower = 1.0;
-    public static double intakeForwardLaunchingPower = 0.35;
+    public static double intakeForwardLaunchingPower = .90;
 
     /** transfer tunables (used in Transfer.java) **/
 
@@ -45,12 +45,10 @@ public class Tunables {
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
-    public static double shootRPM = 4250; // target flywheel RPM while lined up to shoot
+    public static double shootRPM = 3750; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
-    public static long feedDurationMillis = 1500; // how long to run the transfer + intake to feed balls through the flywheel
-    public static long refuelDurationMillis = 1500; // how long to intake while driving through the refuel line
-    public static long telemetryIntervalMillis = 100; // minimum time between telemetry pushes in auto (telemetry is the slowest part of the loop)
-
+    public static long feedDurationMillis = 3500; // how long to run the transfer + intake to feed balls through the flywheel
+    public static long refuelDurationMillis = 2500; // how long to intake while driving through the refuel line
     /** field tunables (used in Field.java) **/
 
     // goal poses
