@@ -61,7 +61,7 @@ public class Tunables {
     /** fusion tunables (used in Fusion.java) **/
 
     // all distances in inches; "std" = standard deviation = typical size of the error
-    public static double fusionStartStd = 6; // how unsure we are about our starting pose
+    public static double fusionStartStd = 2; // how unsure we are about our starting pose after auto
     public static double fusionOdoVariancePerInch = 0.02; // how much odometry uncertainty grows per inch driven (in^2 per in)
     public static double fusionVisionBaseStd = 1.0; // vision error with ONE tag at fusionVisionRefDistance
     public static double fusionVisionRefDistance = 48; // distance (in) that fusionVisionBaseStd was measured at
