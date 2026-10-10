@@ -11,7 +11,6 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
 import com.pedropathing.math.Pose;
-import com.pedropathing.utils.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -27,7 +26,6 @@ import org.firstinspires.ftc.teamcode.Tunables;
 
 import java.nio.channels.Pipe;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class Vision {
     private double HIVE_PIVOT_HEIGHT = 43.95; // hive pivot height in inches
@@ -51,12 +49,14 @@ public class Vision {
         private Pose pose;
         private int tagCount;
         private double[] stdDev;
+        private double avgTagDistance; // average distance from the camera to the tags it used, in inches
         private long acquisitionTime; // acquisition time from System.currentTimeMillis()
 
-        public VisionResult(Pose pose, int tagCount, double[] stdDev, long acquisitionTime) {
+        public VisionResult(Pose pose, int tagCount, double[] stdDev, double avgTagDistance, long acquisitionTime) {
             this.pose = pose;
             this.tagCount = tagCount;
             this.stdDev = stdDev;
+            this.avgTagDistance = avgTagDistance;
             this.acquisitionTime = acquisitionTime;
         }
 
@@ -72,6 +72,14 @@ public class Vision {
             return stdDev;
         }
 
+        public double avgTagDistance() {
+            return avgTagDistance;
+        }
+
+        public long acquisitionTime() {
+            return acquisitionTime;
+        }
+
         public int staleness() {
             return Math.toIntExact(System.currentTimeMillis() - acquisitionTime);
         }
@@ -85,8 +93,8 @@ public class Vision {
     private Pose lastBotPose = new Pose(0, 0);
     private HiveState lastHiveState = HiveState.UNKNOWN;
     private int lastTagCount = 0; // number of tags seen in the last update
-
-    private Timer staleTimer; // how stale lastBotPose is
+    private long lastCaptureTimeMs = 0; // when the image behind lastBotPose was taken (System.currentTimeMillis() clock)
+    private VisionResult latestResult = null; // result from the newest frame, null if the newest frame wasn't valid
 
     public Vision(HardwareMap hw, boolean isBlueTeam) {
         limelight = hw.get(Limelight3A.class, "limelight");
@@ -94,11 +102,13 @@ public class Vision {
         this.isBlueTeam = isBlueTeam;
         if (isBlueTeam) startPipeline(Pipeline.BLUE);
         else startPipeline(Pipeline.RED);
-        staleTimer = new Timer();
     }
 
     public void startPipeline(Pipeline pipeline) {
-        if (!started) limelight.start();
+        if (!started) {
+            limelight.start();
+            started = true;
+        }
 
         limelight.pipelineSwitch(pipeline.ordinal()); // convert from Pipeline enum to ordinal/index
     }
@@ -106,8 +116,8 @@ public class Vision {
     public LLStatus getStatus() { return limelight.getStatus(); }
     public Pipeline getPipeline() { return Pipeline.values()[getStatus().getPipelineIndex()]; } // convert from limelight pipeline ordinal/index to Pipeline enum
 
-    // return staleness of botpose in milliseconds
-    public double getStaleness() { return staleTimer.get(TimeUnit.MILLISECONDS);}
+    // return staleness of botpose in milliseconds (time since the image was taken, not since we last read it)
+    public double getStaleness() { return System.currentTimeMillis() - lastCaptureTimeMs; }
 
     public void update() {
         /**
@@ -120,6 +130,8 @@ public class Vision {
          *         floor ●-----● robot
          *               horizontal
          */
+        latestResult = null; // stays null unless this frame passes every check
+
         LLResult result = limelight.getLatestResult();
 
         if (isReasonable(result)) {
@@ -153,12 +165,43 @@ public class Vision {
                 return; // hive is at an impossible tilt
             }
 
+            if (trueRelativeY == 0) return; // directly under the pivot; the std dev math below would divide by zero
+
             double realY = HIVE_PIVOT_Y + trueRelativeY;
 
             lastBotPose = new Pose(x, realY);
-            staleTimer.reset();
+
+            // time the image was taken = time the Control Hub received it - camera capture latency - processing latency
+            lastCaptureTimeMs = Math.round(result.getControlHubTimeStamp() - result.getCaptureLatency() - result.getTargetingLatency());
+
+            double avgTagDistance = result.getBotposeAvgDist() * 39.3701; // meters -> inches
+
+            latestResult = new VisionResult(lastBotPose, lastTagCount, getPedroStdDev(result, relativeY, relativeZ, trueRelativeY), avgTagDistance, lastCaptureTimeMs);
         }
-        else return;
+    }
+
+    // returns {std dev of x, std dev of y} in inches, Pedro coordinates
+    private double[] getPedroStdDev(LLResult result, double relativeY, double relativeZ, double trueRelativeY) {
+        double[] llStdDev = result.getStddevMt1(); // limelight coordinates: {x, y, z, roll, pitch, yaw}, meters and degrees
+        double metersToInches = 39.3701;
+
+        double stdX = llStdDev[1] * metersToInches; // pedro x comes from limelight y
+        double stdRawY = llStdDev[0] * metersToInches; // pedro y comes from limelight x
+        double stdZ = llStdDev[2] * metersToInches;
+
+        // realY goes through the hive math, which uses both y and z, so both of their errors end up in realY:
+        // d(trueRelativeY)/d(relativeY) = relativeY / trueRelativeY, d(trueRelativeY)/d(relativeZ) = relativeZ / trueRelativeY
+        double yFromY = (relativeY / trueRelativeY) * stdRawY;
+        double yFromZ = (relativeZ / trueRelativeY) * stdZ;
+        double stdY = Math.sqrt(yFromY * yFromY + yFromZ * yFromZ);
+
+        return new double[] {stdX, stdY};
+    }
+
+    // result from the newest frame, or null if the newest frame wasn't valid
+    // the same frame is returned every loop until the Limelight sends a new one
+    public VisionResult getResult() {
+        return latestResult;
     }
 
     public Position convertToPedro(Pose3D rawPos) { // convert from Limelight coordinates to Pedro
@@ -171,9 +214,11 @@ public class Vision {
     }
 
     public boolean isReasonable(LLResult result) { // check if result is reasonable
+        if (result == null) return false; // check for null before touching result
+
         lastTagCount = result.getBotposeTagCount();
 
-        return result != null && result.isValid() && lastTagCount >= Tunables.minTagCount;
+        return result.isValid() && lastTagCount >= Tunables.minTagCount;
     }
 
 
@@ -192,5 +237,9 @@ public class Vision {
 
     public int getLastTagCount() {
         return lastTagCount;
+    }
+
+    public long getLastCaptureTimeMs() {
+        return lastCaptureTimeMs;
     }
 }

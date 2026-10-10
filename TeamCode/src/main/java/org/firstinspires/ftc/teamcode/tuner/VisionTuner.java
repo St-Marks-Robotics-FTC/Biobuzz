@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsys.Fusion;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 @TeleOp(name="VisionTuner", group="Tuner")
@@ -26,7 +27,9 @@ public class VisionTuner extends LinearOpMode {
         Vision vision = new Vision(hardwareMap, true);
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         Follower follower = Constants.create(hardwareMap);
-        follower.setPose(new Pose(72, 72, Math.toRadians(90))); // start in center of field
+        Pose startPose = new Pose(72, 72, Math.toRadians(90)); // start in center of field
+        follower.setPose(startPose);
+        Fusion fusion = new Fusion(startPose);
 
         TuneMode mode = TuneMode.BLUE;
 
@@ -54,13 +57,21 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addLine("current testing mode is: " + mode);
 
             vision.update();
+            fusion.update(follower.pose(), follower.velocity(), vision.getResult());
 
-            telemetryM.addData("raw position (Pedro)", vision.convertToPedro(vision.getLatestResult().getBotpose()));
+            LLResult latest = vision.getLatestResult();
+            if (latest != null) telemetryM.addData("raw position (Pedro)", vision.convertToPedro(latest.getBotpose()));
             telemetryM.addData("last botpose", vision.getLastBotPose().toString());
             telemetryM.addData("last hive state", vision.getLastHiveState());
             telemetryM.addData("last tag count", vision.getLastTagCount());
             telemetryM.addData("staleness", vision.getStaleness());
             telemetryM.addData("odo pos", follower.pose().toString());
+            telemetryM.addData("fused pos", fusion.getPose().toString());
+            telemetryM.addData("fusion offset x/y", fusion.getOffsetX() + " / " + fusion.getOffsetY());
+            telemetryM.addData("fusion std x/y", fusion.getStdX() + " / " + fusion.getStdY());
+            telemetryM.addData("last vision std x/y", fusion.getLastVisionStdX() + " / " + fusion.getLastVisionStdY());
+            telemetryM.addData("fusion accepted/rejected", fusion.getAcceptedCount() + " / " + fusion.getRejectedCount());
+            telemetryM.addData("fusion last frame", fusion.getLastResult());
             telemetryM.addData("pipeline", vision.getPipeline());
 
             telemetryM.update(telemetry);

@@ -14,6 +14,7 @@ import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Field;
+import org.firstinspires.ftc.teamcode.subsys.Fusion;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
@@ -25,6 +26,7 @@ public abstract class BozoTeleOp extends OpMode {
     private Robot robot;
     private Field field;
     private Vision vision;
+    private Fusion fusion;
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
@@ -45,6 +47,7 @@ public abstract class BozoTeleOp extends OpMode {
         follower = Constants.create(hardwareMap);
 
         follower.setPose(HandoffState.pose);
+        fusion = new Fusion(HandoffState.pose);
 
         robot.transfer.close();
 
@@ -61,8 +64,6 @@ public abstract class BozoTeleOp extends OpMode {
     public void loop() {
         loopTimer.reset();
 
-        vision.update();
-
         handleDrive();
         handleFlywheel();
         handleIntake();
@@ -73,6 +74,8 @@ public abstract class BozoTeleOp extends OpMode {
         }
 
         follower.update();
+        vision.update();
+        fusion.update(follower.pose(), follower.velocity(), vision.getResult()); // must come after follower.update() and vision.update()
 
         if (Tunables.isDebugging) updateTelemetry();
 
@@ -145,9 +148,9 @@ public abstract class BozoTeleOp extends OpMode {
 
         Field.ScoringData scoringData;
         if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
-            scoringData = field.getScoringData(true, follower.pose());
+            scoringData = field.getScoringData(true, fusion.getPose());
         } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
-            scoringData = field.getScoringData(false, follower.pose());
+            scoringData = field.getScoringData(false, fusion.getPose());
         } else {
             return; // hive state unknown - can't auto turn
         }
@@ -156,6 +159,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (gamepad1.leftBumperWasPressed()) {
             // they got rid of follower.turnTo() so we have to make it ourselves
+            // x and y must stay in the follower's own (odometry) coordinates, or it would try to drive by the fusion offset
             lastTurnPose = new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle());
             follower.hold(lastTurnPose);
             isTurning = true;
@@ -172,6 +176,12 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
         telemetryM.addData("odo x", follower.pose().x());
         telemetryM.addData("odo y", follower.pose().y());
+
+        // fusion
+        telemetryM.addData("fused x", fusion.getPose().x());
+        telemetryM.addData("fused y", fusion.getPose().y());
+        telemetryM.addData("fusion std x/y", fusion.getStdX() + " / " + fusion.getStdY());
+        telemetryM.addData("fusion last frame", fusion.getLastResult());
     }
 }
 
