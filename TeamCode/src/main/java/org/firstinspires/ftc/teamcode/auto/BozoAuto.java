@@ -19,10 +19,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Autonomous: spin up the flywheel, shoot, drive linearly to an intermediate pose and then to the refuel pose
- * to pick up balls, drive back to the start pose, shoot again, shut everything off.
+ * to pick up balls, drive back to the start pose, shoot again, then curve over to the park pose.
  *
  * Sequence: SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE -> TRAVEL_TO_REFUEL -> REFUEL
- *           -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT -> DONE
+ *           -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT -> TRAVEL_TO_PARK -> DONE
  */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
@@ -51,13 +51,17 @@ public abstract class BozoAuto extends OpMode {
         TRAVEL_TO_SHOOT,       // driving back to the start pose; intake off, flywheel keeps spinning
         SPIN_UP_SECOND_SHOOT,  // back at the start pose; waiting for flywheel to be at target RPM
         FEED_SECOND_SHOOT,     // transfer open + intake running, feeding the refueled balls through the flywheel
-        DONE                   // everything off; waiting for the OpMode to be stopped
+        TRAVEL_TO_PARK,        // everything off; driving a bezier curve from the shoot pose to the park pose
+        DONE                   // parked; waiting for the OpMode to be stopped
     }
 
     private State state = State.SPIN_UP_FIRST_SHOOT;
 
     /** startPose -> intermediatePose -> refuelPose and back. The shoot pose is the start pose. Built in {@link #init()}. **/
     private Path shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
+
+    /** Bezier curve from the shoot pose to the park pose, bent by {@link AutoConfig#parkControlPose}. Built in {@link #init()}. **/
+    private Path shootToParkPath;
 
     private static final double REFUEL_ROTATE_START = 0.7;
 
@@ -71,6 +75,9 @@ public abstract class BozoAuto extends OpMode {
                         Constants.foresightConfig.maxPathSpeed.at(0.35)
                 );
         refuelToShootPath = line(config.refuelPose, shootPose).linear(config.refuelPose, shootPose);
+        // curve(start, control, end): the control point is not driven through, it only pulls the path toward it.
+        shootToParkPath = curve(shootPose, config.parkControlPose, config.parkPose)
+                .linear(shootPose, config.parkPose);
     }
 
     private void autoUpdate() {
@@ -125,6 +132,12 @@ public abstract class BozoAuto extends OpMode {
                 // the if statement below represents AFTER we've fed the balls
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
                     shutOff();
+                    follower.follow(shootToParkPath);
+                    setState(State.TRAVEL_TO_PARK);
+                }
+                break;
+            case TRAVEL_TO_PARK:
+                if (!follower.isBusy()) {
                     setState(State.DONE);
                 }
                 break;
