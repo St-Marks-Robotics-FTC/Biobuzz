@@ -167,7 +167,7 @@ public abstract class BozoAuto extends OpMode {
     public void loop() {
         loopTimer.reset();
         follower.update();
-        robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target
+        robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target also dih
         autoUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
