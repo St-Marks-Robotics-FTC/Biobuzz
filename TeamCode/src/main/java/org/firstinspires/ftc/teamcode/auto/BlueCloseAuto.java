@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 @Autonomous(name = "BlueCloseAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
 public class BlueCloseAuto extends BlueAuto {
     @Override
-    public Pose getStartPose() {
+    public Pose getShootPose() {
         return new Pose(84, 6, Math.toRadians(90));
     }
 }

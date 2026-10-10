@@ -27,12 +27,12 @@ import java.util.concurrent.TimeUnit;
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
-    protected abstract Pose getStartPose();
+    protected abstract Pose getShootPose();
     private Robot robot;
     private Follower follower;
     private Timer stateTimer, loopTimer, telemetryTimer;
     private TelemetryManager telemetryM;
-    private Pose startPose;
+    private Pose shootPose;
 
     /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
     private double targetRPM = 0;
@@ -62,7 +62,7 @@ public abstract class BozoAuto extends OpMode {
     private static final double REFUEL_ROTATE_START = 0.7;
 
     private void buildPaths() {
-        shootToIntermediatePath = line(startPose, config.intermediatePose).linear(startPose, config.intermediatePose);
+        shootToIntermediatePath = line(shootPose, config.intermediatePose).linear(shootPose, config.intermediatePose);
         intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose)
                 .heading(Interpolator.piecewise()
                         .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
@@ -70,7 +70,7 @@ public abstract class BozoAuto extends OpMode {
                 .with(
                         Constants.foresightConfig.maxPathSpeed.at(0.35)
                 );
-        refuelToShootPath = line(config.refuelPose, startPose).linear(config.refuelPose, startPose);
+        refuelToShootPath = line(config.refuelPose, shootPose).linear(config.refuelPose, shootPose);
     }
 
     private void autoUpdate() {
@@ -174,9 +174,9 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
-        startPose = getStartPose();
-        config.startPose = startPose;
-        follower.setPose(startPose);
+        shootPose = getShootPose();
+        config.shootPose = shootPose;
+        follower.setPose(shootPose);
         buildPaths();
         sendTelemetry(true);
         telemetryM.update(telemetry);

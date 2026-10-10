@@ -6,7 +6,7 @@ import com.pedropathing.math.Pose;
 @Autonomous(name = "RedCloseAuto", group = "Red", preselectTeleOp = "RedTeleOp")
 public class RedCloseAuto extends RedAuto {
     @Override
-    public Pose getStartPose() {
+    public Pose getShootPose() {
         // Start pose of the robot for this variant.
         return new Pose(60, 6.504, Math.toRadians(90));
     }
