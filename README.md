@@ -15,6 +15,10 @@ it may take a second for the control hub to show up in Android Studio
 
 Using Panels interferes with Pedro Pathing's auto tuner so in order to tune Pedro Pathing you must switch to the `pedro-tuner` branch
 
+## Fusion tuning
+
+refer to [fusion-tuning.md](doc/fusion-tuning.md)
+
 # hardware map
 
 driver station config name: `v0`

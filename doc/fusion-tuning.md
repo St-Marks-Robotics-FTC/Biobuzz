@@ -2,26 +2,27 @@
 
 `Fusion.java` combines odometry and Limelight vision into one pose. Odometry is smooth but drifts. Vision doesn't drift but is noisy and delayed. Fusion keeps an offset (how far odometry has drifted) and corrects it with every vision frame, trusting each source based on how uncertain it is.
 
-All values below are in `Tunables.java` and can be changed live in Panels (192.168.43.1:8001). Once something works, put the number in `Tunables.java` with the date, like the other tuned values.
+All values below are in `Tunables.java` and can be changed live in [Panels](http://192.168.43.1:8001). Once something works, put the number in `Tunables.java` with the date, like the other tuned values.
 
 ## before you start
 
 - odometry has to be tuned first. Fusion can't fix bad odometry, only drift.
-- use the `VisionTuner` OpMode. It starts odometry at (72, 72) facing 90°, so put the robot in the middle of the field facing that way. If you don't, the first frames get rejected until fusion catches up (a couple of seconds).
+  - must switch to `pedro-tuner` branch for Pedro tuning
+- use the `VisionTuner` OpMode. It starts odometry at (72, 72) facing 90°, so put the robot in the middle of the field facing towards scoring. If you don't, the first frames get rejected until fusion catches up (a couple of seconds).
 - `minTagCount` is 2, so the robot needs to see at least 2 tags or vision does nothing.
 
 ## telemetry
 
-| name | meaning |
-|---|---|
-| `last botpose` | raw vision position |
-| `odo pos` | raw odometry position |
-| `fused pos` | final answer (odometry + offset) |
-| `fusion offset x/y` | how far odometry has drifted, in inches |
-| `fusion std x/y` | how unsure fusion is about its pose, in inches |
-| `last vision std x/y` | how unsure fusion thought the last vision frame was, in inches |
-| `fusion accepted/rejected` | frame counts |
-| `fusion last frame` | whether the last frame was used, and if not, why |
+| name                       | meaning                                                        |
+|----------------------------|----------------------------------------------------------------|
+| `last botpose`             | raw vision position                                            |
+| `odo pos`                  | raw odometry position                                          |
+| `fused pos`                | final answer (odometry + offset)                               |
+| `fusion offset x/y`        | how far odometry has drifted, in inches                        |
+| `fusion std x/y`           | how unsure fusion is about its pose, in inches                 |
+| `last vision std x/y`      | how unsure fusion thought the last vision frame was, in inches |
+| `fusion accepted/rejected` | frame counts                                                   |
+| `fusion last frame`        | whether the last frame was used, and if not, why               |
 
 "std" is standard deviation. Read it as "usually off by about this much".
 
@@ -107,12 +108,12 @@ Fusion never trusts a single frame more than this. Leave it at 0.5. If `fused po
 
 ## problems
 
-| problem | fix |
-|---|---|
-| fused pose jitters while still | raise `fusionVisionBaseStd` or `fusionMinVisionStd` |
-| fused pose lags or overshoots when driving | step 3 (latency) |
-| fused pose jumps when turning | raise `fusionTurnStd` |
-| vision never seems to correct anything | check `fusion last frame`, check tag count is at least 2, lower `fusionVisionBaseStd` |
-| all frames say "too far from current estimate" | robot isn't where odometry thinks. Wait for it to recover, or raise `fusionGateSigmas` |
+| problem                                              | fix                                                                                        |
+|------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| fused pose jitters while still                       | raise `fusionVisionBaseStd` or `fusionMinVisionStd`                                        |
+| fused pose lags or overshoots when driving           | step 3 (latency)                                                                           |
+| fused pose jumps when turning                        | raise `fusionTurnStd`                                                                      |
+| vision never seems to correct anything               | check `fusion last frame`, check tag count is at least 2, lower `fusionVisionBaseStd`      |
+| all frames say "too far from current estimate"       | robot isn't where odometry thinks. Wait for it to recover, or raise `fusionGateSigmas`     |
 | all frames say "picture older than odometry history" | something is wrong with timestamps. Check `staleness` in telemetry, it should be under 100 |
-| big jump after driving with no tags | normal if odometry drifted. If it's every time, redo step 5 |
+| big jump after driving with no tags                  | normal if odometry drifted. If it's every time, redo step 5                                |
