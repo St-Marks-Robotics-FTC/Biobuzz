@@ -135,7 +135,7 @@ the **start** button toggles between robot/field centric control
 
 ## bumpers
 
-- **left bumper**: auto turn
+- **left bumper**: auto turn (faces the goal that is up, see [localization](#localization-and-hive-detection-teleop))
 - **right bumper**: shoot all balls
 
 ## triggers
@@ -171,13 +171,17 @@ the **start** button toggles between robot/field centric control
 
 ## Auto
 
+Every auto runs the same route: preload, drive to the shooting spot and shoot, sweep the garden with a slight tilt and intake from the corner, drive back to the shooting spot and shoot, park at the end pose.
+Poses (exported from the Pedro visualizer) live in `BlueAuto`/`RedAuto` (red is blue rotated 180 degrees about field center) and the state machine lives in `BozoAuto`.
+Shooting reuses `Robot.startLaunch()` at `Tunables.autoShootRpm`.
+
 ### blue team
 
-- `BlueAuto`: starting by bottom triangle
+- `BlueCloseAuto`, `BlueFarAuto`: starting by bottom triangle
 
 ### red team
 
-- `RedAuto`: starting by bottom triangle
+- `RedCloseAuto`, `RedFarAuto`: starting by bottom triangle
 
 ## Tuner
 
@@ -198,6 +202,17 @@ We are using a Limelight 3A
 
 Many thanks to [Team 19725](https://github.com/BluePowerRobotics/Team19725_BIOBUZZ) for providing their `.fmap` files for localization!
 Our localization approach is largely based off of theirs, but we use trigonometry instead of transformation matrices.
+
+## localization and hive detection (TeleOp)
+
+`Vision` turns each Limelight frame into a robot position and tells us which way the hive is tilted:
+- the camera assumes the hive is flat, so its pose is off when the hive tilts; `Vision` uses the known pivot height and the fact that the robot sits on the floor to get the true `y` and the tilt (tilt > 0 raises the scoring side, tilt < 0 the audience side)
+- the visible tag faces (audience: blue 38-41 / red 34-37, scoring: blue 42-45 / red 30-33) say which side of the hive the robot is on
+- a new hive state (`AUDIENCE_UP` / `SCORING_UP`) has to be seen on `Tunables.hiveConfirmFrames` frames in a row; it stays put until the camera confirms the opposite state
+- while the robot is nearly stopped, `BozoTeleOp` pulls odometry `x`/`y` toward the Limelight position (heading always stays with odometry); turn it off with `Tunables.visionLocalization`
+- **auto turn** (left bumper) aims at the goal on the side that is up; if the camera hasn't confirmed the hive yet it aims at the nearest goal and buzzes the controller
+
+the Limelight web UI must have the camera's pose in robot space configured (position relative to the robot center and height off the floor), because `Vision` expects the botpose to be the robot's pose with `z` = 0 on the floor
 
 # telemetry IPs and ports
 

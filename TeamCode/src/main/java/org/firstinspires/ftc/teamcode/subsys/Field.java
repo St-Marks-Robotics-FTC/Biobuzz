@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsys;
 
 import com.pedropathing.math.Pose;
 
+import com.pedropathing.utils.Angle;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
 
@@ -27,11 +28,20 @@ public class Field {
 
         double angleToGoal = AngleUnit.normalizeRadians(Math.atan2(dY, dX));
         double dToGoal = Math.sqrt(dY * dY + dX * dX);
-        boolean canScore = Math.abs(goalHeading - angleToGoal) < Tunables.maxScoringAngle;
+        boolean canScore = Angle.smallestDifference(goalHeading, angleToGoal) < Tunables.maxScoringAngle; // headings wrap at 0/2pi
 
         double idealRPM = calcIdealRPM(dToGoal);
 
         return new ScoringData(canScore, dToGoal, angleToGoal, idealRPM);
+    }
+
+    // true if the audience goal is closer to the robot than the scoring goal; used when the camera hasn't seen the hive yet
+    public boolean nearestGoalIsAudience(Pose robotPose) {
+        Pose audience = getGoalPose(true);
+        Pose scoring = getGoalPose(false);
+        double dAudience = Math.hypot(audience.x() - robotPose.x(), audience.y() - robotPose.y());
+        double dScoring = Math.hypot(scoring.x() - robotPose.x(), scoring.y() - robotPose.y());
+        return dAudience < dScoring;
     }
 
     private Pose getGoalPose(boolean isAudienceUp) {

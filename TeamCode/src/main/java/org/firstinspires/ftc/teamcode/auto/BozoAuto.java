@@ -6,6 +6,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
 import static com.pedropathing.api.Paths.*;
+import com.pedropathing.paths.interpolator.Interpolator;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.HandoffState;
@@ -27,29 +28,37 @@ public abstract class BozoAuto extends OpMode {
 
     // Every DRIVE_* state waits for the follower to settle; every action state then dwells at that pose.
     private enum State {
-        DRIVE_TO_SHOOT_LEFT,
+        DRIVE_TO_SHOOT_PRELOAD, // start -> 1st shooting spot with the preload
         SHOOT_PRELOAD,
-        DRIVE_TO_LEFT_FLOWER,
-        LEFT_PICKUP,
-        DRIVE_TO_SHOOT_RIGHT,
-        SHOOT_LEFT_FLOWER,
-        DRIVE_TO_RIGHT_FLOWER,
-        RIGHT_PICKUP,
-        DRIVE_BACK_TO_SHOOT_RIGHT,
-        SHOOT_RIGHT_FLOWER,
-        PARK,
+        DRIVE_TO_GARDEN,        // sweep the garden with a tilt, ending in the corner
+        GARDEN_PICKUP,
+        DRIVE_TO_SHOOT_GARDEN,  // corner -> 2nd shooting spot
+        SHOOT_GARDEN,
+        PARK,                   // 2nd shooting spot -> end pose
         DONE
     }
-    State state = State.DRIVE_TO_SHOOT_LEFT;
-    private Path path1, path2, path3, path4, path5, path6;
+    State state = State.DRIVE_TO_SHOOT_PRELOAD;
+    private boolean launched; // true once the current SHOOT_* state has started its volley
+    private Path path1, path2, path3, path4;
+
+    // Bezier through the control points in the order the Pedro visualizer exports them: start, controls..., end.
+    private Path bezier(Pose start, Pose[] controls, Pose end) {
+        Pose[] points = new Pose[controls.length + 2];
+        points[0] = start;
+        System.arraycopy(controls, 0, points, 1, controls.length);
+        points[points.length - 1] = end;
+        return curve(points);
+    }
 
     private void buildPaths() {
-        path1 = line(startPose, config.shootLeftPose).linear(startPose, config.shootLeftPose);
-        path2 = line(config.shootLeftPose, config.flowerLeftPose).linear(config.shootLeftPose, config.flowerLeftPose);
-        path3 = line(config.flowerLeftPose, config.shootRightPose).linear(config.flowerLeftPose, config.shootRightPose);
-        path4 = line(config.shootRightPose, config.flowerRightPose).linear(config.shootRightPose, config.flowerRightPose);
-        path5 = line(config.flowerRightPose, config.shootRightPose).linear(config.flowerRightPose, config.shootRightPose);
-        path6 = line(config.shootRightPose, config.endPose).linear(config.shootRightPose, config.endPose);
+        Pose gardenTilt = config.gardenPose.withHeading(config.gardenTiltRad);
+        path1 = bezier(startPose, config.shootPreloadControls, config.shootPreloadPose).linear(startPose, config.shootPreloadPose);
+        path2 = bezier(config.shootPreloadPose, config.gardenControls, config.gardenPose).heading(Interpolator.piecewise()
+                .until(0.5, Interpolator.linear(config.shootPreloadPose, gardenTilt))
+                .until(0.75, Interpolator.constant(gardenTilt))
+                .until(1, Interpolator.linear(gardenTilt, config.gardenPose)));
+        path3 = line(config.gardenPose, config.shootGardenPose).linear(config.gardenPose, config.shootGardenPose);
+        path4 = bezier(config.shootGardenPose, config.endControls, config.endPose).linear(config.shootGardenPose, config.endPose);
     }
 
     private boolean arrived() {
@@ -65,37 +74,40 @@ public abstract class BozoAuto extends OpMode {
         setPathState(next);
     }
 
+    private boolean shot() {
+        if (!launched && (flywheelReady() || stateTimer.get(TimeUnit.MILLISECONDS) > Tunables.shootSpinUpTimeoutMs)) {
+            robot.startLaunch();
+            launched = true;
+        }
+        return launched && !robot.isLaunching();
+    }
+
+    private boolean flywheelReady() {
+        return Math.abs(Math.abs(robot.flywheel.getRPM()) - Tunables.autoShootRpm) <= Tunables.shooterToleranceRpm;
+    }
+
     private void autoPathUpdate() {
         switch (state) {
-            case DRIVE_TO_SHOOT_LEFT:
+            case DRIVE_TO_SHOOT_PRELOAD:
                 if (arrived()) setPathState(State.SHOOT_PRELOAD);
                 break;
             case SHOOT_PRELOAD:
-                if (dwelled(Tunables.shootTimeMs)) followThen(path2, State.DRIVE_TO_LEFT_FLOWER);
+                if (shot()) followThen(path2, State.DRIVE_TO_GARDEN);
                 break;
-            case DRIVE_TO_LEFT_FLOWER:
-                if (arrived()) setPathState(State.LEFT_PICKUP);
+            case DRIVE_TO_GARDEN: // intake is running, so balls swept into the corner are picked up on the way
+                if (arrived()) setPathState(State.GARDEN_PICKUP);
                 break;
-            case LEFT_PICKUP:
-                if (dwelled(Tunables.intakeTimeMs)) followThen(path3, State.DRIVE_TO_SHOOT_RIGHT);
+            case GARDEN_PICKUP: // wait while the intake collects
+                if (dwelled(Tunables.intakeTimeMs)) followThen(path3, State.DRIVE_TO_SHOOT_GARDEN);
                 break;
-            case DRIVE_TO_SHOOT_RIGHT:
-                if (arrived()) setPathState(State.SHOOT_LEFT_FLOWER);
+            case DRIVE_TO_SHOOT_GARDEN:
+                if (arrived()) setPathState(State.SHOOT_GARDEN);
                 break;
-            case SHOOT_LEFT_FLOWER:
-                if (dwelled(Tunables.shootTimeMs)) followThen(path4, State.DRIVE_TO_RIGHT_FLOWER);
-                break;
-            case DRIVE_TO_RIGHT_FLOWER:
-                if (arrived()) setPathState(State.RIGHT_PICKUP);
-                break;
-            case RIGHT_PICKUP:
-                if (dwelled(Tunables.intakeTimeMs)) followThen(path5, State.DRIVE_BACK_TO_SHOOT_RIGHT);
-                break;
-            case DRIVE_BACK_TO_SHOOT_RIGHT:
-                if (arrived()) setPathState(State.SHOOT_RIGHT_FLOWER);
-                break;
-            case SHOOT_RIGHT_FLOWER:
-                if (dwelled(Tunables.shootTimeMs)) followThen(path6, State.PARK);
+            case SHOOT_GARDEN:
+                if (shot()) {
+                    robot.intake.off();
+                    followThen(path4, State.PARK);
+                }
                 break;
             case PARK:
                 if (arrived()) {
@@ -110,6 +122,7 @@ public abstract class BozoAuto extends OpMode {
 
     private void setPathState(State newState) {
         state = newState;
+        launched = false;
         stateTimer.reset();
     }
 
@@ -118,6 +131,9 @@ public abstract class BozoAuto extends OpMode {
         loopTimer.reset();
         follower.update();
         updateHandoff();
+        // flywheel stays spun up from start until the last volley so every shoot state is ready to fire
+        robot.flywheel.update(state == State.PARK || state == State.DONE ? 0 : Tunables.autoShootRpm);
+        robot.updateLaunch(); // ends a volley (closes transfer, intake back to full power) once its time is up
         autoPathUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
@@ -154,11 +170,14 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void start() {
-        followThen(path1, State.DRIVE_TO_SHOOT_LEFT);
+        robot.intake.forward();
+        followThen(path1, State.DRIVE_TO_SHOOT_PRELOAD);
     }
 
     @Override
     public void stop() {
+        robot.flywheel.update(0);
+        robot.intake.off();
         updateHandoff();
     }
 
@@ -175,6 +194,7 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.addData("x", follower.pose().x());
         telemetryM.addData("y", follower.pose().y());
         telemetryM.addData("Heading", follower.pose().heading());
+        telemetryM.addData("Flywheel RPM", robot.flywheel.getRPM());
         telemetryM.debug("Time " + getRuntime());
     }
 }
