@@ -47,6 +47,36 @@ public class Vision {
         SCORING_UP
     }
 
+    public class VisionResult {
+        private Pose pose;
+        private int tagCount;
+        private double[] stdDev;
+        private long acquisitionTime; // acquisition time from System.currentTimeMillis()
+
+        public VisionResult(Pose pose, int tagCount, double[] stdDev, long acquisitionTime) {
+            this.pose = pose;
+            this.tagCount = tagCount;
+            this.stdDev = stdDev;
+            this.acquisitionTime = acquisitionTime;
+        }
+
+        public Pose pose() {
+            return pose;
+        }
+
+        public int tagCount() {
+            return tagCount;
+        }
+
+        public double[] stdDev() {
+            return stdDev;
+        }
+
+        public int staleness() {
+            return Math.toIntExact(System.currentTimeMillis() - acquisitionTime);
+        }
+    }
+
     private boolean started = false;
     private boolean isBlueTeam;
 
@@ -146,6 +176,8 @@ public class Vision {
         return result != null && result.isValid() && lastTagCount >= Tunables.minTagCount;
     }
 
+
+    /** DO NOT USE THESE FOR FUSION. THEY ARE FOR TESTING  **/
     public LLResult getLatestResult() {
         return limelight.getLatestResult();
     }
