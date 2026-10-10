@@ -29,7 +29,9 @@ public class Field {
         double dToGoal = Math.sqrt(dY * dY + dX * dX);
         boolean canScore = Math.abs(goalHeading - angleToGoal) < Tunables.maxScoringAngle;
 
-        return new ScoringData(canScore, dToGoal, angleToGoal);
+        double idealRPM = calcIdealRPM(dToGoal);
+
+        return new ScoringData(canScore, dToGoal, angleToGoal, idealRPM);
     }
 
     private Pose getGoalPose(boolean isAudienceUp) {
@@ -48,15 +50,26 @@ public class Field {
         }
     }
 
+    // take in distance in inches and return ideal flywheel RPM
+    public double calcIdealRPM(double dist) {
+        // insert regression here
+        return 0;
+    }
+
     public class ScoringData {
+        private boolean canScore; // whether
         private double distance; // distance to goal in inches
         private double angle; // angle to goal in radians
-        private boolean canScore; // whether
+        private double idealRPM; // ideal RPM for auto shoot
 
-        public ScoringData(boolean canScore, double distance, double angle) {
+        public ScoringData(boolean canScore, double distance, double angle, double idealRPM) {
+            this.canScore = canScore;
             this.distance = distance;
             this.angle = angle;
+            this.idealRPM = idealRPM;
         }
+
+        public boolean canScore() { return canScore; }
 
         public double distance() {
             return distance;
@@ -64,6 +77,10 @@ public class Field {
 
         public double angle() {
             return angle;
+        }
+
+        public double idealRPM() {
+            return idealRPM;
         }
 
         public String toString() {
