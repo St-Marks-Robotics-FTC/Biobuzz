@@ -18,14 +18,14 @@ public class Tunables {
     public static double aimMaxPower = 0.8;
     public static double aimToleranceDeg = 2.0; //Gap between target and acceptable actual
     public static double aimIntegralLimit = 1.0;
-    public static double shooterTargetRpm = 3000.0;
+    public static double shooterTargetRpm = 3110.0;
     public static double shooterRampRpmPerSec = 2500.0;
-    public static double shooterToleranceRpm = 20.0; //Gap between target and acceptable actual
-    public static double shooterFireIntervalSec = 1; //Minimum time passing between shots
-    public static double autoShootRpm = 3000; // flywheel RPM used by every auto volley (BozoTeleOp's default setRPM)
-    public static long shootSpinUpTimeoutMs = 3000; // fire anyway if the flywheel hasn't reached autoShootRpm by now
+    public static double shooterToleranceRpm = 10.0; //Gap between target and acceptable actual
+    public static double shooterFireIntervalSec = 0.5; //Minimum time passing between shots
+    public static double autoShootRpm = 3100; // flywheel RPM used by every auto volley (BozoTeleOp's default setRPM)
+    public static long shootSpinUpTimeoutMs = 5000; // fire anyway if the flywheel hasn't reached autoShootRpm by now
     public static long intakeTimeMs = 1000;
-    public static long pathTimeoutMs = 10000;
+    public static long pathTimeoutMs = 3000;
     // all members must be initialized with the keywords `public static`... in order to be usable
 
     public static boolean isDebugging = true; // whether to print additional debug info (slow)

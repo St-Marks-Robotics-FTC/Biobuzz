@@ -67,7 +67,7 @@ public class Field {
     }
 
     public class ScoringData {
-        private boolean canScore; // whether
+        private boolean canScore; // whether or not
         private double distance; // distance to goal in inches
         private double angle; // angle to goal in radians
         private double idealRPM; // ideal RPM for auto shoot

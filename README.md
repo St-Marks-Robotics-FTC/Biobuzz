@@ -140,7 +140,7 @@ the **start** button toggles between robot/field centric control
 
 ## triggers
 
-- **left trigger**: slow mode
+- **left trigger**: slow mode (scales drive speed down to `Tunables.slowModeMin` at full pull)
 - **right trigger**: *unused*
 
 ## buttons
@@ -151,6 +151,7 @@ the **start** button toggles between robot/field centric control
 - **Y**: toggle intake reverse
 - **X**: reset field centric heading
   - make sure to orient the robot towards the top of the field (in between the goals)
+  - the Limelight never corrects heading, so after a TeleOp-only start (no auto run before it) press this before using auto turn
 
 ### d-pad
 - **up**: increment flywheel RPM
@@ -171,17 +172,18 @@ the **start** button toggles between robot/field centric control
 
 ## Auto
 
-Every auto runs the same route: preload, drive to the shooting spot and shoot, sweep the garden with a slight tilt and intake from the corner, drive back to the shooting spot and shoot, park at the end pose.
-Poses (exported from the Pedro visualizer) live in `BlueAuto`/`RedAuto` (red is blue rotated 180 degrees about field center) and the state machine lives in `BozoAuto`.
+Every auto runs the same sequence: preload, drive to the shooting spot and shoot, sweep the garden and intake from the corner, drive back to the shooting spot and shoot, park at the end pose. The state machine lives in `BozoAuto`; a route is just an `AutoConfig` (poses, bezier control points, how the garden path steers).
+Each blue auto owns its route as `public static` poses (exported from the Pedro visualizer) plus a `route()` method. The red autos have no poses of their own: `RedFarAuto`/`RedCloseAuto` return `BlueFarAuto.route()`/`BlueCloseAuto.route()` rotated 180 degrees about field center (`AutoConfig.rotated()`), recomputed every time the auto is initialized. So change the blue auto and the red one follows; a new field added to `AutoConfig` has to be added to `rotated()` as well.
 Shooting reuses `Robot.startLaunch()` at `Tunables.autoShootRpm`.
 
 ### blue team
 
-- `BlueCloseAuto`, `BlueFarAuto`: starting by bottom triangle
+- `BlueFarAuto`: starts at (125.9, 8.4) by the bottom triangle, garden swept with a slight tilt
+- `BlueCloseAuto`: starts at (83, 132) at the shooting spot, garden path follows its tangent
 
 ### red team
 
-- `RedCloseAuto`, `RedFarAuto`: starting by bottom triangle
+- `RedFarAuto`, `RedCloseAuto`: the blue routes above, rotated 180 degrees
 
 ## Tuner
 
@@ -209,8 +211,9 @@ Our localization approach is largely based off of theirs, but we use trigonometr
 - the camera assumes the hive is flat, so its pose is off when the hive tilts; `Vision` uses the known pivot height and the fact that the robot sits on the floor to get the true `y` and the tilt (tilt > 0 raises the scoring side, tilt < 0 the audience side)
 - the visible tag faces (audience: blue 38-41 / red 34-37, scoring: blue 42-45 / red 30-33) say which side of the hive the robot is on
 - a new hive state (`AUDIENCE_UP` / `SCORING_UP`) has to be seen on `Tunables.hiveConfirmFrames` frames in a row; it stays put until the camera confirms the opposite state
-- while the robot is nearly stopped, `BozoTeleOp` pulls odometry `x`/`y` toward the Limelight position (heading always stays with odometry); turn it off with `Tunables.visionLocalization`
-- **auto turn** (left bumper) aims at the goal on the side that is up; if the camera hasn't confirmed the hive yet it aims at the nearest goal and buzzes the controller
+- while the robot is nearly stopped and the latest fix is fresher than `Tunables.visionMaxStalenessMs`, `BozoTeleOp` pulls odometry `x`/`y` toward the Limelight position (heading always stays with odometry); turn it off with `Tunables.visionLocalization`
+- **auto turn** (left bumper) aims at the goal on the side that is up; if the camera hasn't confirmed the hive yet it aims at the nearest goal; the controller buzzes once if that shot can score
+  - the target is an absolute field heading, so it needs a real pose: after an auto the pose is handed over, otherwise it refuses (3 controller blips, reason in the `last auto turn` telemetry) until the heading is set with **X** and the Limelight has corrected `x`/`y` at least once
 
 the Limelight web UI must have the camera's pose in robot space configured (position relative to the robot center and height off the floor), because `Vision` expects the botpose to be the robot's pose with `z` = 0 on the floor
 

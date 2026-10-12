@@ -13,36 +13,38 @@ import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsys.Vision;
+
 import java.util.concurrent.TimeUnit;
 
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
-    protected abstract Pose getStartPose();
     private Robot robot;
     private Follower follower;
     private Timer stateTimer, loopTimer;
+    private Vision vision;
     private TelemetryManager telemetryM;
     private Pose startPose;
     private double initMs;
 
-    // Every DRIVE_* state waits for the follower to settle; every action state then dwells at that pose.
     private enum State {
-        DRIVE_TO_SHOOT_PRELOAD, // start -> 1st shooting spot with the preload
+        DRIVE_TO_SHOOT_PRELOAD,
         SHOOT_PRELOAD,
-        DRIVE_TO_GARDEN,        // sweep the garden with a tilt, ending in the corner
+        DRIVE_TO_GARDEN,
         GARDEN_PICKUP,
-        DRIVE_TO_SHOOT_GARDEN,  // corner -> 2nd shooting spot
+        DRIVE_TO_SHOOT_GARDEN,
         SHOOT_GARDEN,
-        PARK,                   // 2nd shooting spot -> end pose
+        PARK,
         DONE
     }
     State state = State.DRIVE_TO_SHOOT_PRELOAD;
-    private boolean launched; // true once the current SHOOT_* state has started its volley
+    private boolean launched;
     private Path path1, path2, path3, path4;
 
-    // Bezier through the control points in the order the Pedro visualizer exports them: start, controls..., end.
+
     private Path bezier(Pose start, Pose[] controls, Pose end) {
+        if (controls.length == 0) return line(start, end);
         Pose[] points = new Pose[controls.length + 2];
         points[0] = start;
         System.arraycopy(controls, 0, points, 1, controls.length);
@@ -51,12 +53,17 @@ public abstract class BozoAuto extends OpMode {
     }
 
     private void buildPaths() {
-        Pose gardenTilt = config.gardenPose.withHeading(config.gardenTiltRad);
         path1 = bezier(startPose, config.shootPreloadControls, config.shootPreloadPose).linear(startPose, config.shootPreloadPose);
-        path2 = bezier(config.shootPreloadPose, config.gardenControls, config.gardenPose).heading(Interpolator.piecewise()
-                .until(0.5, Interpolator.linear(config.shootPreloadPose, gardenTilt))
-                .until(0.75, Interpolator.constant(gardenTilt))
-                .until(1, Interpolator.linear(gardenTilt, config.gardenPose)));
+        Path garden = bezier(config.shootPreloadPose, config.gardenControls, config.gardenPose);
+        if (config.gardenTangent) {
+            path2 = garden.tangent();
+        } else {
+            Pose gardenTilt = config.gardenPose.withHeading(config.gardenTiltRad);
+            path2 = garden.heading(Interpolator.piecewise()
+                    .until(0.5, Interpolator.linear(config.shootPreloadPose, gardenTilt))
+                    .until(0.75, Interpolator.constant(gardenTilt))
+                    .until(1, Interpolator.linear(gardenTilt, config.gardenPose)));
+        }
         path3 = line(config.gardenPose, config.shootGardenPose).linear(config.gardenPose, config.shootGardenPose);
         path4 = bezier(config.shootGardenPose, config.endControls, config.endPose).linear(config.shootGardenPose, config.endPose);
     }
@@ -131,9 +138,9 @@ public abstract class BozoAuto extends OpMode {
         loopTimer.reset();
         follower.update();
         updateHandoff();
-        // flywheel stays spun up from start until the last volley so every shoot state is ready to fire
+        // flywheel stays spun up
         robot.flywheel.update(state == State.PARK || state == State.DONE ? 0 : Tunables.autoShootRpm);
-        robot.updateLaunch(); // ends a volley (closes transfer, intake back to full power) once its time is up
+        robot.updateLaunch(); // ends a volley
         autoPathUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
@@ -152,7 +159,7 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.debug("Creating follower");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
-        startPose = getStartPose();
+        startPose = config.startPose;
         telemetryM.debug("Building paths");
         telemetryM.update(telemetry);
         buildPaths();
@@ -183,6 +190,7 @@ public abstract class BozoAuto extends OpMode {
 
     public void updateHandoff() {
         HandoffState.pose = follower.pose();
+        HandoffState.fromAuto = true;
     }
 
     public void sendTelemetry(boolean sendInitTime) {

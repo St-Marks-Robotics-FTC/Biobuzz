@@ -30,8 +30,8 @@ public abstract class BozoTeleOp extends OpMode {
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
-    private boolean isRobotCentric = true; // start in field-centric mode
-    private double setRPM = 4300;
+    private boolean isRobotCentric = true; // start in robot-centric mode (start button toggles field-centric)
+    private double setRPM = 3100;
     private boolean flywheelOn = true;
     private boolean isTurning = false;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
@@ -40,6 +40,8 @@ public abstract class BozoTeleOp extends OpMode {
     private Timer fuseTimer; // time since odometry was last corrected by the Limelight
     private boolean turnSettled = false; // heading is currently within the margin
     private String aimInfo = "none yet"; // what the last auto turn aimed at (for telemetry)
+    private boolean headingKnown; // odometry heading matches the real robot (auto handed it off, or X was pressed)
+    private boolean positionKnown; // odometry x/y matches the real robot (auto handed it off, or the Limelight corrected it)
 
     @Override
     public void init() {
@@ -55,6 +57,7 @@ public abstract class BozoTeleOp extends OpMode {
         follower = Constants.create(hardwareMap);
 
         follower.setPose(HandoffState.pose);
+        headingKnown = positionKnown = HandoffState.fromAuto; // without an auto the pose is just a default guess until X / the Limelight fix it
 
         robot.transfer.close();
 
@@ -81,6 +84,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (gamepad1.xWasPressed()) { // reset field centric heading
             follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
+            headingKnown = true;
         }
 
         follower.update();
@@ -96,6 +100,8 @@ public abstract class BozoTeleOp extends OpMode {
     private void handleLocalization() {
         if (!Tunables.visionLocalization || isTurning || !vision.hasNewPose()) return;
         if (fuseTimer.milliseconds() < Tunables.visionFuseIntervalMs) return;
+        // hasNewPose() stays true until taken, so a fix from before the camera lost the tags would otherwise be applied late
+        if (vision.getStaleness() > Tunables.visionMaxStalenessMs) return;
 
         Velocity velocity = follower.velocity();
         if (Math.hypot(velocity.vx, velocity.vy) > Tunables.visionMaxSpeed || Math.abs(velocity.omega) > Tunables.visionMaxTurnRate) return;
@@ -109,13 +115,15 @@ public abstract class BozoTeleOp extends OpMode {
         double alpha = Math.hypot(dx, dy) > Tunables.visionSnapDistance ? 1.0 : Tunables.visionBlend;
 
         follower.setPose(new Pose(odo.x() + dx * alpha, odo.y() + dy * alpha, odo.heading())); // heading stays with odometry
+        positionKnown = true;
         fuseTimer.reset();
     }
 
     private void handleDrive() {
         if (gamepad1.startWasPressed()) isRobotCentric = !isRobotCentric;
+        boolean backPressed = gamepad1.backWasPressed(); // always read: a press made while not turning would otherwise cancel the next auto turn instantly
 
-        double slowModeMultiplier = (gamepad1.left_trigger - 1) * -1; // amount to multiply for by slow mode
+        double slowModeMultiplier = 1 - gamepad1.left_trigger * (1 - Tunables.slowModeMin); // 1.0 released, slowModeMin fully pressed (never 0: the robot must still move)
 
         if (!isTurning) {
             if (isRobotCentric) { // robot-centric control
@@ -153,7 +161,7 @@ public abstract class BozoTeleOp extends OpMode {
 
             if (turnTimer.milliseconds() > Tunables.aimTimeoutMs) isTurning = false; // never trap the driver
 
-            if (gamepad1.backWasPressed()) isTurning = false; // emergency exit
+            if (backPressed) isTurning = false; // emergency exit
         }
     }
 
@@ -162,8 +170,6 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (gamepad1.dpadUpWasPressed()) setRPM += Tunables.adjustRPM; // increment by adjustRPM
         if (gamepad1.dpadDownWasPressed()) setRPM -= Tunables.adjustRPM; // decrement by adjustRPM
-        if (gamepad1.dpadLeftWasPressed()) setRPM -= (Tunables.adjustRPM / 2.0); // decrement by half of adjustRPM
-        if (gamepad1.dpadRightWasPressed()) setRPM += (Tunables.adjustRPM / 2.0); // increment by half of adjustRPM
 
         if (setRPM < 0) setRPM = 0;
 
@@ -181,7 +187,6 @@ public abstract class BozoTeleOp extends OpMode {
 
     private void handleShoot() {
         boolean shootPressed = gamepad1.rightBumperWasPressed();
-
         if (shootPressed) robot.startLaunch();
 
         robot.updateLaunch();
@@ -192,6 +197,15 @@ public abstract class BozoTeleOp extends OpMode {
 
     // turn in place to face the goal the Limelight says is up
     private void startAutoTurn() {
+        // the target is an absolute field heading, so a pose that doesn't match the real robot turns it the wrong way / at the wrong goal
+        if (!headingKnown || (!positionKnown && Tunables.visionLocalization)) {
+            aimInfo = "blocked: " + (!headingKnown
+                    ? "press X with the robot facing the top of the field"
+                    : "no Limelight position fix yet (needs " + Tunables.visionMinTags + "+ tags in view while slow)");
+            gamepad1.rumbleBlips(3);
+            return;
+        }
+
         Pose pose = follower.pose();
 
         boolean audienceUp;
@@ -203,17 +217,20 @@ public abstract class BozoTeleOp extends OpMode {
             audienceUp = false;
             source = "vision";
         } else {
-            // the camera hasn't confirmed the hive yet -> best guess is the closest goal, and buzz so the driver knows it's a guess
+            // the camera hasn't confirmed the hive yet -> best guess is the closest goal
             audienceUp = field.nearestGoalIsAudience(pose);
             source = "nearest goal (hive unknown)";
-            gamepad1.rumble(250);
         }
 
         Field.ScoringData scoringData = field.getScoringData(audienceUp, pose);
+
         aimInfo = (audienceUp ? "audience" : "scoring") + " goal from " + source + ", " + scoringData;
 
         // they got rid of follower.turnTo() so we have to make it ourselves
         lastTurnPose = new Pose(pose.x(), pose.y(), scoringData.angle());
+
+        if (scoringData.canScore()){gamepad1.rumble(250);}
+
         follower.hold(lastTurnPose);
         isTurning = true;
         turnSettled = false;
@@ -232,10 +249,7 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.addData("odo y", follower.pose().y());
 
         // vision
-        telemetryM.addData("vision x", vision.getLastBotPose().x());
-        telemetryM.addData("vision y", vision.getLastBotPose().y());
         telemetryM.addData("vision tags", vision.getLastTagCount());
-        telemetryM.addData("vision staleness (ms)", vision.getStaleness());
         telemetryM.addData("hive state", vision.getLastHiveState() + " (" + (int) vision.getHiveAgeMs() + " ms ago)");
         telemetryM.addData("hive tilt (deg)", Math.toDegrees(vision.getLastHiveTilt()));
         telemetryM.addData("last auto turn", aimInfo);
