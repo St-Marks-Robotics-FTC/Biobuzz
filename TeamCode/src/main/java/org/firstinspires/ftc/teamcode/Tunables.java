@@ -58,7 +58,9 @@ public class Tunables {
 
     /** robot tunables (used in Robot.java) **/
 
-    public static double launchOpenTime = 1500;
+    public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
+    public static double launchTransferOpeningTime = 150;
+    public static double launchShootingTime = 800;
 
     /** field tunables (used in Field.java) **/
 
