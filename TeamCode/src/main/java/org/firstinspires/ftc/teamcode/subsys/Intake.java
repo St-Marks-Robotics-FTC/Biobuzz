@@ -20,7 +20,6 @@ public class Intake {
 
     public Intake(HardwareMap hw) {
         motor = hw.get(DcMotorEx.class, "intakeMotor");
-
         motor.setDirection(DcMotorEx.Direction.FORWARD);
         motor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
         motor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); // we're just running our intake at 100% speed all the time, so we don't need the encoder
