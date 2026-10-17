@@ -53,7 +53,7 @@ public class Tunables {
 
     /** transfer tunables (used in Transfer.java) **/
 
-    public static double transferOpen = 0.254;
+    public static double transferOpen = 0.280;
     public static double transferClosed = 0.00;
 
     /** robot tunables (used in Robot.java) **/
