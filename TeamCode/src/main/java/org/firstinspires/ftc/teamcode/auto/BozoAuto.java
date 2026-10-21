@@ -18,21 +18,24 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Autonomous: spin up the flywheel, shoot, drive linearly to an intermediate pose and then to the refuel pose
- * to pick up balls, drive back to the start pose, shoot again, then curve over to the park pose.
+ * Autonomous: start at the start pose, drive linearly to the shoot pose (flywheel spinning up on the way), shoot,
+ * drive linearly to an intermediate pose and then to the refuel pose to pick up balls, drive back to the shoot pose,
+ * shoot again, then curve over to the park pose.
  *
- * Sequence: SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE -> TRAVEL_TO_REFUEL -> REFUEL
- *           -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT -> TRAVEL_TO_PARK -> DONE
+ * Sequence: TRAVEL_TO_FIRST_SHOOT -> SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE
+ *           -> TRAVEL_TO_REFUEL -> REFUEL -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT
+ *           -> TRAVEL_TO_PARK -> DONE
  */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
+    protected abstract Pose getStartPose();
     protected abstract Pose getShootPose();
     private Robot robot;
     private Follower follower;
     private Timer stateTimer, loopTimer, telemetryTimer;
     private TelemetryManager telemetryM;
-    private Pose shootPose;
+    private Pose startPose, shootPose;
 
     /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
     private double targetRPM = 0;
@@ -43,22 +46,23 @@ public abstract class BozoAuto extends OpMode {
     }
 
     private enum State {
-        SPIN_UP_FIRST_SHOOT,   // at the start pose; flywheel spinning up, waiting to reach target RPM
+        TRAVEL_TO_FIRST_SHOOT, // driving linearly from the start pose to the shoot pose; flywheel already spinning up
+        SPIN_UP_FIRST_SHOOT,   // at the shoot pose; waiting for flywheel to reach target RPM
         FEED_FIRST_SHOOT,      // transfer open + intake running, feeding the preload through the flywheel
         TRAVEL_TO_INTERMEDIATE, // driving linearly to the intermediate pose with intake running; flywheel keeps spinning
         TRAVEL_TO_REFUEL,      // driving linearly from the intermediate pose to the refuel pose with intake running
         REFUEL,                // sitting on the refuel pose with intake running to pick up balls
-        TRAVEL_TO_SHOOT,       // driving back to the start pose; intake off, flywheel keeps spinning
-        SPIN_UP_SECOND_SHOOT,  // back at the start pose; waiting for flywheel to be at target RPM
+        TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake off, flywheel keeps spinning
+        SPIN_UP_SECOND_SHOOT,  // back at the shoot pose; waiting for flywheel to be at target RPM
         FEED_SECOND_SHOOT,     // transfer open + intake running, feeding the refueled balls through the flywheel
         TRAVEL_TO_PARK,        // everything off; driving a bezier curve from the shoot pose to the park pose
         DONE                   // parked; waiting for the OpMode to be stopped
     }
 
-    private State state = State.SPIN_UP_FIRST_SHOOT;
+    private State state = State.TRAVEL_TO_FIRST_SHOOT;
 
-    /** startPose -> intermediatePose -> refuelPose and back. The shoot pose is the start pose. Built in {@link #init()}. **/
-    private Path shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
+    /** startPose -> shootPose, then shootPose -> intermediatePose -> refuelPose and back. Built in {@link #init()}. **/
+    private Path startToShootPath, shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
 
     /** Bezier curve from the shoot pose to the park pose, bent by {@link AutoConfig#parkControlPose}. Built in {@link #init()}. **/
     private Path shootToParkPath;
@@ -66,6 +70,7 @@ public abstract class BozoAuto extends OpMode {
     private static final double REFUEL_ROTATE_START = 0.7;
 
     private void buildPaths() {
+        startToShootPath = line(startPose, shootPose).linear(startPose, shootPose);
         shootToIntermediatePath = line(shootPose, config.intermediatePose).linear(shootPose, config.intermediatePose);
         intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose)
                 .heading(Interpolator.piecewise()
@@ -82,6 +87,11 @@ public abstract class BozoAuto extends OpMode {
 
     private void autoUpdate() {
         switch (state) {
+            case TRAVEL_TO_FIRST_SHOOT:
+                if (!follower.isBusy()) {
+                    setState(State.SPIN_UP_FIRST_SHOOT);
+                }
+                break;
             case SPIN_UP_FIRST_SHOOT:
                 if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
                     startShooting();
@@ -187,9 +197,11 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
+        startPose = getStartPose();
         shootPose = getShootPose();
+        config.startPose = startPose;
         config.shootPose = shootPose;
-        follower.setPose(shootPose);
+        follower.setPose(startPose);
         buildPaths();
         sendTelemetry(true);
         telemetryM.update(telemetry);
@@ -206,7 +218,8 @@ public abstract class BozoAuto extends OpMode {
         targetRPM = Tunables.shootRPM; // begin spinning up immediately
         telemetryTimer.reset();
         loopTimer.reset(); // so the first loop() doesn't report init time as loop time
-        setState(State.SPIN_UP_FIRST_SHOOT);
+        follower.follow(startToShootPath);
+        setState(State.TRAVEL_TO_FIRST_SHOOT);
     }
 
     @Override
