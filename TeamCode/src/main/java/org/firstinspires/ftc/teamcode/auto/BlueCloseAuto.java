@@ -9,9 +9,4 @@ public class BlueCloseAuto extends BlueAuto {
     public Pose getStartPose() {
         return new Pose(84, 129, Math.toRadians(270));
     }
-
-    @Override
-    public Pose getShootPose() {
-        return new Pose(84, 137.496, Math.toRadians(270));
-    }
 }
