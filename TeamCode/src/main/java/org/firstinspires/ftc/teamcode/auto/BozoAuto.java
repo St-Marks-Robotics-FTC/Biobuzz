@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
-    protected abstract Pose getStartPose();
     private Robot robot;
     private Follower follower;
     private Timer stateTimer, loopTimer, telemetryTimer;
@@ -196,9 +195,8 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
-        startPose = getStartPose();
+        startPose = config.startPose;
         shootPose = config.shootPose;
-        config.startPose = startPose;
         follower.setPose(startPose);
         buildPaths();
         sendTelemetry(true);
