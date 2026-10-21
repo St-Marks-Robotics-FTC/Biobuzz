@@ -23,7 +23,7 @@ public class Flywheel {
         launchMotor = hw.get(DcMotorEx.class, "launchMotor");
 
         // set up hardware
-        launchMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        launchMotor.setDirection(DcMotorEx.Direction.REVERSE);
         launchMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
 
         // set up PIDF
