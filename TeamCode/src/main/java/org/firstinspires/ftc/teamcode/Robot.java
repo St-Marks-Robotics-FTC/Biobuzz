@@ -7,6 +7,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
@@ -17,6 +18,8 @@ public class Robot {
     public Flywheel flywheel;
     public Intake intake;
     public Transfer transfer;
+
+    public Flower flower;
 
     private boolean isLaunching = false;
     private Timer launchTimer;

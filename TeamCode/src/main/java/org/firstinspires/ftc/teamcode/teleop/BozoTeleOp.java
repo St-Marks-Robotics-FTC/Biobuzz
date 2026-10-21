@@ -32,6 +32,8 @@ public abstract class BozoTeleOp extends OpMode {
     private double setRPM = 3600;
     private boolean flywheelOn = true;
     private boolean isTurning = false;
+
+    private boolean flowerIsDown = true;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
     private Field.ScoringData lastScoringData = null;
 
@@ -68,6 +70,7 @@ public abstract class BozoTeleOp extends OpMode {
         handleFlywheel();
         handleIntake();
         handleShoot();
+        handleFlower();
 
         if (gamepad1.xWasPressed()) { // reset field centric heading
             follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
@@ -132,6 +135,18 @@ public abstract class BozoTeleOp extends OpMode {
         }
     }
 
+    private void handleFlower() {
+        if (gamepad1.yWasPressed()) flowerIsDown = !flowerIsDown;
+
+        if (flowerIsDown) {
+            robot.flower.goUp();
+        }
+        else
+        {
+            robot.flower.goDown();
+        }
+
+    }
     private void handleIntake() {
         if (gamepad1.aWasPressed()) robot.intake.toggle();
         if (gamepad1.xWasPressed()) robot.intake.toggleReverse();

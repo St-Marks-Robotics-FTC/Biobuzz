@@ -39,6 +39,9 @@ public class Tunables {
     public static double transferOpen = 0.254;
     public static double transferClosed = 0.00;
 
+    public static double flowerDown = 0.00;
+    public static double flowerUp = 1;
+
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
