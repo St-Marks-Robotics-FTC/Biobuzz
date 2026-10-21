@@ -113,7 +113,9 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case TRAVEL_TO_REFUEL:
-                if (!follower.isBusy()) {
+                if (!follower.isBusy()
+                        // make sure it times out after getting stuck on a ball
+                        || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime) {
                     setState(State.REFUEL);
                 }
                 break;
