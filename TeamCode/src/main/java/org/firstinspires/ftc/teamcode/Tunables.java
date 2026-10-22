@@ -11,7 +11,7 @@ import com.pedropathing.math.Pose;
 public class Tunables {
     // all members must be initialized with the keywords `public static`... in order to be usable
 
-    public static boolean isDebugging = true; // whether to print additional debug info (slow)
+    public static boolean isDebugging = false; // whether to print additional debug info (slow)
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
