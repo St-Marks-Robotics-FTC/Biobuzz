@@ -69,6 +69,7 @@ public abstract class BozoTeleOp extends OpMode {
         handleIntake();
         handleShoot();
 
+
         if (gamepad1.xWasPressed()) { // reset field centric heading
             follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
         }
@@ -110,6 +111,10 @@ public abstract class BozoTeleOp extends OpMode {
         } else {
             // under what conditions to exit turning
             if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) isTurning = false;
+            // emergency exit if pose is invalid
+            if (follower.pose() == null || follower.pose().equals(new Pose(0, 0, 0))) {
+                isTurning = false;
+            }
 
             if (gamepad1.backWasPressed()) isTurning = false; // emergency exit
         }
