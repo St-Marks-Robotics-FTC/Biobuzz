@@ -28,7 +28,7 @@ public abstract class BozoTeleOp extends OpMode {
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
-    private boolean isRobotCentric = true; // start in field-centric mode
+    private boolean isRobotCentric = true; // start in robot-centric mode
     private double setRPM = 3600;
     private boolean flywheelOn = true;
     private boolean isTurning = false;
