@@ -8,6 +8,6 @@ public class RedCloseAuto extends RedAuto {
     @Override
     public Pose getStartPose() {
         // Start pose of the robot for this variant.
-        return new Pose(0, 0, Math.toRadians(0));
+        return new Pose(135, 57, Math.toRadians(270));
     }
 }
