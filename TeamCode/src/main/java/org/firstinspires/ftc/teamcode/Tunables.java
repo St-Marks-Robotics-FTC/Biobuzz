@@ -27,9 +27,7 @@ public class Tunables {
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
-    public static double maxFlywheelBraking = 0.05; // max amount of breaking (negative power) to apply to launch motors
-    // disable this for now
-    public static double flywheelQuickStartThreshold = 10000000; // if TPS diff is greater than this, set full power (~1000rpm)
+    public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
 
     /** intake tunables (used in Intake.java) **/
 
