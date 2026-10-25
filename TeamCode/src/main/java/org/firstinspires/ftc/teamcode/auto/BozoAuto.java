@@ -159,7 +159,7 @@ public abstract class BozoAuto extends OpMode {
 
     private void startShooting() {
         robot.transfer.open();
-        robot.intake.forwardLaunching();
+        robot.intake.forward();
     }
 
     private void shutOff() {

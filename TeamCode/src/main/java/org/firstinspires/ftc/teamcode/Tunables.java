@@ -33,8 +33,12 @@ public class Tunables {
 
     /** intake tunables (used in Intake.java) **/
 
-    public static double intakeForwardPower = 1.0;
-    public static double intakeForwardLaunchingPower = 1.0; // full power seems to be consistent enough
+    public static boolean intakeUsePowerSave = true;
+    public static int intakePowerSaveWaitInterval = 30; // how often to check for a stalled intake while running
+    public static int intakePowerSaveCheckInterval = 30; // how often to update intake power/velocity check in millis
+    public static double intakePowerSaveTriggerAmps = 6; // if we are drawing more amps than this, trigger power save
+    public static double intakePowerSaveTriggerVelocity = 0; // if we have a tps less than this, trigger power save
+    public static double intakeHoldPower = 0.0; // minimum power for balls to not fall out of intake
 
     /** transfer tunables (used in Transfer.java) **/
 

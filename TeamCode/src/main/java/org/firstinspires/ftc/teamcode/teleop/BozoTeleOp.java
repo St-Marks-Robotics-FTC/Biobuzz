@@ -144,7 +144,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (shootPressed) robot.startLaunch();
 
-        robot.updateLaunch();
+        robot.update();
 
         // TODO: add odo fallback on top of vision hive state data
         if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
@@ -167,6 +167,8 @@ public abstract class BozoTeleOp extends OpMode {
     private void updateTelemetry() {
         // only output debug values if we're debugging - these kill our loop times
         if (Tunables.isDebugging) {
+            // intake
+            telemetryM.addData("power save", robot.intake.getPowerSaveTrigger());
             // flywheel
             telemetryM.addData("current RPM", robot.flywheel.getRPM());
             telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
