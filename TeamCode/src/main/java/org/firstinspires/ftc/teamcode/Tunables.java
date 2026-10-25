@@ -16,7 +16,7 @@ public class Tunables {
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
 
-    public static double manualStartingRPM = 3500;
+    public static double manualStartingRPM = 3250;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
 
@@ -34,7 +34,7 @@ public class Tunables {
     /** intake tunables (used in Intake.java) **/
 
     public static double intakeForwardPower = 1.0;
-    public static double intakeForwardLaunchingPower = 0.35;
+    public static double intakeForwardLaunchingPower = 1.0; // full power seems to be consistent enough
 
     /** transfer tunables (used in Transfer.java) **/
 
@@ -45,7 +45,7 @@ public class Tunables {
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 800;
+    public static double launchShootingTime = 1600;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
