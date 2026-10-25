@@ -15,6 +15,8 @@ public class Tunables {
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
+
+    public static double manualStartingRPM = 3500;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
 
