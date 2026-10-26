@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
@@ -23,7 +24,7 @@ public class Flywheel {
         launchMotor = hw.get(DcMotorEx.class, "launchMotor");
 
         // set up hardware
-        launchMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        launchMotor.setDirection(DcMotorEx.Direction.REVERSE);
         launchMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
 
         // set up PIDF
@@ -38,14 +39,7 @@ public class Flywheel {
 
         if (setpointTPS == 0) {
             newPower = 0.0;
-        } else if (setpointTPS - currentTPS < Tunables.flywheelQuickStartThreshold) {
-            // small difference -> use PIDF
-            newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
-        } else {
-            // big difference -> full power
-            newPower = 1.0;
-            pidf.reset(); // keep the lastTime from growing too large and causing integral accumulation
-        }
+        } else newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
 
         double clippedPower = Range.clip(newPower, -Tunables.maxFlywheelBraking, 1.0);
 
@@ -73,7 +67,7 @@ public class Flywheel {
 
     // these should only be used for tuning
     public double getPower() {
-        return launchMotor.getPower(); // doesn't mater which one we query for power - we're both setting them the same
+        return launchMotor.getPower();
     }
 
     public double getCurrent() { // return sum current in amps

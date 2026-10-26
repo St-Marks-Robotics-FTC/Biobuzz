@@ -2,27 +2,32 @@ package org.firstinspires.ftc.teamcode.auto;
 
 import com.pedropathing.math.Pose;
 
+/**
+ * Poses the autonomous drives through. {@link #startPose} is where the robot is placed at init; it drives from there
+ * to {@link #shootPose} before the first shot. {@link #parkControlPose} is the bezier control point that bends the
+ * path from {@link #shootPose} to {@link #parkPose}; its heading is ignored (only x/y shape the curve).
+ */
 public class AutoConfig {
     public Pose startPose,
-            shootLeftPose,
-            shootRightPose,
-            flowerLeftPose,
-            flowerRightPose,
-            endPose;
+            shootPose,
+            intermediatePose,
+            refuelPose,
+            parkControlPose,
+            parkPose;
 
     public AutoConfig(
             Pose startPose,
-            Pose shootLeftPose,
-            Pose shootRightPose,
-            Pose flowerLeftPose,
-            Pose flowerRightPose,
-            Pose endPose
+            Pose shootPose,
+            Pose intermediatePose,
+            Pose refuelPose,
+            Pose parkControlPose,
+            Pose parkPose
     ) {
         this.startPose = startPose;
-        this.shootLeftPose = shootLeftPose;
-        this.shootRightPose = shootRightPose;
-        this.flowerLeftPose = flowerLeftPose;
-        this.flowerRightPose = flowerRightPose;
-        this.endPose = endPose;
+        this.shootPose = shootPose;
+        this.intermediatePose = intermediatePose;
+        this.refuelPose = refuelPose;
+        this.parkControlPose = parkControlPose;
+        this.parkPose = parkPose;
     }
 }

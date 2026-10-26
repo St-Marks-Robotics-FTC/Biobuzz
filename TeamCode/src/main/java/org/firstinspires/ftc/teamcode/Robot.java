@@ -55,7 +55,7 @@ public class Robot {
         launchState = LaunchState.START_LAUNCH;
     }
 
-    public void updateLaunch() { // returns true when we're done launching
+    public void update() {
         switch (launchState) {
             case LOCKED:
                 // do nothing
@@ -75,12 +75,13 @@ public class Robot {
             case OPENING_TRANSFER:
                 if (launchTimer.milliseconds() >= Tunables.launchTransferOpeningTime) {
                     // we've waited for transfer to open so we can now start our intake at launching power
-                    intake.forwardLaunching();
+                    intake.forward();
                     launchState = LaunchState.SHOOTING;
                     launchTimer.reset();
                 }
                 break;
             case SHOOTING:
+                // TODO: add a staggered shooting system where we go from full to zero power for each ball to fix inconsistency of forwardLaunchingPower
                 if (launchTimer.milliseconds() >= Tunables.launchShootingTime) {
                     // we've waited for all the balls to come through
                     intake.forward(); // go forward full power
@@ -89,6 +90,8 @@ public class Robot {
                 }
                 break;
         }
+
+        intake.update(isLaunching);
     }
 
     public boolean isLaunching() {
