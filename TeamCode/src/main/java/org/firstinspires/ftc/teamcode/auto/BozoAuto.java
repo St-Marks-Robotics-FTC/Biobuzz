@@ -46,13 +46,13 @@ public abstract class BozoAuto extends OpMode {
     private enum State {
         TRAVEL_TO_FIRST_SHOOT, // driving linearly from the start pose to the shoot pose; flywheel already spinning up
         SPIN_UP_FIRST_SHOOT,   // at the shoot pose; waiting for flywheel to reach target RPM
-        FEED_FIRST_SHOOT,      // transfer open + intake running, feeding the preload through the flywheel
+        FEED_FIRST_SHOOT,      // Robot launch feeds the preloaded balls through the flywheel
         TRAVEL_TO_INTERMEDIATE, // driving linearly to the intermediate pose with intake running; flywheel keeps spinning
         TRAVEL_TO_REFUEL,      // driving linearly from the intermediate pose to the refuel pose with intake running
         REFUEL,                // sitting on the refuel pose with intake running to pick up balls
-        TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake off, flywheel keeps spinning
+        TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake running, flywheel keeps spinning
         SPIN_UP_SECOND_SHOOT,  // back at the shoot pose; waiting for flywheel to be at target RPM
-        FEED_SECOND_SHOOT,     // transfer open + intake running, feeding the refueled balls through the flywheel
+        FEED_SECOND_SHOOT,     // Robot launch sequence feeds the refueled balls through the flywheel
         TRAVEL_TO_PARK,        // everything off; driving a bezier curve from the shoot pose to the park pose
         DONE                   // parked; waiting for the OpMode to be stopped
     }
@@ -92,16 +92,12 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case SPIN_UP_FIRST_SHOOT:
                 if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
-                    startShooting();
+                    robot.startLaunch();
                     setState(State.FEED_FIRST_SHOOT);
                 }
                 break;
             case FEED_FIRST_SHOOT:
-                // FEEDING IS HERE
-                // the if statement below represents AFTER we've fed the balls
-                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
-                    robot.transfer.close();
-                    robot.intake.forward(); // intake on while driving so we're collecting as we arrive
+                if (!robot.isLaunching()) {
                     follower.follow(shootToIntermediatePath);
                     setState(State.TRAVEL_TO_INTERMEDIATE);
                 }
@@ -133,14 +129,12 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case SPIN_UP_SECOND_SHOOT:
                 if (isFlywheelWithinMargin()) {
-                    startShooting();
+                    robot.startLaunch();
                     setState(State.FEED_SECOND_SHOOT);
                 }
                 break;
             case FEED_SECOND_SHOOT:
-                // FEEDING IS HERE
-                // the if statement below represents AFTER we've fed the balls
-                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
+                if (!robot.isLaunching()) {
                     shutOff();
                     follower.follow(shootToParkPath);
                     setState(State.TRAVEL_TO_PARK);
@@ -155,11 +149,6 @@ public abstract class BozoAuto extends OpMode {
                 requestOpModeStop();
                 break;
         }
-    }
-
-    private void startShooting() {
-        robot.transfer.open();
-        robot.intake.forwardLaunching();
     }
 
     private void shutOff() {
@@ -178,6 +167,7 @@ public abstract class BozoAuto extends OpMode {
         loopTimer.reset();
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target also dih
+        robot.updateLaunch(); // advances the shooting state machine; no-op when not launching
         autoUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
