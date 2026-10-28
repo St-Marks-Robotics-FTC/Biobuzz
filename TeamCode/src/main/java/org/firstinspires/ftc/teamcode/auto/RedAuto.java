@@ -17,6 +17,9 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose tippedParkControlPose = new Pose(48, 84, Math.toRadians(0)); // bezier control point tippedShoot -> park; x/y only
 
     @Override
+    protected boolean isBlueTeam() { return false; }
+
+    @Override
     protected AutoConfig buildConfig() {
         return new AutoConfig(
                 startPose,

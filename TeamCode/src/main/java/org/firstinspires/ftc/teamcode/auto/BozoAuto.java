@@ -30,6 +30,9 @@ import java.util.concurrent.TimeUnit;
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
+
+    /** @return true if this OpMode runs on the blue alliance, false for red; selects the Limelight pipeline. **/
+    protected abstract boolean isBlueTeam();
     private Robot robot;
     private Vision vision;
     private Follower follower;
@@ -232,6 +235,7 @@ public abstract class BozoAuto extends OpMode {
         telemetryTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = new Robot(hardwareMap);
+        vision = new Vision(hardwareMap, isBlueTeam());
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);

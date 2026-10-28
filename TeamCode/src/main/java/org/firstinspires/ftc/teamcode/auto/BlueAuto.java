@@ -18,6 +18,9 @@ public abstract class BlueAuto extends BozoAuto {
 
 
     @Override
+    protected boolean isBlueTeam() { return true; }
+
+    @Override
     protected AutoConfig buildConfig() {
         return new AutoConfig(
                 startPose,
