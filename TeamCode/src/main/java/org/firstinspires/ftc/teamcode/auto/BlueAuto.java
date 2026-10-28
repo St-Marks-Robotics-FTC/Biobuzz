@@ -14,7 +14,6 @@ public abstract class BlueAuto extends BozoAuto {
     // CASE 2 (hive tipped)
     public static Pose tippedControlPose = new Pose(72, 72, Math.toRadians(270)); // bezier control point toward scoring side; x/y only
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(90)); // scoring side: shootPose mirrored over y = 72 (y -> 144 - y)
-    public static Pose tippedParkControlPose = new Pose(96, 60, Math.toRadians(180)); // bezier control point tippedShoot -> park; x/y only
 
 
     @Override
@@ -30,8 +29,7 @@ public abstract class BlueAuto extends BozoAuto {
                 parkControlPose,
                 parkPose,
                 tippedControlPose,
-                tippedShootPose,
-                tippedParkControlPose
+                tippedShootPose
         );
     }
 }

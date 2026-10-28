@@ -78,7 +78,7 @@ public abstract class BozoAuto extends OpMode {
     /** Bezier curve from the shoot pose to the park pose, bent by {@link AutoConfig#parkControlPose}. Built in {@link #init()}. **/
     private Path shootToParkPath;
 
-    /** CASE 2 (hive tipped): shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose}), then on to park. Built in {@link #init()}. **/
+    /** CASE 2 (hive tipped): shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose}), then a straight line to park. Built in {@link #init()}. **/
     private Path shootToTippedShootPath, tippedShootToParkPath;
 
     private static final double REFUEL_ROTATE_START = 0.7;
@@ -100,7 +100,7 @@ public abstract class BozoAuto extends OpMode {
         // CASE 2 (hive tipped): same curve(start, control, end) idea, toward the scoring side and then to park
         shootToTippedShootPath = curve(shootPose, config.tippedControlPose, config.tippedShootPose)
                 .linear(shootPose, config.tippedShootPose);
-        tippedShootToParkPath = curve(config.tippedShootPose, config.tippedParkControlPose, config.parkPose)
+        tippedShootToParkPath = line(config.tippedShootPose, config.parkPose)
                 .linear(config.tippedShootPose, config.parkPose);
     }
 
