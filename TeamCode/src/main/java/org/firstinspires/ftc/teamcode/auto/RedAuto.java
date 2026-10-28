@@ -12,7 +12,7 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose parkControlPose = new Pose(36, 24, Math.toRadians(0)); // bezier control point: pulls the park path into a curve; x/y only
     public static Pose parkPose = new Pose(12, 102, Math.toRadians(0));
     // CASE 2 (hive tipped)
-    public static Pose tippedControlPose = new Pose(44, 34, Math.toRadians(90)); // bezier control point toward scoring side; x/y only
+    public static Pose tippedControlPose = new Pose(72, 72, Math.toRadians(90)); // bezier control point toward scoring side; x/y only
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(270)); // scoring side: shootPose mirrored over y = 72 (y -> 144 - y)
     public static Pose tippedParkControlPose = new Pose(48, 84, Math.toRadians(0)); // bezier control point tippedShoot -> park; x/y only
 
