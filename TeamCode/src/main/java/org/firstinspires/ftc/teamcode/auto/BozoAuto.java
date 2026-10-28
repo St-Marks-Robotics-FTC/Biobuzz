@@ -14,6 +14,7 @@ import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +31,7 @@ public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
     private Robot robot;
+    private Vision vision;
     private Follower follower;
     private Timer stateTimer, loopTimer, telemetryTimer;
     private TelemetryManager telemetryM;
@@ -51,8 +53,16 @@ public abstract class BozoAuto extends OpMode {
         TRAVEL_TO_REFUEL,      // driving linearly from the intermediate pose to the refuel pose with intake running
         REFUEL,                // sitting on the refuel pose with intake running to pick up balls
         TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake running, flywheel keeps spinning
-        SPIN_UP_SECOND_SHOOT,  // back at the shoot pose; waiting for flywheel to be at target RPM
-        FEED_SECOND_SHOOT,     // Robot launch sequence feeds the refueled balls through the flywheel
+
+        // CASE 1: hive did not tip over, shoot again
+        UNTIPPED_SPEED_UP_SECOND_SHOOT,  // back at the shoot pose; waiting for flywheel to be at target RPM
+        UNTIPPED_FEED_SECOND_SHOOT,     // Robot launch sequence feeds the refueled balls through the flywheel
+
+        // CASE 2: hive did tip over, go to other side
+        TIPPED_TRAVEL_TO_TIPPED_SHOOT, // go to scoring side to shoot second round
+        TIPPED_SPEED_UP_SECOND_SHOOT, // arrived, wait for flywheel to speed up
+        TIPPED_FEED_SECOND_SHOOT, // Robot launch sequence...
+
         TRAVEL_TO_PARK,        // everything off; driving a bezier curve from the shoot pose to the park pose
         DONE                   // parked; waiting for the OpMode to be stopped
     }
@@ -64,6 +74,9 @@ public abstract class BozoAuto extends OpMode {
 
     /** Bezier curve from the shoot pose to the park pose, bent by {@link AutoConfig#parkControlPose}. Built in {@link #init()}. **/
     private Path shootToParkPath;
+
+    /** CASE 2 (hive tipped): shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose}), then on to park. Built in {@link #init()}. **/
+    private Path shootToTippedShootPath, tippedShootToParkPath;
 
     private static final double REFUEL_ROTATE_START = 0.7;
 
@@ -81,6 +94,11 @@ public abstract class BozoAuto extends OpMode {
         // curve(start, control, end): the control point is not driven through, it only pulls the path toward it.
         shootToParkPath = curve(shootPose, config.parkControlPose, config.parkPose)
                 .linear(shootPose, config.parkPose);
+        // CASE 2 (hive tipped): same curve(start, control, end) idea, toward the scoring side and then to park
+        shootToTippedShootPath = curve(shootPose, config.tippedControlPose, config.tippedShootPose)
+                .linear(shootPose, config.tippedShootPose);
+        tippedShootToParkPath = curve(config.tippedShootPose, config.tippedParkControlPose, config.parkPose)
+                .linear(config.tippedShootPose, config.parkPose);
     }
 
     private void autoUpdate() {
@@ -124,22 +142,51 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case TRAVEL_TO_SHOOT:
                 if (!follower.isBusy()) {
-                    setState(State.SPIN_UP_SECOND_SHOOT);
+                    if (Vision.limelight.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold) {
+                        setState(State.UNTIPPED_SPEED_UP_SECOND_SHOOT);
+                    } else {
+                        follower.follow(shootToTippedShootPath);
+                        setState(State.TIPPED_TRAVEL_TO_TIPPED_SHOOT);
+                    }
                 }
+
                 break;
-            case SPIN_UP_SECOND_SHOOT:
+
+            // CASE 1: hive did not tip
+            case UNTIPPED_SPEED_UP_SECOND_SHOOT:
                 if (isFlywheelWithinMargin()) {
                     robot.startLaunch();
-                    setState(State.FEED_SECOND_SHOOT);
+                    setState(State.UNTIPPED_FEED_SECOND_SHOOT);
                 }
                 break;
-            case FEED_SECOND_SHOOT:
+            case UNTIPPED_FEED_SECOND_SHOOT:
                 if (!robot.isLaunching()) {
                     shutOff();
                     follower.follow(shootToParkPath);
                     setState(State.TRAVEL_TO_PARK);
                 }
                 break;
+
+            // CASE 2: hive tipped, curve to the scoring side and shoot there
+            case TIPPED_TRAVEL_TO_TIPPED_SHOOT:
+                if (!follower.isBusy()) {
+                    setState(State.TIPPED_SPEED_UP_SECOND_SHOOT);
+                }
+                break;
+            case TIPPED_SPEED_UP_SECOND_SHOOT:
+                if (isFlywheelWithinMargin()) {
+                    robot.startLaunch();
+                    setState(State.TIPPED_FEED_SECOND_SHOOT);
+                }
+                break;
+            case TIPPED_FEED_SECOND_SHOOT:
+                if (!robot.isLaunching()) {
+                    shutOff();
+                    follower.follow(tippedShootToParkPath);
+                    setState(State.TRAVEL_TO_PARK);
+                }
+                break;
+
             case TRAVEL_TO_PARK:
                 if (!follower.isBusy()) {
                     setState(State.DONE);
@@ -165,6 +212,7 @@ public abstract class BozoAuto extends OpMode {
     @Override
     public void loop() {
         loopTimer.reset();
+        vision.update();
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target also dih
         robot.updateLaunch(); // advances the shooting state machine; no-op when not launching
