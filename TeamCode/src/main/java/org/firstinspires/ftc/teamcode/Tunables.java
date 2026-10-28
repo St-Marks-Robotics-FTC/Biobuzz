@@ -32,7 +32,7 @@ public class Tunables {
     /** intake tunables (used in Intake.java) **/
 
     public static double intakeForwardPower = 1.0;
-    public static double intakeForwardLaunchingPower = 1.0;
+    public static double intakeForwardLaunchingPower = .7;
 
     /** transfer tunables (used in Transfer.java) **/
 
@@ -43,7 +43,7 @@ public class Tunables {
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 800;
+    public static double launchShootingTime = 1400;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
