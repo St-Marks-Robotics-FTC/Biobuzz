@@ -32,7 +32,7 @@ public class Tunables {
     /** intake tunables (used in Intake.java) **/
 
     public static double intakeForwardPower = 1.0;
-    public static double intakeForwardLaunchingPower = 0.35;
+    public static double intakeForwardLaunchingPower = 1.0;
 
     /** transfer tunables (used in Transfer.java) **/
 
