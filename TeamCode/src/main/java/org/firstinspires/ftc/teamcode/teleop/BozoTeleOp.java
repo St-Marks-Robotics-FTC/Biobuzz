@@ -28,8 +28,8 @@ public abstract class BozoTeleOp extends OpMode {
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
-    private boolean isRobotCentric = true; // start in field-centric mode
-    private double setRPM = 3600;
+    private boolean isRobotCentric = true; // start in robot-centric mode
+    private double setRPM = Tunables.manualStartingRPM;
     private boolean flywheelOn = true;
     private boolean isTurning = false;
 
@@ -72,16 +72,14 @@ public abstract class BozoTeleOp extends OpMode {
         handleShoot();
         handleFlower();
 
+
         if (gamepad1.xWasPressed()) { // reset field centric heading
             follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
         }
 
         follower.update();
 
-        if (Tunables.isDebugging) updateDebuggingTelemetry();
-
-        telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
-        telemetryM.update(telemetry);
+        updateTelemetry();
     }
 
     private void handleDrive() {
@@ -113,6 +111,10 @@ public abstract class BozoTeleOp extends OpMode {
         } else {
             // under what conditions to exit turning
             if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) isTurning = false;
+            // emergency exit if pose is invalid
+            if (follower.pose() == null || follower.pose().equals(new Pose(0, 0, 0))) {
+                isTurning = false;
+            }
 
             if (gamepad1.backWasPressed()) isTurning = false; // emergency exit
         }
@@ -150,7 +152,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (shootPressed) robot.startLaunch();
 
-        robot.updateLaunch();
+        robot.update();
 
         // TODO: add odo fallback on top of vision hive state data
         if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
@@ -170,23 +172,32 @@ public abstract class BozoTeleOp extends OpMode {
         }
     }
 
-    private void updateDebuggingTelemetry() {
-        // flywheel
-        telemetryM.addData("desired RPM", setRPM);
-        telemetryM.addData("current RPM", robot.flywheel.getRPM());
-        telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
+    private void updateTelemetry() {
+        // only output debug values if we're debugging - these kill our loop times
+        if (Tunables.isDebugging) {
+            // intake
+            telemetryM.addData("power save", robot.intake.getPowerSaveTrigger());
+            // flywheel
+            telemetryM.addData("current RPM", robot.flywheel.getRPM());
+            telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
 
-        // odo
-        telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
-        telemetryM.addData("odo x", follower.pose().x());
-        telemetryM.addData("odo y", follower.pose().y());
+            // odo
+            telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
+            telemetryM.addData("odo x", follower.pose().x());
+            telemetryM.addData("odo y", follower.pose().y());
 
-        // Field
-        if (lastScoringData != null) {
-            telemetryM.addLine(lastScoringData.toString());
-        } else {
-            telemetryM.addLine("lastScoringData is null!");
+            // Field
+            if (lastScoringData != null) {
+                telemetryM.addLine(lastScoringData.toString());
+            } else {
+                telemetryM.addLine("lastScoringData is null!");
+            }
         }
+
+        // always output these to telemetry
+        telemetryM.addData("desired RPM", setRPM);
+        telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
+        telemetryM.update(telemetry);
     }
 }
 

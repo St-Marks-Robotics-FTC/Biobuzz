@@ -14,6 +14,10 @@ public class Field {
     }
 
     public ScoringData getScoringData(boolean isAudienceUp, Pose robotPose) {
+        if (robotPose == null || robotPose.equals(new Pose(0, 0, 0))) {
+            return null; // make sure it's not a bad pose
+        }
+
         Pose goalPose = getGoalPose(isAudienceUp);
         double goalX = goalPose.x();
         double goalY = goalPose.y();

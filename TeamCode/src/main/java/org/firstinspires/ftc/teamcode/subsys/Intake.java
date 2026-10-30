@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
+import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -8,13 +9,24 @@ import org.firstinspires.ftc.teamcode.Tunables;
 
 public class Intake {
     public enum State {
-        OFF,
-        FORWARD,
-        FORWARD_LAUNCHING,
-        REVERSE
+        OFF, // intake completely unpowered
+        FORWARD, // intake full power
+        POWER_SAVE, // saving intake power
+        HOLD, // intake partially powered, just enough to keep balls in but save power
+        REVERSE, // intake full power reverse
+    }
+
+    public enum PowerSaveTrigger {
+        CURRENT,
+        VELOCITY,
+        NOT_TRIGGERED
     }
 
     private State state = State.OFF;
+    private Timer powerSaveWaitTimer;
+    private Timer powerSaveCheckTimer;
+    private PowerSaveTrigger powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
+    double lastIntakeHoldPower = Tunables.intakeHoldPower;
 
     private DcMotorEx motor;
 
@@ -24,7 +36,59 @@ public class Intake {
         motor.setDirection(DcMotorEx.Direction.FORWARD);
         motor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
         motor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); // we're just running our intake at 100% speed all the time, so we don't need the encoder
+
+        powerSaveWaitTimer = new Timer();
+        powerSaveCheckTimer = new Timer();
     }
+    public void update(boolean overridePowerSave) { // need to continuously update for power save function and caching
+        switch (state) {
+            case OFF:
+                off();
+                break;
+            case FORWARD:
+                forward();
+                if (Tunables.intakeUsePowerSave && !overridePowerSave) {
+                    if (powerSaveCheckTimer.milliseconds() >= Tunables.intakePowerSaveCheckInterval) {
+                        // now we check which of our power save triggers hit
+                        // we should ideally do this in order of what reads are the quickest / most accurate
+                        if (isCurrentTrigger()) {
+                            powerSaveTrigger = PowerSaveTrigger.CURRENT;
+                            enablePowerSave();
+                            return;
+                        } else if (isVelocityTrigger()) {
+                            powerSaveTrigger = PowerSaveTrigger.VELOCITY;
+                            enablePowerSave();
+                            return;
+                        } else {
+                            powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
+                            powerSaveCheckTimer.reset(); // wait Tunables.intakePowerSaveUpdateInterval before next reading
+                            return;
+                        }
+                    }
+                    // else: don't waste loop time
+                }
+                break;
+            case POWER_SAVE:
+                // waiting with intake off and then after a while going back to on
+                if (powerSaveWaitTimer.milliseconds() >= Tunables.intakePowerSaveWaitInterval || overridePowerSave) {
+                    // we've waiting long enough, turn intake back on
+                    forward();
+                }
+                break;
+            case HOLD:
+                hold();
+                if (Tunables.intakeHoldPower != lastIntakeHoldPower) {
+                    motor.setPower(Tunables.intakeHoldPower);
+                    lastIntakeHoldPower = Tunables.intakeHoldPower;
+                }
+                break;
+            case REVERSE:
+                reverse();
+                break;
+        }
+    }
+
+    // we check states to prevent unnecessary writes
 
     public void off() {
         if (state != State.OFF) {
@@ -35,15 +99,10 @@ public class Intake {
 
     public void forward() {
         if (state != State.FORWARD) {
-            motor.setPower(Tunables.intakeForwardPower);
+            motor.setPower(1);
+            powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
             state = State.FORWARD;
-        }
-    }
-
-    public void forwardLaunching() {
-        if (state != State.FORWARD_LAUNCHING) {
-            motor.setPower(Tunables.intakeForwardLaunchingPower);
-            state = State.FORWARD_LAUNCHING;
+            powerSaveCheckTimer.reset();
         }
     }
 
@@ -52,6 +111,13 @@ public class Intake {
             forward();
         } else {
             off();
+        }
+    }
+
+    public void hold() {
+        if (state != State.HOLD) {
+            motor.setPower(Tunables.intakeHoldPower);
+            state = State.HOLD;
         }
     }
 
@@ -70,6 +136,18 @@ public class Intake {
         }
     }
 
+    public boolean isCurrentTrigger() { // whether our current amps is over our trigger amps
+        return getCurrent() >= Tunables.intakePowerSaveTriggerAmps;
+    }
+    public boolean isVelocityTrigger() { // whether our current velocity is under our trigger velocity
+        return getVelocity() <= Tunables.intakePowerSaveTriggerVelocity;
+    }
+    private void enablePowerSave() {
+        state = State.POWER_SAVE;
+        powerSaveWaitTimer.reset();
+        motor.setPower(Tunables.intakeHoldPower); // save power
+    }
+
     /** getter methods **/
 
     public boolean isOff() {
@@ -79,11 +157,24 @@ public class Intake {
     public boolean isForward() {
         return state == State.FORWARD;
     }
+
+    public boolean isHold() {
+        return state == State.HOLD;
+    }
+
     public boolean isReverse() {
         return state == State.REVERSE;
     }
 
-    public State getState() { return state; }
     public double getCurrent() { return motor.getCurrent(CurrentUnit.AMPS); } // return intake current in amps
     public double getVelocity() { return motor.getVelocity(); } // get velocity in tps
+    public PowerSaveTrigger getPowerSaveTrigger() { return powerSaveTrigger; }
+
+    public DcMotorEx getMotor() { // get our intake motor whose encoder is used by Turret.java
+        return motor;
+    }
+
+    public State getState() {
+        return state;
+    }
 }
