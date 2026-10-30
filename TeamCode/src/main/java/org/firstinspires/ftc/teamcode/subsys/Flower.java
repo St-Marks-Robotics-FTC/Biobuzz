@@ -17,7 +17,7 @@ public class Flower {
     public Flower(HardwareMap hw) {
         flowerServo = hw.get(Servo.class, "flowerServo");
 
-        flowerServo.setPosition(Tunables.flowerDown); // start down
+        flowerServo.setPosition(Tunables.flowerUp); // start up
     }
 
     public void toggle() {
