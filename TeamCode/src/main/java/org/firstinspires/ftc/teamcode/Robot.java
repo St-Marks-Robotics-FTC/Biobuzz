@@ -46,6 +46,7 @@ public class Robot {
         flywheel = new Flywheel(hw);
         intake = new Intake(hw);
         transfer = new Transfer(hw);
+        flower = new Flower(hw);
 
         launchTimer = new Timer();
     }
