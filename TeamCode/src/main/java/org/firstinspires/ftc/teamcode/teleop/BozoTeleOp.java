@@ -136,17 +136,10 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleFlower() {
-        if (gamepad1.yWasPressed()) flowerIsDown = !flowerIsDown;
-
-        if (flowerIsDown) {
-            robot.flower.goUp();
-        }
-        else
-        {
-            robot.flower.goDown();
-        }
-
+        if (gamepad1.right_trigger_pressed) robot.flower.goDown();
+        else robot.flower.goUp();
     }
+
     private void handleIntake() {
         if (gamepad1.aWasPressed()) robot.intake.toggle();
         if (gamepad1.xWasPressed()) robot.intake.toggleReverse();

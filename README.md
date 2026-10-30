@@ -73,14 +73,14 @@ make sure to connect every motor with the correct polarity; the reversing is don
 
 ### servos
 
-| servo port   | servo type       | verbatim name |
-|:-------------|------------------|:--------------|
-| `0`          | *unused*         | *unused*      |
-| `1`          | *unused*         | *unused*      |
-| `2`          | *unused*         | *unused*      |
-| `3`          | *unused*         | *unused*      |
-| `4`          | *unused*         | *unused*      |
-| `5`          | *unused*         | *unused*      |
+| servo port   | servo type | verbatim name  |
+|:-------------|------------|:---------------|
+| `0`          | Servo      | `flowerServo`  |
+| `1`          | *unused*   | *unused*       |
+| `2`          | *unused*   | *unused*       |
+| `3`          | *unused*   | *unused*       |
+| `4`          | *unused*   | *unused*       |
+| `5`          | *unused*   | *unused*       |
 
 ## expansion hub
 
@@ -145,7 +145,7 @@ the **start** button toggles between robot/field centric control
 ## triggers
 
 - **left trigger**: slow mode
-- **right trigger**: *unused*
+- **right trigger**: hold to lower flower mechanism
 
 ## buttons
 
