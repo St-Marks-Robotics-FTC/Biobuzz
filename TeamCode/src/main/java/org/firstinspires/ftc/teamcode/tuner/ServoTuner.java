@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
 
 @TeleOp(name="ServoTuner", group="Tuner")
@@ -16,18 +17,21 @@ public class ServoTuner extends OpMode {
 
     private enum TuneMode { // order matters for display
         TRANSFER,
+        FLOWER,
         UNSELECTED
     }
 
     private TuneMode mode = TuneMode.UNSELECTED;
 
     private Transfer transfer;
+    private Flower flower;
 
     private TelemetryManager telemetryM;
 
     @Override
     public void init() {
         transfer = new Transfer(hardwareMap);
+        flower = new Flower(hardwareMap);
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
@@ -39,18 +43,19 @@ public class ServoTuner extends OpMode {
     @Override
     public void init_loop() {
         TuneMode mode0 = TuneMode.values()[0];
+        TuneMode mode1 = TuneMode.values()[1];
 
         telemetryM.addLine("select your tuning mode using the gamepad:");
         // display servo test modes in order of TestMode enum
         telemetryM.addLine("(A): " + mode0);
-        /*telemetryM.addLine("(B): " + mode1);
-        telemetryM.addLine("(X): " + mode2);
+        telemetryM.addLine("(B): " + mode1);
+        /*telemetryM.addLine("(X): " + mode2);
         telemetryM.addLine("(Y): " + mode3);
         telemetryM.addLine("(start): " + mode4); */
 
         if (gamepad1.aWasReleased()) { mode = mode0; }
-        /*if (gamepad1.bWasReleased()) { mode = mode1; }
-        if (gamepad1.xWasReleased()) { mode = mode2; }
+        if (gamepad1.bWasReleased()) { mode = mode1; }
+        /*if (gamepad1.xWasReleased()) { mode = mode2; }
         if (gamepad1.yWasReleased()) { mode = mode3; }
         if (gamepad1.startWasReleased()) { mode = mode4; } */
 
@@ -73,6 +78,10 @@ public class ServoTuner extends OpMode {
                 transfer.setServoRaw(rightStickAmount);
                 telemetryM.addData("transfer pos", rightStickAmount);
                 break;
+            case FLOWER:
+                telemetryM.addLine("use the right stick to tune flower positions");
+                flower.setServoRaw(rightStickAmount);
+                telemetryM.addData("flower pos", rightStickAmount);
             case UNSELECTED:
                 throw new RuntimeException("make sure to select a tuning mode before starting!");
         }
