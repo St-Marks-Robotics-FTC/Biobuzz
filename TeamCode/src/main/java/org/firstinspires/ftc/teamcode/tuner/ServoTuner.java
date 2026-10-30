@@ -82,6 +82,7 @@ public class ServoTuner extends OpMode {
                 telemetryM.addLine("use the right stick to tune flower positions");
                 flower.setServoRaw(rightStickAmount);
                 telemetryM.addData("flower pos", rightStickAmount);
+                break;
             case UNSELECTED:
                 throw new RuntimeException("make sure to select a tuning mode before starting!");
         }
