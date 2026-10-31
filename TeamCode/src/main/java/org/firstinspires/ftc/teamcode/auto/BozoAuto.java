@@ -21,12 +21,16 @@ import java.util.concurrent.TimeUnit;
 /**
  * Autonomous: start at the start pose, drive linearly to the shoot pose (flywheel spinning up on the way), shoot,
  * drive linearly to an intermediate pose and then to the refuel pose to pick up balls, drive back to the shoot pose,
- * then (hive tipped) curve to the scoring side, shoot again, and drive to the park pose. If the hive did not tip,
- * the auto reports a failure in telemetry (TEMP_FAILED) and stops.
+ * then (hive tipped) curve to the scoring side and shoot again. For each of two flowers it then curves at full speed
+ * to an intermediate pose, drives a straight line at reduced speed into the flower, collects, returns by line to the
+ * same scoring-side shoot pose and shoots; after the final shot it curves to the park pose. If the hive did not
+ * tip, the auto reports a failure in telemetry (TEMP_FAILED) and stops.
  *
  * Sequence: TRAVEL_TO_FIRST_SHOOT -> SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE
  *           -> TRAVEL_TO_REFUEL -> REFUEL -> TRAVEL_TO_SHOOT
- *           -> TIPPED_TRAVEL_TO_TIPPED_SHOOT -> TIPPED_SPEED_UP_SECOND_SHOOT -> TIPPED_FEED_SECOND_SHOOT
+ *           -> TRAVEL_TO_TIPPED_SHOOT -> SPEED_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT
+ *           -> TRAVEL_TO_FLOWER_INTERMEDIATE -> TRAVEL_TO_FLOWER -> COLLECT_FLOWER -> TRAVEL_TO_SHOOT_2 -> SPEED_UP_SHOOT_2 -> FEED_SHOOT_2
+ *           -> TRAVEL_TO_FLOWER_2_INTERMEDIATE -> TRAVEL_TO_FLOWER_2 -> COLLECT_FLOWER_2 -> TRAVEL_TO_SHOOT_3 -> SPEED_UP_SHOOT_3 -> FEED_SHOOT_3
  *           -> TRAVEL_TO_PARK -> DONE
  *           (not tipped: TRAVEL_TO_SHOOT -> TEMP_FAILED -> DONE)
  */
@@ -61,11 +65,27 @@ public abstract class BozoAuto extends OpMode {
         TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake running, flywheel keeps spinning
 
         // hive tipped, go to the scoring side and shoot the second round there
-        TIPPED_TRAVEL_TO_TIPPED_SHOOT, // go to scoring side to shoot second round
-        TIPPED_SPEED_UP_SECOND_SHOOT, // arrived, wait for flywheel to speed up
-        TIPPED_FEED_SECOND_SHOOT, // Robot launch sequence...
+        TRAVEL_TO_TIPPED_SHOOT, // go to scoring side to shoot second round
+        SPEED_UP_SECOND_SHOOT, // arrived, wait for flywheel to speed up
+        FEED_SECOND_SHOOT, // Robot launch sequence...
 
-        TRAVEL_TO_PARK,        // everything off; driving a straight line from the tipped shoot pose to the park pose
+        // first flower: curve to the intermediate pose, slow line into the flower, collect, line back to the tipped shoot pose, shoot
+        TRAVEL_TO_FLOWER_INTERMEDIATE, // driving a full-speed curve (1 control point) from the tipped shoot pose to the flower's intermediate pose; intake running, flywheel keeps spinning
+        TRAVEL_TO_FLOWER,      // driving a straight line at reduced speed from the intermediate pose into the flower
+        COLLECT_FLOWER,        // sitting on the flower with intake running to pick up balls
+        TRAVEL_TO_SHOOT_2,     // driving a straight line back to the tipped shoot pose
+        SPEED_UP_SHOOT_2,      // arrived, wait for flywheel to speed up
+        FEED_SHOOT_2,          // Robot launch sequence...
+
+        // second flower: same shape as the first
+        TRAVEL_TO_FLOWER_2_INTERMEDIATE, // driving a full-speed curve (1 control point) from the tipped shoot pose to the second flower's intermediate pose
+        TRAVEL_TO_FLOWER_2,    // driving a straight line at reduced speed from the intermediate pose into the second flower
+        COLLECT_FLOWER_2,      // sitting on the second flower with intake running to pick up balls
+        TRAVEL_TO_SHOOT_3,     // driving a straight line back to the tipped shoot pose
+        SPEED_UP_SHOOT_3,      // arrived, wait for flywheel to speed up
+        FEED_SHOOT_3,          // Robot launch sequence...
+
+        TRAVEL_TO_PARK,        // everything off; driving a curve (1 control point) from the tipped shoot pose to the park pose
         DONE,                  // parked; waiting for the OpMode to be stopped
 
         TEMP_FAILED            // TEMPORARY: hive did not flip; report failure, then DONE
@@ -76,10 +96,21 @@ public abstract class BozoAuto extends OpMode {
     /** startPose -> shootPose, then shootPose -> intermediatePose -> refuelPose and back. Built in {@link #init()}. **/
     private Path startToShootPath, shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
 
-    /** shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose1} and {@link AutoConfig#tippedControlPose2}), then a straight line to park. Built in {@link #init()}. **/
-    private Path shootToTippedShootPath, tippedShootToParkPath;
+    /** shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose1} and {@link AutoConfig#tippedControlPose2}). Built in {@link #init()}. **/
+    private Path shootToTippedShootPath;
+
+    /**
+     * tippedShootPose -> flowerIntermediatePose (curve, full speed) -> flowerPose (line, {@link #FLOWER_APPROACH_SPEED}) -> tippedShootPose (line),
+     * then the same for flower 2, then tippedShootPose -> parkPose (curve). Built in {@link #init()}.
+     **/
+    private Path tippedShootToFlowerIntermediatePath, flowerIntermediateToFlowerPath, flowerToTippedShootPath,
+            tippedShootToFlower2IntermediatePath, flower2IntermediateToFlower2Path, flower2ToTippedShootPath,
+            tippedShootToParkPath;
 
     private static final double REFUEL_ROTATE_START = 0.7;
+
+    /** fraction of max path speed for the final straight run from a flower's intermediate pose into the flower **/
+    private static final double FLOWER_APPROACH_SPEED = 0.3;
 
     private void buildPaths() {
         startToShootPath = line(startPose, shootPose).linear(startPose, shootPose);
@@ -96,7 +127,24 @@ public abstract class BozoAuto extends OpMode {
         // Toward the scoring side (bent by the two control poses), then a line to park.
         shootToTippedShootPath = curve(shootPose, config.tippedControlPose1, config.tippedControlPose2, config.tippedShootPose)
                 .linear(shootPose, config.tippedShootPose);
-        tippedShootToParkPath = line(config.tippedShootPose, config.parkPose)
+        // After the tipped shoot, per flower: full-speed curve (1 control point) to an intermediate pose, then a slow
+        // straight line into the flower. Back to the tipped shoot pose is a straight line.
+        tippedShootToFlowerIntermediatePath = curve(config.tippedShootPose, config.flowerControlPose, config.flowerIntermediatePose)
+                .linear(config.tippedShootPose, config.flowerIntermediatePose);
+        flowerIntermediateToFlowerPath = line(config.flowerIntermediatePose, config.flowerPose)
+                .linear(config.flowerIntermediatePose, config.flowerPose)
+                .with(Constants.foresightConfig.maxPathSpeed.at(FLOWER_APPROACH_SPEED));
+        flowerToTippedShootPath = line(config.flowerPose, config.tippedShootPose)
+                .linear(config.flowerPose, config.tippedShootPose);
+        tippedShootToFlower2IntermediatePath = curve(config.tippedShootPose, config.flower2ControlPose, config.flower2IntermediatePose)
+                .linear(config.tippedShootPose, config.flower2IntermediatePose);
+        flower2IntermediateToFlower2Path = line(config.flower2IntermediatePose, config.flower2Pose)
+                .linear(config.flower2IntermediatePose, config.flower2Pose)
+                .with(Constants.foresightConfig.maxPathSpeed.at(FLOWER_APPROACH_SPEED));
+        flower2ToTippedShootPath = line(config.flower2Pose, config.tippedShootPose)
+                .linear(config.flower2Pose, config.tippedShootPose);
+        // Final leg: curve (1 control point) from the tipped shoot pose to park.
+        tippedShootToParkPath = curve(config.tippedShootPose, config.parkControlPose, config.parkPose)
                 .linear(config.tippedShootPose, config.parkPose);
     }
 
@@ -147,26 +195,104 @@ public abstract class BozoAuto extends OpMode {
                         setState(State.TEMP_FAILED);
                     } else {
                         follower.follow(shootToTippedShootPath);
-                        setState(State.TIPPED_TRAVEL_TO_TIPPED_SHOOT);
+                        setState(State.TRAVEL_TO_TIPPED_SHOOT);
                     }
                 }
                 break;
 
             // hive tipped, curve to the scoring side and shoot there
-            case TIPPED_TRAVEL_TO_TIPPED_SHOOT:
+            case TRAVEL_TO_TIPPED_SHOOT:
                 if (!follower.isBusy()) {
-                    setState(State.TIPPED_SPEED_UP_SECOND_SHOOT);
+                    setState(State.SPEED_UP_SECOND_SHOOT);
                 }
                 break;
-            case TIPPED_SPEED_UP_SECOND_SHOOT:
+            case SPEED_UP_SECOND_SHOOT:
                 if (isFlywheelWithinMargin()) {
                     robot.startLaunch();
-                    setState(State.TIPPED_FEED_SECOND_SHOOT);
+                    setState(State.FEED_SECOND_SHOOT);
                 }
                 break;
-            case TIPPED_FEED_SECOND_SHOOT:
+            case FEED_SECOND_SHOOT:
                 if (!robot.isLaunching()) {
-                    shutOff();
+                    // keep the flywheel spinning: we shoot again after the flower
+                    robot.intake.forward();
+                    follower.follow(tippedShootToFlowerIntermediatePath);
+                    setState(State.TRAVEL_TO_FLOWER_INTERMEDIATE);
+                }
+                break;
+
+            // collect at the first flower, then shoot again from the same tipped shoot pose
+            case TRAVEL_TO_FLOWER_INTERMEDIATE:
+                if (!follower.isBusy()) {
+                    follower.follow(flowerIntermediateToFlowerPath);
+                    setState(State.TRAVEL_TO_FLOWER);
+                }
+                break;
+            case TRAVEL_TO_FLOWER:
+                if (!follower.isBusy()
+                        // make sure it times out after getting stuck on a ball
+                        || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime) {
+                    setState(State.COLLECT_FLOWER);
+                }
+                break;
+            case COLLECT_FLOWER:
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
+                    follower.follow(flowerToTippedShootPath);
+                    setState(State.TRAVEL_TO_SHOOT_2);
+                }
+                break;
+            case TRAVEL_TO_SHOOT_2:
+                if (!follower.isBusy()) {
+                    setState(State.SPEED_UP_SHOOT_2);
+                }
+                break;
+            case SPEED_UP_SHOOT_2:
+                if (isFlywheelWithinMargin()) {
+                    robot.startLaunch();
+                    setState(State.FEED_SHOOT_2);
+                }
+                break;
+            case FEED_SHOOT_2:
+                if (!robot.isLaunching()) {
+                    robot.intake.forward();
+                    follower.follow(tippedShootToFlower2IntermediatePath);
+                    setState(State.TRAVEL_TO_FLOWER_2_INTERMEDIATE);
+                }
+                break;
+
+            // collect at the second flower, then shoot a third time from the same tipped shoot pose
+            case TRAVEL_TO_FLOWER_2_INTERMEDIATE:
+                if (!follower.isBusy()) {
+                    follower.follow(flower2IntermediateToFlower2Path);
+                    setState(State.TRAVEL_TO_FLOWER_2);
+                }
+                break;
+            case TRAVEL_TO_FLOWER_2:
+                if (!follower.isBusy()
+                        || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime) {
+                    setState(State.COLLECT_FLOWER_2);
+                }
+                break;
+            case COLLECT_FLOWER_2:
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
+                    follower.follow(flower2ToTippedShootPath);
+                    setState(State.TRAVEL_TO_SHOOT_3);
+                }
+                break;
+            case TRAVEL_TO_SHOOT_3:
+                if (!follower.isBusy()) {
+                    setState(State.SPEED_UP_SHOOT_3);
+                }
+                break;
+            case SPEED_UP_SHOOT_3:
+                if (isFlywheelWithinMargin()) {
+                    robot.startLaunch();
+                    setState(State.FEED_SHOOT_3);
+                }
+                break;
+            case FEED_SHOOT_3:
+                if (!robot.isLaunching()) {
+                    shutOff(); // last shot; everything off for park
                     follower.follow(tippedShootToParkPath);
                     setState(State.TRAVEL_TO_PARK);
                 }

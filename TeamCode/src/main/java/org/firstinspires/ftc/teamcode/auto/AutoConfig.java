@@ -3,44 +3,67 @@ package org.firstinspires.ftc.teamcode.auto;
 import com.pedropathing.math.Pose;
 
 /**
- * Poses the autonomous drives through. {@link #startPose} is where the robot is placed at init; it drives from there
- * to {@link #shootPose} before the first shot. {@link #parkControlPose} is the bezier control point that bends the
- * path from {@link #shootPose} to {@link #parkPose}; its heading is ignored (only x/y shape the curve).
+ * Poses the autonomous drives through, in path order. {@link #startPose} is where the robot is placed at init; it
+ * drives from there to {@link #shootPose} before the first shot.
  *
- * If the hive tipped over, the robot instead curves from {@link #shootPose} to {@link #tippedShootPose} (the scoring
- * side), bent by {@link #tippedControlPose1} then {@link #tippedControlPose2} (cubic bezier; headings ignored), shoots
- * there, then drives a straight line to {@link #parkPose}.
+ * If the hive tipped over, the robot curves from {@link #shootPose} to {@link #tippedShootPose} (the scoring side),
+ * bent by {@link #tippedControlPose1} then {@link #tippedControlPose2} (cubic bezier), and shoots there. It then
+ * collects each flower the same way: a full-speed curve from {@link #tippedShootPose} (bent by
+ * {@link #flowerControlPose}) to {@link #flowerIntermediatePose}, then a straight line at reduced speed into
+ * {@link #flowerPose}; after collecting it drives a straight line back to {@link #tippedShootPose} to shoot again.
+ * The second flower does the same via {@link #flower2ControlPose}, {@link #flower2IntermediatePose} and
+ * {@link #flower2Pose}. After the third shot it curves (bent by {@link #parkControlPose}) to {@link #parkPose}.
+ *
+ * Headings of control poses are ignored (only x/y shape the curve).
  */
 public class AutoConfig {
     public Pose startPose,
             shootPose,
             intermediatePose,
             refuelPose,
-            parkControlPose,
-            parkPose,
             tippedControlPose1,
             tippedControlPose2,
-            tippedShootPose;
+            tippedShootPose,
+            flowerControlPose,
+            flowerIntermediatePose,
+            flowerPose,
+            flower2ControlPose,
+            flower2IntermediatePose,
+            flower2Pose,
+            parkControlPose,
+            parkPose;
 
     public AutoConfig(
             Pose startPose,
             Pose shootPose,
             Pose intermediatePose,
             Pose refuelPose,
-            Pose parkControlPose,
-            Pose parkPose,
             Pose tippedControlPose1,
             Pose tippedControlPose2,
-            Pose tippedShootPose
+            Pose tippedShootPose,
+            Pose flowerControlPose,
+            Pose flowerIntermediatePose,
+            Pose flowerPose,
+            Pose flower2ControlPose,
+            Pose flower2IntermediatePose,
+            Pose flower2Pose,
+            Pose parkControlPose,
+            Pose parkPose
     ) {
         this.startPose = startPose;
         this.shootPose = shootPose;
         this.intermediatePose = intermediatePose;
         this.refuelPose = refuelPose;
-        this.parkControlPose = parkControlPose;
-        this.parkPose = parkPose;
         this.tippedControlPose1 = tippedControlPose1;
         this.tippedControlPose2 = tippedControlPose2;
         this.tippedShootPose = tippedShootPose;
+        this.flowerControlPose = flowerControlPose;
+        this.flowerIntermediatePose = flowerIntermediatePose;
+        this.flowerPose = flowerPose;
+        this.flower2ControlPose = flower2ControlPose;
+        this.flower2IntermediatePose = flower2IntermediatePose;
+        this.flower2Pose = flower2Pose;
+        this.parkControlPose = parkControlPose;
+        this.parkPose = parkPose;
     }
 }
