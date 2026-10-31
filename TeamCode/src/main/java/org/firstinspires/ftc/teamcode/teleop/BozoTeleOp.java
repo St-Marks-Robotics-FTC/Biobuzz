@@ -131,9 +131,9 @@ public abstract class BozoTeleOp extends OpMode {
         if (setRPM < 0) setRPM = 0;
 
         if (flywheelOn) {
-            robot.flywheel.update(setRPM);
+            robot.flywheel.update(setRPM, robot.getExpansionHubVoltage());
         } else {
-            robot.flywheel.update(0);
+            robot.flywheel.update(0, robot.getExpansionHubVoltage());
         }
     }
 

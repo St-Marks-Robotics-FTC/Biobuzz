@@ -31,7 +31,7 @@ public class Flywheel {
         pidf = new PIDF(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF); // create our PIDF controller for our launch motors
     }
 
-    public void update(double RPM) {
+    public void update(double RPM, double voltage) {
         pidf.updateTerms(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF);
         double currentTPS = getTPS();
         double setpointTPS = RPMToTPS(RPM);
@@ -39,7 +39,7 @@ public class Flywheel {
 
         if (setpointTPS == 0) {
             newPower = 0.0;
-        } else newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
+        } else newPower = pidf.calc(setpointTPS, currentTPS) * getVoltageCompensation(voltage); // calc new motor power
 
         double clippedPower = Range.clip(newPower, -Tunables.maxFlywheelBraking, 1.0);
 
@@ -51,8 +51,6 @@ public class Flywheel {
 
         launchMotor.setPower(clippedPower);
     }
-
-    /** internal methods **/
 
     public double getTPS() {
         // get TPS of flywheel in the fastest way while also being able to fall back between encoders
@@ -76,6 +74,13 @@ public class Flywheel {
 
     private static double getMotorTicksPerOutputRev() {
         return MOTOR_TICKS_PER_MOTOR_REV / LAUNCH_RATIO;
+    }
+
+    // return how much to multiply power by to compensate for voltage fall
+    private double getVoltageCompensation(double voltage) {
+        return Range.scale(voltage,
+                Tunables.flywheelVoltageStart, Tunables.flywheelVoltageEnd,
+                Tunables.flywheelCompensationMax, 1.0);  // reverse to scale inversely
     }
 
     public double TPSToRPM(double TPS) {

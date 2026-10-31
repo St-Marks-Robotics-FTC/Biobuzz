@@ -28,6 +28,9 @@ public class Tunables {
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
     public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
+    public static double flywheelVoltageStart = 12.0; // start voltage of compensation scale
+    public static double flywheelVoltageEnd = 13.5;   // end voltage of compensation scale
+    public static double flywheelCompensationMax = 1.2; // max amount to scale voltage
 
     /** intake tunables (used in Intake.java) **/
 
