@@ -58,6 +58,11 @@ public class VisionTuner extends LinearOpMode {
             if (gamepad1.xWasPressed()) calibrationSpot = "X";
             if (gamepad1.yWasPressed()) calibrationSpot = "Y";
 
+            if (gamepad1.dpadUpWasPressed()) calibrationSpot = "U";
+            if (gamepad1.dpadDownWasPressed()) calibrationSpot = "D";
+            if (gamepad1.dpadLeftWasPressed()) calibrationSpot = "L";
+            if (gamepad1.dpadRightWasPressed()) calibrationSpot = "R";
+
             if (gamepad1.startWasPressed()) isCalibrating = !isCalibrating;
 
             telemetryM.addLine("");
