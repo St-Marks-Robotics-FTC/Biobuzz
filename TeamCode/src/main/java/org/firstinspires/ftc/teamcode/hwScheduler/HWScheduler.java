@@ -8,6 +8,7 @@ import com.pedropathing.utils.Timer;
 
 import java.util.ArrayList;
 
+// TODO: add ability to get hardwareMap from scheduler when adding devices
 public class HWScheduler {
     private ArrayList<Device> deviceList = new ArrayList<>();
 
