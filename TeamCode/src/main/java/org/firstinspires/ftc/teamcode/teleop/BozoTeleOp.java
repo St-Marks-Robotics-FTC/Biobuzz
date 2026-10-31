@@ -32,6 +32,9 @@ public abstract class BozoTeleOp extends OpMode {
     private double setRPM = Tunables.manualStartingRPM;
     private boolean flywheelOn = true;
     private boolean isTurning = false;
+    private boolean isManualRPM = false;
+
+    private boolean flowerIsDown = true;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
     private Field.ScoringData lastScoringData = null;
 
@@ -64,6 +67,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         vision.update();
 
+        updateLastScoringData();
         handleDrive();
         handleFlywheel();
         handleIntake();
@@ -119,6 +123,7 @@ public abstract class BozoTeleOp extends OpMode {
 
     private void handleFlywheel() {
         if (gamepad1.bWasPressed()) flywheelOn = !flywheelOn;
+        if (gamepad1.yWasPressed()) isManualRPM = !isManualRPM;
 
         if (gamepad1.dpadUpWasPressed()) setRPM += Tunables.adjustRPM; // increment by adjustRPM
         if (gamepad1.dpadDownWasPressed()) setRPM -= Tunables.adjustRPM; // decrement by adjustRPM
@@ -128,7 +133,11 @@ public abstract class BozoTeleOp extends OpMode {
         if (setRPM < 0) setRPM = 0;
 
         if (flywheelOn) {
-            robot.flywheel.update(setRPM);
+            if (isManualRPM) {
+                robot.flywheel.update(setRPM);
+            } else { // automatic RPM
+                robot.flywheel.update(lastScoringData.idealRPM());
+            }
         } else {
             robot.flywheel.update(0);
         }
@@ -146,21 +155,27 @@ public abstract class BozoTeleOp extends OpMode {
 
         robot.update();
 
-        // TODO: add odo fallback on top of vision hive state data
-        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
-            lastScoringData = field.getScoringData(true, follower.pose());
-        } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
-            lastScoringData = field.getScoringData(false, follower.pose());
-        } else {
-            return; // hive state unknown - can't auto turn
-        }
-
 
         if (gamepad1.leftBumperWasPressed() && lastScoringData != null) {
             // they got rid of follower.turnTo() so we have to make it ourselves
             lastTurnPose = new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.angle());
             follower.hold(lastTurnPose);
             isTurning = true;
+        }
+    }
+
+    private void updateLastScoringData() {
+        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
+            lastScoringData = field.getScoringData(true, follower.pose());
+        } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
+            lastScoringData = field.getScoringData(false, follower.pose());
+        } else {
+            // we don't have data from Vision so we fall back to odometry
+            if (follower.pose().y() <= 72) {
+                lastScoringData = field.getScoringData(true, follower.pose());
+            } else {
+                lastScoringData = field.getScoringData(false, follower.pose());
+            }
         }
     }
 
@@ -187,7 +202,7 @@ public abstract class BozoTeleOp extends OpMode {
         }
 
         // always output these to telemetry
-        telemetryM.addData("desired RPM", setRPM);
+        telemetryM.addData("desired RPM", robot.flywheel.getLastSetRPM());
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
         telemetryM.update(telemetry);
     }
