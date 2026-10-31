@@ -23,7 +23,7 @@ public class Tunables {
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.001;
+    public static double flywheelP = 0.002;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
