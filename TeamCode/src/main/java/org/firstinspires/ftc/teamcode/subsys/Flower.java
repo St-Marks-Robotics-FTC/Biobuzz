@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 public class Flower {
-    private Servo flowerServo;
+    private final Servo flowerServo;
 
     private enum State {
         UP,
