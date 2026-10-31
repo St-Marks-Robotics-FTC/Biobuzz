@@ -23,8 +23,9 @@ import java.util.concurrent.TimeUnit;
  * drive linearly to an intermediate pose and then to the refuel pose to pick up balls, drive back to the shoot pose,
  * then (hive tipped) curve to the scoring side and shoot again. For each of two flowers it then drives at full speed
  * to an intermediate pose (a line for flower 1, a curve for flower 2), drives a straight line at reduced speed into
- * the flower, collects, backs out to the same intermediate pose, returns by line to the same scoring-side shoot pose
- * and shoots; after the final shot it curves to the park pose. If the hive did not tip, the auto reports a failure
+ * the flower, collects, backs out to the same intermediate pose. After flower 1 it returns by line to the scoring-side
+ * shoot pose and shoots; after flower 2 it instead returns by line to the original shoot pose, shoots, and then
+ * curves to the park pose. If the hive did not tip, the auto reports a failure
  * in telemetry (TEMP_FAILED) and stops.
  *
  * Sequence: TRAVEL_TO_FIRST_SHOOT -> SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE
@@ -86,11 +87,11 @@ public abstract class BozoAuto extends OpMode {
         TRAVEL_TO_FLOWER_2,    // driving a straight line at reduced speed from the intermediate pose into the second flower
         COLLECT_FLOWER_2,      // sitting on the second flower with intake running to pick up balls
         TRAVEL_FROM_FLOWER_2_TO_INTERMEDIATE, // backing out of the second flower to its intermediate pose
-        TRAVEL_TO_SHOOT_3,     // driving a straight line from the intermediate pose back to the tipped shoot pose
+        TRAVEL_TO_SHOOT_3,     // driving a straight line from the intermediate pose to the ORIGINAL shoot pose (not the tipped one)
         SPEED_UP_SHOOT_3,      // arrived, wait for flywheel to speed up
         FEED_SHOOT_3,          // Robot launch sequence...
 
-        TRAVEL_TO_PARK,        // everything off; driving a curve (1 control point) from the tipped shoot pose to the park pose
+        TRAVEL_TO_PARK,        // everything off; driving a curve (1 control point) from the original shoot pose to the park pose
         DONE,                  // parked; waiting for the OpMode to be stopped
 
         TEMP_FAILED            // TEMPORARY: hive did not flip; report failure, then DONE
@@ -108,13 +109,13 @@ public abstract class BozoAuto extends OpMode {
      * tippedShootPose -> flowerIntermediatePose (line, full speed) -> flowerPose (line, {@link #FLOWER_APPROACH_SPEED})
      * -> flowerIntermediatePose (line) -> tippedShootPose (line), then tippedShootPose -> flower2IntermediatePose
      * (curve, full speed) -> flower2Pose (line, {@link #FLOWER_APPROACH_SPEED}) -> flower2IntermediatePose (line)
-     * -> tippedShootPose (line), then tippedShootPose -> parkPose (curve). Built in {@link #init()}.
+     * -> shootPose (line, the ORIGINAL shoot pose), then shootPose -> parkPose (curve). Built in {@link #init()}.
      **/
     private Path tippedShootToFlowerIntermediatePath, flowerIntermediateToFlowerPath,
             flowerToFlowerIntermediatePath, flowerIntermediateToTippedShootPath,
             tippedShootToFlower2IntermediatePath, flower2IntermediateToFlower2Path,
-            flower2ToFlower2IntermediatePath, flower2IntermediateToTippedShootPath,
-            tippedShootToParkPath;
+            flower2ToFlower2IntermediatePath, flower2IntermediateToShootPath,
+            shootToParkPath;
 
     private static final double REFUEL_ROTATE_START = 0.7;
 
@@ -155,11 +156,10 @@ public abstract class BozoAuto extends OpMode {
                 .with(Constants.foresightConfig.maxPathSpeed.at(FLOWER_APPROACH_SPEED));
         flower2ToFlower2IntermediatePath = line(config.flower2Pose, config.flower2IntermediatePose)
                 .linear(config.flower2Pose, config.flower2IntermediatePose);
-        flower2IntermediateToTippedShootPath = line(config.flower2IntermediatePose, config.tippedShootPose)
-                .linear(config.flower2IntermediatePose, config.tippedShootPose);
-        // Final leg: curve (1 control point) from the tipped shoot pose to park.
-        tippedShootToParkPath = curve(config.tippedShootPose, config.parkControlPose, config.parkPose)
-                .linear(config.tippedShootPose, config.parkPose);
+        flower2IntermediateToShootPath = line(config.flower2IntermediatePose, shootPose)
+                .linear(config.flower2IntermediatePose, shootPose);
+        shootToParkPath = curve(shootPose, config.parkControlPose, config.parkPose)
+                .linear(shootPose, config.parkPose);
     }
 
     private void autoUpdate() {
@@ -283,9 +283,10 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
 
-            // collect at the second flower, then shoot a third time from the same tipped shoot pose
+            // collect at the second flower, then return to the original shoot pose for the third shot
             case TRAVEL_TO_FLOWER_2_INTERMEDIATE:
                 if (!follower.isBusy()) {
+                    // flower is already down (lowered when leaving the tipped shoot pose)
                     follower.follow(flower2IntermediateToFlower2Path);
                     setState(State.TRAVEL_TO_FLOWER_2);
                 }
@@ -305,7 +306,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case TRAVEL_FROM_FLOWER_2_TO_INTERMEDIATE:
                 if (!follower.isBusy()) {
-                    follower.follow(flower2IntermediateToTippedShootPath);
+                    follower.follow(flower2IntermediateToShootPath);
                     setState(State.TRAVEL_TO_SHOOT_3);
                 }
                 break;
@@ -323,7 +324,7 @@ public abstract class BozoAuto extends OpMode {
             case FEED_SHOOT_3:
                 if (!robot.isLaunching()) {
                     shutOff(); // last shot; everything off for park
-                    follower.follow(tippedShootToParkPath);
+                    follower.follow(shootToParkPath);
                     setState(State.TRAVEL_TO_PARK);
                 }
                 break;
