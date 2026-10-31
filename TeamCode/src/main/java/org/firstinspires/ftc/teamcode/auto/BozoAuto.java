@@ -76,7 +76,7 @@ public abstract class BozoAuto extends OpMode {
     /** startPose -> shootPose, then shootPose -> intermediatePose -> refuelPose and back. Built in {@link #init()}. **/
     private Path startToShootPath, shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
 
-    /** shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose}), then a straight line to park. Built in {@link #init()}. **/
+    /** shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose1} and {@link AutoConfig#tippedControlPose2}), then a straight line to park. Built in {@link #init()}. **/
     private Path shootToTippedShootPath, tippedShootToParkPath;
 
     private static final double REFUEL_ROTATE_START = 0.7;
@@ -93,8 +93,8 @@ public abstract class BozoAuto extends OpMode {
                 );
         refuelToShootPath = line(config.refuelPose, shootPose).linear(config.refuelPose, shootPose);
         // curve(start, control, end): the control point is not driven through, it only pulls the path toward it.
-        // Toward the scoring side (bent by the control pose), then a line to park.
-        shootToTippedShootPath = curve(shootPose, config.tippedControlPose, config.tippedShootPose)
+        // Toward the scoring side (bent by the two control poses), then a line to park.
+        shootToTippedShootPath = curve(shootPose, config.tippedControlPose1, config.tippedControlPose2, config.tippedShootPose)
                 .linear(shootPose, config.tippedShootPose);
         tippedShootToParkPath = line(config.tippedShootPose, config.parkPose)
                 .linear(config.tippedShootPose, config.parkPose);
@@ -204,7 +204,7 @@ public abstract class BozoAuto extends OpMode {
         vision.update();
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target also dih
-        robot.updateLaunch(); // advances the shooting state machine; no-op when not launching
+        robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);

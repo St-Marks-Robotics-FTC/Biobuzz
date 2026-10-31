@@ -12,7 +12,8 @@ public abstract class BlueAuto extends BozoAuto {
     public static Pose parkControlPose = new Pose(108, 120, Math.toRadians(180)); // bezier control point: pulls the park path into a curve; x/y only
     public static Pose parkPose = new Pose(132, 42, Math.toRadians(180));
     // CASE 2 (hive tipped)
-    public static Pose tippedControlPose = new Pose(72, 72, Math.toRadians(270)); // bezier control point toward scoring side; x/y only
+    public static Pose tippedControlPose1 = new Pose(72, 72, Math.toRadians(270)); // first bezier control point toward scoring side; x/y only
+    public static Pose tippedControlPose2 = new Pose(96, 72, Math.toRadians(270)); // second bezier control point; x/y only. DUMMY coords, replace with tuned values
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(90)); // scoring side: shootPose mirrored over y = 72 (y -> 144 - y)
 
 
@@ -28,7 +29,8 @@ public abstract class BlueAuto extends BozoAuto {
                 refuelPose,
                 parkControlPose,
                 parkPose,
-                tippedControlPose,
+                tippedControlPose1,
+                tippedControlPose2,
                 tippedShootPose
         );
     }

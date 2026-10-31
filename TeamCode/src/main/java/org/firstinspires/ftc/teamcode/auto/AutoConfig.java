@@ -8,8 +8,8 @@ import com.pedropathing.math.Pose;
  * path from {@link #shootPose} to {@link #parkPose}; its heading is ignored (only x/y shape the curve).
  *
  * If the hive tipped over, the robot instead curves from {@link #shootPose} to {@link #tippedShootPose} (the scoring
- * side), bent by {@link #tippedControlPose} (heading ignored), shoots there, then drives a straight line to
- * {@link #parkPose}.
+ * side), bent by {@link #tippedControlPose1} then {@link #tippedControlPose2} (cubic bezier; headings ignored), shoots
+ * there, then drives a straight line to {@link #parkPose}.
  */
 public class AutoConfig {
     public Pose startPose,
@@ -18,7 +18,8 @@ public class AutoConfig {
             refuelPose,
             parkControlPose,
             parkPose,
-            tippedControlPose,
+            tippedControlPose1,
+            tippedControlPose2,
             tippedShootPose;
 
     public AutoConfig(
@@ -28,7 +29,8 @@ public class AutoConfig {
             Pose refuelPose,
             Pose parkControlPose,
             Pose parkPose,
-            Pose tippedControlPose,
+            Pose tippedControlPose1,
+            Pose tippedControlPose2,
             Pose tippedShootPose
     ) {
         this.startPose = startPose;
@@ -37,7 +39,8 @@ public class AutoConfig {
         this.refuelPose = refuelPose;
         this.parkControlPose = parkControlPose;
         this.parkPose = parkPose;
-        this.tippedControlPose = tippedControlPose;
+        this.tippedControlPose1 = tippedControlPose1;
+        this.tippedControlPose2 = tippedControlPose2;
         this.tippedShootPose = tippedShootPose;
     }
 }
