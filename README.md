@@ -174,13 +174,8 @@ the **start** button toggles between robot/field centric control
 
 ## Auto
 
-### blue team
-
-- `BlueAuto`: starting by bottom triangle
-
-### red team
-
-- `RedAuto`: starting by bottom triangle
+- `BlueAuto`: start in middle of tile touching wall directly across from goal
+- `RedAuto`: start in middle of tile touching wall directly across from goal
 
 ## Tuner
 

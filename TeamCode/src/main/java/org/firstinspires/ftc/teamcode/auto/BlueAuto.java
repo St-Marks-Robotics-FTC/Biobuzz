@@ -2,9 +2,11 @@ package org.firstinspires.ftc.teamcode.auto;
 
 import com.pedropathing.math.Pose;
 import com.bylazar.configurables.annotations.Configurable;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Configurable
-public abstract class BlueAuto extends BozoAuto {
+@Autonomous(name = "BlueAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
+public class BlueAuto extends BozoAuto {
     public static Pose startPose = new Pose(84, 137.246, Math.toRadians(270)); // where the robot is placed at init; drives to shootPose first
     public static Pose shootPose = new Pose(84, 111.246, Math.toRadians(270));
     public static Pose intermediatePose = new Pose(122, 132.25, Math.toRadians(30)); // approach heading toward the wall (mirror of Red's 210)
