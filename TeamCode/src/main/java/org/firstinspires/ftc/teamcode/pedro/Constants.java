@@ -45,10 +45,10 @@ public class Constants {
     // tuned 10-04-2026
     public static PinpointConfig localizerConfig = new PinpointConfig(c -> {
         c.name.set("odo");
-        c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
-        c.xPodOffset.set(-1.98); // taken from ruler 10-30-2026
-        c.yPodOffset.set(-3.7);  // taken from ruler 10-30-2026
-        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        c.xPodOffset.set(1.072);    // taken from Onshape 10-04-2026
+        c.yPodOffset.set(-3.64932); // taken from Onshape 10-04-2026
+        c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
         c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
         c.globalDistanceUnit.set(DistanceUnit.INCH);
         c.offsetUnits.set(DistanceUnit.INCH);
