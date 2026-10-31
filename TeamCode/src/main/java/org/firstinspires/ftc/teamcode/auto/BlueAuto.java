@@ -14,15 +14,15 @@ public abstract class BlueAuto extends BozoAuto {
 
     // hive tipped: scoring side (shootPose mirrored over y = 72)
     public static Pose tippedControlPose1 = new Pose(132, 132, Math.toRadians(270));
-    public static Pose tippedControlPose2 = new Pose(132, 12, Math.toRadians(270));
+    public static Pose tippedControlPose2 = new Pose(126, 20, Math.toRadians(270));
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(90));
 
     // flowers, collected after the tipped shoot
     public static Pose flowerIntermediatePose = new Pose(96, 24, Math.toRadians(270));
-    public static Pose flowerPose = new Pose(96, 8, Math.toRadians(270));
+    public static Pose flowerPose = new Pose(96, 14, Math.toRadians(270));
     public static Pose flower2ControlPose = new Pose(120, 24, Math.toRadians(0));
     public static Pose flower2IntermediatePose = new Pose(120, 96, Math.toRadians(0));
-    public static Pose flower2Pose = new Pose(136, 96, Math.toRadians(0));
+    public static Pose flower2Pose = new Pose(130, 96, Math.toRadians(0));
 
     public static Pose parkControlPose = new Pose(120, 120, Math.toRadians(180));
     public static Pose parkPose = new Pose(132, 42, Math.toRadians(180));
