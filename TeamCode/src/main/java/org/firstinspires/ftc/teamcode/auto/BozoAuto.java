@@ -100,8 +100,9 @@ public abstract class BozoAuto extends OpMode {
     private Path shootToTippedShootPath;
 
     /**
-     * tippedShootPose -> flowerIntermediatePose (curve, full speed) -> flowerPose (line, {@link #FLOWER_APPROACH_SPEED}) -> tippedShootPose (line),
-     * then the same for flower 2, then tippedShootPose -> parkPose (curve). Built in {@link #init()}.
+     * tippedShootPose -> flowerIntermediatePose (line, full speed) -> flowerPose (line, {@link #FLOWER_APPROACH_SPEED}) -> tippedShootPose (line),
+     * then tippedShootPose -> flower2IntermediatePose (curve, full speed) -> flower2Pose (line, {@link #FLOWER_APPROACH_SPEED})
+     * -> tippedShootPose (line), then tippedShootPose -> parkPose (curve). Built in {@link #init()}.
      **/
     private Path tippedShootToFlowerIntermediatePath, flowerIntermediateToFlowerPath, flowerToTippedShootPath,
             tippedShootToFlower2IntermediatePath, flower2IntermediateToFlower2Path, flower2ToTippedShootPath,
@@ -127,9 +128,9 @@ public abstract class BozoAuto extends OpMode {
         // Toward the scoring side (bent by the two control poses), then a line to park.
         shootToTippedShootPath = curve(shootPose, config.tippedControlPose1, config.tippedControlPose2, config.tippedShootPose)
                 .linear(shootPose, config.tippedShootPose);
-        // After the tipped shoot, per flower: full-speed curve (1 control point) to an intermediate pose, then a slow
-        // straight line into the flower. Back to the tipped shoot pose is a straight line.
-        tippedShootToFlowerIntermediatePath = curve(config.tippedShootPose, config.flowerControlPose, config.flowerIntermediatePose)
+        // After the tipped shoot, per flower: full-speed approach to an intermediate pose (flower 1 a line, flower 2 a
+        // curve with 1 control point), then a slow straight line into the flower. Back to the tipped shoot pose is a line.
+        tippedShootToFlowerIntermediatePath = line(config.tippedShootPose, config.flowerIntermediatePose)
                 .linear(config.tippedShootPose, config.flowerIntermediatePose);
         flowerIntermediateToFlowerPath = line(config.flowerIntermediatePose, config.flowerPose)
                 .linear(config.flowerIntermediatePose, config.flowerPose)

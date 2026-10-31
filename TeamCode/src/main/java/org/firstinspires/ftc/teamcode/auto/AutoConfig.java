@@ -8,11 +8,11 @@ import com.pedropathing.math.Pose;
  *
  * If the hive tipped over, the robot curves from {@link #shootPose} to {@link #tippedShootPose} (the scoring side),
  * bent by {@link #tippedControlPose1} then {@link #tippedControlPose2} (cubic bezier), and shoots there. It then
- * collects each flower the same way: a full-speed curve from {@link #tippedShootPose} (bent by
- * {@link #flowerControlPose}) to {@link #flowerIntermediatePose}, then a straight line at reduced speed into
- * {@link #flowerPose}; after collecting it drives a straight line back to {@link #tippedShootPose} to shoot again.
- * The second flower does the same via {@link #flower2ControlPose}, {@link #flower2IntermediatePose} and
- * {@link #flower2Pose}. After the third shot it curves (bent by {@link #parkControlPose}) to {@link #parkPose}.
+ * collects each flower: a full-speed approach to the flower's intermediate pose, then a straight line at reduced
+ * speed into the flower; after collecting it drives a straight line back to {@link #tippedShootPose} to shoot again.
+ * Flower 1's approach ({@link #flowerIntermediatePose}) is a straight line; flower 2's is a curve bent by
+ * {@link #flower2ControlPose} to {@link #flower2IntermediatePose}, then into {@link #flower2Pose}. After the third
+ * shot it curves (bent by {@link #parkControlPose}) to {@link #parkPose}.
  *
  * Headings of control poses are ignored (only x/y shape the curve).
  */
@@ -24,7 +24,6 @@ public class AutoConfig {
             tippedControlPose1,
             tippedControlPose2,
             tippedShootPose,
-            flowerControlPose,
             flowerIntermediatePose,
             flowerPose,
             flower2ControlPose,
@@ -41,7 +40,6 @@ public class AutoConfig {
             Pose tippedControlPose1,
             Pose tippedControlPose2,
             Pose tippedShootPose,
-            Pose flowerControlPose,
             Pose flowerIntermediatePose,
             Pose flowerPose,
             Pose flower2ControlPose,
@@ -57,7 +55,6 @@ public class AutoConfig {
         this.tippedControlPose1 = tippedControlPose1;
         this.tippedControlPose2 = tippedControlPose2;
         this.tippedShootPose = tippedShootPose;
-        this.flowerControlPose = flowerControlPose;
         this.flowerIntermediatePose = flowerIntermediatePose;
         this.flowerPose = flowerPose;
         this.flower2ControlPose = flower2ControlPose;

@@ -18,7 +18,6 @@ public abstract class BlueAuto extends BozoAuto {
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(90));
 
     // flowers, collected after the tipped shoot
-    public static Pose flowerControlPose = new Pose(96, 84, Math.toRadians(0));
     public static Pose flowerIntermediatePose = new Pose(108, 96, Math.toRadians(0));
     public static Pose flowerPose = new Pose(120, 96, Math.toRadians(0));
     public static Pose flower2ControlPose = new Pose(96, 108, Math.toRadians(0));
@@ -41,7 +40,6 @@ public abstract class BlueAuto extends BozoAuto {
                 tippedControlPose1,
                 tippedControlPose2,
                 tippedShootPose,
-                flowerControlPose,
                 flowerIntermediatePose,
                 flowerPose,
                 flower2ControlPose,
