@@ -7,7 +7,7 @@ import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
 
 public class Transfer {
-    private static final double PRIORITY_MULTIPLIER = 4; // open/close is a small position change, but VITAL
+    private static final double PRIORITY_MULTIPLIER = 1; // open/close is a small position change, but VITAL
 
     private SServo servo;
 

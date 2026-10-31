@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
 public class Flywheel {
     public static final int MOTOR_TICKS_PER_MOTOR_REV = 28; // encoder ticks per motor revolution
     public static final double LAUNCH_RATIO = 1; // motor->flywheel ratio (output rotations / motor rotations)
-    private static final double priorityMultiplier = 4; // PIDF makes small power changes, so boost them to keep up with bigger changes
+    private static final double priorityMultiplier = 1; // PIDF makes small power changes, so boost them to keep up with bigger changes
 
     /** hardware **/
     private SMotor launchMotor; // writes go through the scheduler, reads go straight to launchMotor.m
