@@ -7,6 +7,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
@@ -53,6 +54,10 @@ public class Robot {
 
     public double getSystemCurrent() { // return system current in amps
         return (controlHub.getCurrent(CurrentUnit.AMPS) + expansionHub.getCurrent(CurrentUnit.AMPS));
+    }
+
+    public double getExpansionHubVoltage() {
+        return expansionHub.getInputVoltage(VoltageUnit.VOLTS);
     }
 
     public void startLaunch() {

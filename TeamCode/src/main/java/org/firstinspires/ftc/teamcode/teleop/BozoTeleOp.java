@@ -141,7 +141,7 @@ public abstract class BozoTeleOp extends OpMode {
                 robot.flywheel.update(lastScoringData.idealRPM());
             }
         } else {
-            robot.flywheel.update(0);
+            robot.flywheel.update(0, robot.getExpansionHubVoltage());
         }
     }
 
