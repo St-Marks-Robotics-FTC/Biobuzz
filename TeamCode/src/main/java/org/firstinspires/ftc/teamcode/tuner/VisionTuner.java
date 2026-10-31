@@ -40,11 +40,11 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addLine("(A): " + mode0);
             telemetryM.addLine("(B): " + mode1);
 
-            if (gamepad1.aWasReleased()) {
+            if (gamepad1.leftBumperWasPressed()) {
                 mode = mode0;
                 vision.startPipeline(Vision.Pipeline.BLUE);
             }
-            if (gamepad1.bWasReleased()) {
+            if (gamepad1.rightBumperWasPressed()) {
                 mode = mode1;
                 vision.startPipeline(Vision.Pipeline.RED);
             }
