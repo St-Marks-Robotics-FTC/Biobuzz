@@ -33,7 +33,6 @@ public abstract class BozoTeleOp extends OpMode {
     private boolean flywheelOn = true;
     private boolean isTurning = false;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
-    private Field.ScoringData lastScoringData = null;
 
     @Override
     public void init() {
@@ -76,7 +75,9 @@ public abstract class BozoTeleOp extends OpMode {
 
         follower.update();
 
-        if (Tunables.isDebugging) updateDebuggingTelemetry();
+        robot.update(loopTimer.milliseconds()); // write subsystem hardware with whatever time is left in the loop
+
+        if (Tunables.isDebugging) updateTelemetry();
 
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
         telemetryM.update(telemetry);
@@ -149,25 +150,26 @@ public abstract class BozoTeleOp extends OpMode {
 
         robot.updateLaunch();
 
-        // TODO: add odo fallback on top of vision hive state data
+        Field.ScoringData scoringData;
         if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
-            lastScoringData = field.getScoringData(true, follower.pose());
+            scoringData = field.getScoringData(true, follower.pose());
         } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
-            lastScoringData = field.getScoringData(false, follower.pose());
+            scoringData = field.getScoringData(false, follower.pose());
         } else {
             return; // hive state unknown - can't auto turn
         }
 
+        telemetryM.addLine(scoringData.toString());
 
-        if (gamepad1.leftBumperWasPressed() && lastScoringData != null) {
+        if (gamepad1.leftBumperWasPressed()) {
             // they got rid of follower.turnTo() so we have to make it ourselves
-            lastTurnPose = new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.angle());
+            lastTurnPose = new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle());
             follower.hold(lastTurnPose);
             isTurning = true;
         }
     }
 
-    private void updateDebuggingTelemetry() {
+    private void updateTelemetry() {
         // flywheel
         telemetryM.addData("desired RPM", setRPM);
         telemetryM.addData("current RPM", robot.flywheel.getRPM());
@@ -178,12 +180,8 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.addData("odo x", follower.pose().x());
         telemetryM.addData("odo y", follower.pose().y());
 
-        // Field
-        if (lastScoringData != null) {
-            telemetryM.addLine(lastScoringData.toString());
-        } else {
-            telemetryM.addLine("lastScoringData is null!");
-        }
+        // hardware scheduler
+        telemetryM.addLine(robot.scheduler.getStatus());
     }
 }
 

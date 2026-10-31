@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 
 @TeleOp(name="FlywheelTuner", group="Tuner")
@@ -22,7 +23,8 @@ public class FlywheelTuner extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        Flywheel flywheel = new Flywheel(hardwareMap);
+        HWScheduler scheduler = new HWScheduler();
+        Flywheel flywheel = new Flywheel(hardwareMap, scheduler);
 
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
@@ -63,6 +65,8 @@ public class FlywheelTuner extends LinearOpMode {
                     telemetryM.addData("desired flywheel TPS", flywheel.RPMToTPS(desiredFlywheelRPM));
                     break;
             }
+
+            scheduler.update(0); // write flywheel power
 
             telemetryM.addData("flywheel RPM", flywheel.getRPM());
             telemetryM.addData("flywheel TPS", flywheel.getTPS());

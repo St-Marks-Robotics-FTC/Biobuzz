@@ -13,7 +13,7 @@ public class SMotor extends Device {
     public SMotor(String name, double priorityMultiplier, HardwareMap hw) {
         super(name, priorityMultiplier); // create Device
 
-        lastUpdateLength = 3; // estimated time
+        estimatedUpdateLength = 3; // estimated time
 
         m = hw.get(DcMotorEx.class, name);
     }
@@ -26,12 +26,11 @@ public class SMotor extends Device {
         return lastPower;
     }
 
-    public double getPriority() {
-        double priority = Math.abs(lastPower - setPower) * priorityMultiplier;
-        return priority;
+    protected double getChange() {
+        return Math.abs(lastPower - setPower);
     }
 
-    public void write() {
+    protected void write() {
         m.setPower(setPower);
         lastPower = setPower;
     }

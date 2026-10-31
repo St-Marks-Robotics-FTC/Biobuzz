@@ -13,7 +13,7 @@ public class SDualMotor extends Device {
     public SDualMotor(String name1, String name2, double priorityMultiplier, HardwareMap hw) {
         super(name1 + name2, priorityMultiplier); // create Device
 
-        lastUpdateLength = 6; // estimated time
+        estimatedUpdateLength = 6; // estimated time
 
         m1 = hw.get(DcMotorEx.class, name1);
         m2 = hw.get(DcMotorEx.class, name2);
@@ -27,12 +27,11 @@ public class SDualMotor extends Device {
         return lastPower;
     }
 
-    public double getPriority() {
-        double priority = Math.abs(lastPower - setPower) * priorityMultiplier;
-        return priority;
+    protected double getChange() {
+        return Math.abs(lastPower - setPower);
     }
 
-    public void write() {
+    protected void write() {
         m1.setPower(setPower);
         m2.setPower(setPower);
         lastPower = setPower;

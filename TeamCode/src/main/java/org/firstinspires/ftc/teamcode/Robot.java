@@ -7,6 +7,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.teamcode.subsys.Transfer;
 public class Robot {
     public LynxModule controlHub;
     public LynxModule expansionHub;
+    public HWScheduler scheduler;
     public Flywheel flywheel;
     public Intake intake;
     public Transfer transfer;
@@ -40,15 +42,22 @@ public class Robot {
         controlHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         expansionHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
 
-        flywheel = new Flywheel(hw);
-        intake = new Intake(hw);
-        transfer = new Transfer(hw);
+        scheduler = new HWScheduler(); // subsystems register their devices with this
+
+        flywheel = new Flywheel(hw, scheduler);
+        intake = new Intake(hw, scheduler);
+        transfer = new Transfer(hw, scheduler);
 
         launchTimer = new Timer();
     }
 
     public double getSystemCurrent() { // return system current in amps
         return (controlHub.getCurrent(CurrentUnit.AMPS) + expansionHub.getCurrent(CurrentUnit.AMPS));
+    }
+
+    /** writes queued hardware changes - call this once at the end of every loop **/
+    public double update(double elapsedTime) { // take in time we have already spent this loop and return time the scheduler took
+        return scheduler.update(elapsedTime);
     }
 
     public void startLaunch() {

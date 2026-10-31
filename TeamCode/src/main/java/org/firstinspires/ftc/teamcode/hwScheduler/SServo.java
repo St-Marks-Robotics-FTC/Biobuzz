@@ -14,7 +14,7 @@ public class SServo extends Device {
     public SServo(String name, double priorityMultiplier, HardwareMap hw) {
         super(name, priorityMultiplier);
 
-        lastUpdateLength = 3; // estimated update time
+        estimatedUpdateLength = 3; // estimated update time
 
         s = hw.get(Servo.class, name);
     }
@@ -27,12 +27,11 @@ public class SServo extends Device {
         return lastPos;
     }
 
-    public double getPriority() {
-        double priority = Math.abs(lastPos - setPos) * priorityMultiplier;
-        return priority;
+    protected double getChange() {
+        return Math.abs(lastPos - setPos);
     }
 
-    public void write() {
+    protected void write() {
         s.setPosition(setPos);
         lastPos = setPos;
     }
