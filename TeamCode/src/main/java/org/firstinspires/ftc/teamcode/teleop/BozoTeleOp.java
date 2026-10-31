@@ -33,7 +33,6 @@ public abstract class BozoTeleOp extends OpMode {
     private boolean flywheelOn = true;
     private boolean isTurning = false;
 
-    private boolean flowerIsDown = true;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
     private Field.ScoringData lastScoringData = null;
 

@@ -19,10 +19,10 @@ public abstract class RedAuto extends BozoAuto {
 
     // flowers, collected after the tipped shoot
     public static Pose flowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
-    public static Pose flowerPose = new Pose(48, 134, Math.toRadians(90));
+    public static Pose flowerPose = new Pose(48, 136, Math.toRadians(90));
     public static Pose flower2ControlPose = new Pose(18, 90, Math.toRadians(180));
     public static Pose flower2IntermediatePose = new Pose(24, 48, Math.toRadians(180));
-    public static Pose flower2Pose = new Pose(10, 48, Math.toRadians(180));
+    public static Pose flower2Pose = new Pose(8, 48, Math.toRadians(180));
 
     public static Pose parkControlPose = new Pose(24, 24, Math.toRadians(0));
     public static Pose parkPose = new Pose(12, 102, Math.toRadians(0));

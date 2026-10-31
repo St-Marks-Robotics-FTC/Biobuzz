@@ -230,7 +230,6 @@ public abstract class BozoAuto extends OpMode {
                 if (!robot.isLaunching()) {
                     // keep the flywheel spinning: we shoot again after the flower
                     robot.intake.forward();
-                    robot.flower.goDown(); // lower on the way to the flower so it is down before arriving
                     follower.follow(tippedShootToFlowerIntermediatePath);
                     setState(State.TRAVEL_TO_FLOWER_INTERMEDIATE);
                 }
@@ -239,6 +238,7 @@ public abstract class BozoAuto extends OpMode {
             // collect at the first flower, then shoot again from the same tipped shoot pose
             case TRAVEL_TO_FLOWER_INTERMEDIATE:
                 if (!follower.isBusy()) {
+                    robot.flower.goDown();
                     follower.follow(flowerIntermediateToFlowerPath);
                     setState(State.TRAVEL_TO_FLOWER);
                 }
@@ -277,7 +277,6 @@ public abstract class BozoAuto extends OpMode {
             case FEED_SHOOT_2:
                 if (!robot.isLaunching()) {
                     robot.intake.forward();
-                    robot.flower.goDown(); // lower on the way to the flower so it is down before arriving
                     follower.follow(tippedShootToFlower2IntermediatePath);
                     setState(State.TRAVEL_TO_FLOWER_2_INTERMEDIATE);
                 }
@@ -286,7 +285,7 @@ public abstract class BozoAuto extends OpMode {
             // collect at the second flower, then return to the original shoot pose for the third shot
             case TRAVEL_TO_FLOWER_2_INTERMEDIATE:
                 if (!follower.isBusy()) {
-                    // flower is already down (lowered when leaving the tipped shoot pose)
+                    robot.flower.goDown();
                     follower.follow(flower2IntermediateToFlower2Path);
                     setState(State.TRAVEL_TO_FLOWER_2);
                 }
