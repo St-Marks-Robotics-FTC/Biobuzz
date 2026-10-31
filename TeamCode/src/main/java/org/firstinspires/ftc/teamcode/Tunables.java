@@ -57,7 +57,7 @@ public class Tunables {
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
     public static double tagThreshold = 2; // amount of tags we need at least
-    public static double shootRPM = 3150; // target flywheel RPM while lined up to shoot
+    public static double shootRPM = 3130; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
     public static long refuelDurationMillis = 500; // how long to intake while driving through the refuel line
     public static double maxTravelToRefuelTime = 3000; // timeout for travel to picking up balls (if it gets stuck on a ball)
