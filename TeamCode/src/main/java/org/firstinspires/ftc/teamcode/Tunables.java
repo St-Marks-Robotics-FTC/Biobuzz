@@ -15,6 +15,8 @@ public class Tunables {
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
+
+    public static double manualStartingRPM = 3250;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
 
@@ -25,25 +27,32 @@ public class Tunables {
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
-    public static double maxFlywheelBraking = 0.05; // max amount of breaking (negative power) to apply to launch motors
-    // disable this for now
-    public static double flywheelQuickStartThreshold = 10000000; // if TPS diff is greater than this, set full power (~1000rpm)
+    public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
 
     /** intake tunables (used in Intake.java) **/
 
+    public static boolean intakeUsePowerSave = true;
+    public static int intakePowerSaveWaitInterval = 30; // how often to check for a stalled intake while running
+    public static int intakePowerSaveCheckInterval = 30; // how often to update intake power/velocity check in millis
+    public static double intakePowerSaveTriggerAmps = 6; // if we are drawing more amps than this, trigger power save
+    public static double intakePowerSaveTriggerVelocity = 0; // if we have a tps less than this, trigger power save
+    public static double intakeHoldPower = 0.0; // minimum power for balls to not fall out of intake
     public static double intakeForwardPower = 1.0;
     public static double intakeForwardLaunchingPower = .7;
 
     /** transfer tunables (used in Transfer.java) **/
 
-    public static double transferOpen = 0.254;
-    public static double transferClosed = 0.00;
+    public static double transferOpen = 0.41;
+    public static double transferClosed = 0.108;
+
+    public static double flowerDown = 0.908;
+    public static double flowerUp = 0.39;
 
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 1400;
+    public static double launchShootingTime = 1600;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 

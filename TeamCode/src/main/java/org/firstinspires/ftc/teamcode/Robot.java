@@ -7,6 +7,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
@@ -17,6 +18,8 @@ public class Robot {
     public Flywheel flywheel;
     public Intake intake;
     public Transfer transfer;
+
+    public Flower flower;
 
     private boolean isLaunching = false;
     private Timer launchTimer;
@@ -43,6 +46,7 @@ public class Robot {
         flywheel = new Flywheel(hw);
         intake = new Intake(hw);
         transfer = new Transfer(hw);
+        flower = new Flower(hw);
 
         launchTimer = new Timer();
     }
@@ -55,7 +59,7 @@ public class Robot {
         launchState = LaunchState.START_LAUNCH;
     }
 
-    public void updateLaunch() { // returns true when we're done launching
+    public void update() {
         switch (launchState) {
             case LOCKED:
                 // do nothing
@@ -75,7 +79,7 @@ public class Robot {
             case OPENING_TRANSFER:
                 if (launchTimer.milliseconds() >= Tunables.launchTransferOpeningTime) {
                     // we've waited for transfer to open so we can now start our intake at launching power
-                    intake.forwardLaunching();
+                    intake.forward();
                     launchState = LaunchState.SHOOTING;
                     launchTimer.reset();
                 }
@@ -90,6 +94,8 @@ public class Robot {
                 }
                 break;
         }
+
+        intake.update(isLaunching);
     }
 
     public boolean isLaunching() {
