@@ -21,11 +21,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Autonomous: start at the start pose, drive linearly to the shoot pose (flywheel spinning up on the way), shoot,
  * drive linearly to an intermediate pose and then to the refuel pose to pick up balls, drive back to the shoot pose,
- * shoot again, then curve over to the park pose.
+ * then (hive tipped) curve to the scoring side, shoot again, and drive to the park pose. If the hive did not tip,
+ * the auto reports a failure in telemetry (TEMP_FAILED) and stops.
  *
  * Sequence: TRAVEL_TO_FIRST_SHOOT -> SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE
- *           -> TRAVEL_TO_REFUEL -> REFUEL -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT
+ *           -> TRAVEL_TO_REFUEL -> REFUEL -> TRAVEL_TO_SHOOT
+ *           -> TIPPED_TRAVEL_TO_TIPPED_SHOOT -> TIPPED_SPEED_UP_SECOND_SHOOT -> TIPPED_FEED_SECOND_SHOOT
  *           -> TRAVEL_TO_PARK -> DONE
+ *           (not tipped: TRAVEL_TO_SHOOT -> TEMP_FAILED -> DONE)
  */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
@@ -57,17 +60,15 @@ public abstract class BozoAuto extends OpMode {
         REFUEL,                // sitting on the refuel pose with intake running to pick up balls
         TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake running, flywheel keeps spinning
 
-        // CASE 1: hive did not tip over, shoot again
-        UNTIPPED_SPEED_UP_SECOND_SHOOT,  // back at the shoot pose; waiting for flywheel to be at target RPM
-        UNTIPPED_FEED_SECOND_SHOOT,     // Robot launch sequence feeds the refueled balls through the flywheel
-
-        // CASE 2: hive did tip over, go to other side
+        // hive tipped, go to the scoring side and shoot the second round there
         TIPPED_TRAVEL_TO_TIPPED_SHOOT, // go to scoring side to shoot second round
         TIPPED_SPEED_UP_SECOND_SHOOT, // arrived, wait for flywheel to speed up
         TIPPED_FEED_SECOND_SHOOT, // Robot launch sequence...
 
-        TRAVEL_TO_PARK,        // everything off; driving a bezier curve from the shoot pose to the park pose
-        DONE                   // parked; waiting for the OpMode to be stopped
+        TRAVEL_TO_PARK,        // everything off; driving a straight line from the tipped shoot pose to the park pose
+        DONE,                  // parked; waiting for the OpMode to be stopped
+
+        TEMP_FAILED            // TEMPORARY: hive did not flip; report failure, then DONE
     }
 
     private State state = State.TRAVEL_TO_FIRST_SHOOT;
@@ -75,10 +76,7 @@ public abstract class BozoAuto extends OpMode {
     /** startPose -> shootPose, then shootPose -> intermediatePose -> refuelPose and back. Built in {@link #init()}. **/
     private Path startToShootPath, shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
 
-    /** Bezier curve from the shoot pose to the park pose, bent by {@link AutoConfig#parkControlPose}. Built in {@link #init()}. **/
-    private Path shootToParkPath;
-
-    /** CASE 2 (hive tipped): shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose}), then a straight line to park. Built in {@link #init()}. **/
+    /** shootPose -> scoring side (bent by {@link AutoConfig#tippedControlPose}), then a straight line to park. Built in {@link #init()}. **/
     private Path shootToTippedShootPath, tippedShootToParkPath;
 
     private static final double REFUEL_ROTATE_START = 0.7;
@@ -95,9 +93,7 @@ public abstract class BozoAuto extends OpMode {
                 );
         refuelToShootPath = line(config.refuelPose, shootPose).linear(config.refuelPose, shootPose);
         // curve(start, control, end): the control point is not driven through, it only pulls the path toward it.
-        shootToParkPath = curve(shootPose, config.parkControlPose, config.parkPose)
-                .linear(shootPose, config.parkPose);
-        // CASE 2 (hive tipped): same curve(start, control, end) idea, toward the scoring side and then to park
+        // Toward the scoring side (bent by the control pose), then a line to park.
         shootToTippedShootPath = curve(shootPose, config.tippedControlPose, config.tippedShootPose)
                 .linear(shootPose, config.tippedShootPose);
         tippedShootToParkPath = line(config.tippedShootPose, config.parkPose)
@@ -146,31 +142,17 @@ public abstract class BozoAuto extends OpMode {
             case TRAVEL_TO_SHOOT:
                 if (!follower.isBusy()) {
                     if (Vision.limelight.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold) {
-                        setState(State.UNTIPPED_SPEED_UP_SECOND_SHOOT);
+                        // hive did not flip; that case no longer exists, so this is a failure
+                        shutOff();
+                        setState(State.TEMP_FAILED);
                     } else {
                         follower.follow(shootToTippedShootPath);
                         setState(State.TIPPED_TRAVEL_TO_TIPPED_SHOOT);
                     }
                 }
-
                 break;
 
-            // CASE 1: hive did not tip
-            case UNTIPPED_SPEED_UP_SECOND_SHOOT:
-                if (isFlywheelWithinMargin()) {
-                    robot.startLaunch();
-                    setState(State.UNTIPPED_FEED_SECOND_SHOOT);
-                }
-                break;
-            case UNTIPPED_FEED_SECOND_SHOOT:
-                if (!robot.isLaunching()) {
-                    shutOff();
-                    follower.follow(shootToParkPath);
-                    setState(State.TRAVEL_TO_PARK);
-                }
-                break;
-
-            // CASE 2: hive tipped, curve to the scoring side and shoot there
+            // hive tipped, curve to the scoring side and shoot there
             case TIPPED_TRAVEL_TO_TIPPED_SHOOT:
                 if (!follower.isBusy()) {
                     setState(State.TIPPED_SPEED_UP_SECOND_SHOOT);
@@ -197,6 +179,10 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case DONE:
                 requestOpModeStop();
+                break;
+            case TEMP_FAILED:
+                telemetryM.debug("FAILED: im a failure");
+                setState(State.DONE);
                 break;
         }
     }
