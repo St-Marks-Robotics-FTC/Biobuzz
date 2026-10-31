@@ -18,6 +18,7 @@ public class Flywheel {
 
     /** stuff that changes **/
     private PIDF pidf;
+    private double lastSetRPM = 0;
 
     public Flywheel(HardwareMap hw) {
         // launch motors (all are DcMotorEx for current monitoring)
@@ -32,6 +33,8 @@ public class Flywheel {
     }
 
     public void update(double RPM) {
+        lastSetRPM = RPM;
+
         pidf.updateTerms(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF);
         double currentTPS = getTPS();
         double setpointTPS = RPMToTPS(RPM);
@@ -64,6 +67,8 @@ public class Flywheel {
     public double getRPM() {
         return TPSToRPM(launchMotor.getVelocity());
     }
+
+    public double getLastSetRPM() { return lastSetRPM; }
 
     // these should only be used for tuning
     public double getPower() {
