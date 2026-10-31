@@ -13,13 +13,13 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose refuelPose = new Pose(10, 6.754, Math.toRadians(180));
 
     // hive tipped: scoring side (shootPose mirrored over y = 72)
-    public static Pose tippedControlPose1 = new Pose(72, 72, Math.toRadians(90));
-    public static Pose tippedControlPose2 = new Pose(48, 72, Math.toRadians(90));
+    public static Pose tippedControlPose1 = new Pose(12, 12, Math.toRadians(90));
+    public static Pose tippedControlPose2 = new Pose(12, 132, Math.toRadians(90));
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(270));
 
     // flowers, collected after the tipped shoot
-    public static Pose flowerIntermediatePose = new Pose(48, 120, Math.toRadians(180));
-    public static Pose flowerPose = new Pose(48, 136, Math.toRadians(180));
+    public static Pose flowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
+    public static Pose flowerPose = new Pose(48, 136, Math.toRadians(90));
     public static Pose flower2ControlPose = new Pose(24, 120, Math.toRadians(180));
     public static Pose flower2IntermediatePose = new Pose(24, 48, Math.toRadians(180));
     public static Pose flower2Pose = new Pose(8, 48, Math.toRadians(180));
