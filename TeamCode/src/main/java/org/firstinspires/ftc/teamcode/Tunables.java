@@ -69,4 +69,5 @@ public class Tunables {
     public static double targetLoopLength = 20; // target loop length in ms
 
     public static double stalenessReduction = 2; // how important staleness is. higher values are less important
+    public static boolean softScheduling = false; // if true: update device once max staleness has been exceeded
 }
