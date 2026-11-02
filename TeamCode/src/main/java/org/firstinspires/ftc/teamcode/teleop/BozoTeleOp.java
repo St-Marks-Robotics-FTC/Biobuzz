@@ -2,9 +2,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
-import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.follower.ManualDrive;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
@@ -13,6 +11,7 @@ import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.subsys.Drive;
 import org.firstinspires.ftc.teamcode.subsys.Field;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
@@ -23,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class BozoTeleOp extends OpMode {
     protected abstract boolean isBlueTeam();
     private Robot robot;
+    private Drive drive;
     private Field field;
     private Vision vision;
     private Follower follower;
@@ -40,6 +40,7 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
         robot = new Robot(hardwareMap);
+        drive = new Drive(hardwareMap, robot.scheduler); // teleop only - auto drives through the follower
         field = new Field(isBlueTeam());
         vision = new Vision(hardwareMap, isBlueTeam());
         follower = Constants.create(hardwareMap);
@@ -69,7 +70,7 @@ public abstract class BozoTeleOp extends OpMode {
         handleShoot();
 
 
-        if (gamepad1.xWasPressed()) { // reset field centric heading
+        if (gamepad1.backWasPressed()) { // reset field centric heading
             follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
         }
 
@@ -91,36 +92,48 @@ public abstract class BozoTeleOp extends OpMode {
         double slowModeMultiplier = (gamepad1.left_trigger - 1) * -1; // amount to multiply for by slow mode
 
         if (!isTurning) {
+            double forward = -gamepad1.left_stick_y;
+            double strafe = -gamepad1.left_stick_x;
+            double turn = -gamepad1.right_stick_x * Tunables.turnRateMultiplier; // reduce speed by our turn rate
+
             if (isRobotCentric) { // robot-centric control
-                follower.manual(
-                        -gamepad1.left_stick_y * slowModeMultiplier,
-                        -gamepad1.left_stick_x * slowModeMultiplier,
-                        -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier // reduce speed by our turn rate
-                );
+                drive.drive(forward, strafe, turn, slowModeMultiplier);
             } else { // field-centric control
                 double flipControl;
                 if (isBlueTeam()) flipControl = -1; // blue team needs to be flipped
                 else flipControl = 1; // red team doesn't need to be flipped
 
-                DrivePowers powers = ManualDrive.fieldCentric(
-                        -gamepad1.left_stick_y * slowModeMultiplier * flipControl,
-                        -gamepad1.left_stick_x * slowModeMultiplier * flipControl,
-                        -gamepad1.right_stick_x * Tunables.turnRateMultiplier * slowModeMultiplier, // reduce speed by our turn rate
-                        follower.pose().heading()
-                );
-
-                follower.manual(powers);
+                drive.driveFieldCentric(forward * flipControl, strafe * flipControl, turn, follower.pose().heading(), slowModeMultiplier);
             }
         } else {
+            boolean exitTurning = false;
+
             // under what conditions to exit turning
-            if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) isTurning = false;
+            if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) exitTurning = true;
             // emergency exit if pose is invalid
             if (follower.pose() == null || follower.pose().equals(new Pose(0, 0, 0))) {
-                isTurning = false;
+                exitTurning = true;
             }
 
-            if (gamepad1.backWasPressed()) isTurning = false; // emergency exit
+            if (exitTurning) endTurn();
         }
+    }
+
+    // hand drive motors from follower back to Drive
+    private void endTurn() {
+        follower.stop(); // follower goes idle so it stops computing hold powers
+        follower.drivetrain.stop(); // zero the motors now so pedro's cache, ours (zeroed in startTurn) and the hardware all match
+        isTurning = false;
+    }
+
+    // hand motors from Drive to follower
+    private void startTurn(Pose target) {
+        // zero the motors now so pedro's cache, ours and the hardware all match
+        // skip if the follower already has the motors, otherwise we'd write over its hold powers
+        if (!isTurning) drive.stopNow();
+        lastTurnPose = target;
+        follower.hold(lastTurnPose);
+        isTurning = true;
     }
 
     private void handleFlywheel() {
@@ -165,9 +178,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (gamepad1.leftBumperWasPressed()) {
             // they got rid of follower.turnTo() so we have to make it ourselves
-            lastTurnPose = new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle());
-            follower.hold(lastTurnPose);
-            isTurning = true;
+            startTurn(new Pose(follower.pose().x(), follower.pose().y(), scoringData.angle()));
         }
     }
 

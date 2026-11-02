@@ -152,9 +152,8 @@ the **start** button toggles between robot/field centric control
 ### face buttons
 - **A**: toggle intake
 - **B**: toggle flywheel power
-- **Y**: toggle intake reverse
-- **X**: reset field centric heading
-  - make sure to orient the robot towards the top of the field (in between the goals)
+- **Y**: *unused*
+- **X**: toggle intake reverse
 
 ### d-pad
 - **up**: increment flywheel RPM
@@ -164,7 +163,7 @@ the **start** button toggles between robot/field centric control
 
 ### other buttons
 - **start**: toggle field/robot centric
-- **back**: emergency exit from auto turn
+- **back**: reset field centric heading
 
 # OpModes
 
