@@ -163,7 +163,7 @@ the **start** button toggles between robot/field centric control
 
 ### other buttons
 - **start**: toggle field/robot centric
-- **back**: emergency exit from auto turn
+- **back**: reset field centric heading
 
 # OpModes
 

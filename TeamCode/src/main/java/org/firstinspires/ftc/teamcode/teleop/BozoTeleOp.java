@@ -76,7 +76,7 @@ public abstract class BozoTeleOp extends OpMode {
         handleFlower();
 
 
-        if (gamepad1.xWasPressed()) { // reset field centric heading
+        if (gamepad1.backWasPressed()) { // reset field centric heading
             follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
         }
 
@@ -118,8 +118,6 @@ public abstract class BozoTeleOp extends OpMode {
             if (follower.pose() == null || follower.pose().equals(new Pose(0, 0, 0))) {
                 isTurning = false;
             }
-
-            if (gamepad1.backWasPressed()) isTurning = false; // emergency exit
         }
     }
 
