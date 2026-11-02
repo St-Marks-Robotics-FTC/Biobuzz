@@ -67,6 +67,7 @@ public abstract class BozoTeleOp extends OpMode {
         handleDrive();
         handleFlywheel();
         handleIntake();
+        handleFlower();
         handleShoot();
 
         if (gamepad1.xWasPressed()) { // reset field centric heading
@@ -135,6 +136,11 @@ public abstract class BozoTeleOp extends OpMode {
     private void handleIntake() {
         if (gamepad1.aWasPressed()) robot.intake.toggle();
         if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
+    }
+
+    private void handleFlower() {
+        if (gamepad1.right_trigger_pressed) robot.flower.goDown();
+        else robot.flower.goUp();
     }
 
     private void handleShoot() {

@@ -7,24 +7,11 @@ import com.pedropathing.math.Pose;
 
 @Configurable
 public class Tunables {
-    public static double slowModeMin = 0.2;
-    public static double minShootDistance = 30.0;
-    public static double maxShootDistance = 45.0;
-    public static double maxAngleErrorDeg = 35.0;
-    public static double shootP = 2.0; //PIDF can be tuned
-    public static double shootI = 0.0;
-    public static double shootD = 0.05;
-    public static double shootF = 0.0;
-    public static double aimMaxPower = 0.8;
-    public static double aimToleranceDeg = 2.0; //Gap between target and acceptable actual
-    public static double aimIntegralLimit = 1.0;
-    public static double shooterTargetRpm = 3110.0;
-    public static double shooterRampRpmPerSec = 2500.0;
-    public static double shooterToleranceRpm = 10.0; //Gap between target and acceptable actual
-    public static double shooterFireIntervalSec = 0.5; //Minimum time passing between shots
-    public static double autoShootRpm = 3100; // flywheel RPM used by every auto volley (BozoTeleOp's default setRPM)
-    public static long shootSpinUpTimeoutMs = 5000; // fire anyway if the flywheel hasn't reached autoShootRpm by now
-    public static long intakeTimeMs = 1000;
+    public static double shooterToleranceRpm = 15.0; //Gap between target and acceptable actual
+    public static double autoShootRpm = 3170; // flywheel RPM used by every auto volley (BozoTeleOp's default setRPM)
+    public static long autoWaitBudgetMs = 10000; // all rev-up, shot, intake and tip-spin waits in one auto must fit in this; path travel is not counted
+    public static long tipSpinMs = 600; // how long the post-preload tip-spin runs when the hive did not tip
+    public static long intakeTimeMs = 700;
     public static long pathTimeoutMs = 3000;
     // all members must be initialized with the keywords `public static`... in order to be usable
 
@@ -51,6 +38,10 @@ public class Tunables {
     public static double intakeForwardPower = 1.0;
     public static double intakeForwardLaunchingPower = 0.3;
 
+    /** flower tunables (used in Flower.java) **/
+    public static double flowerDown = 0.4;
+    public static double flowerUp = 0.9;
+
     /** transfer tunables (used in Transfer.java) **/
 
     public static double transferOpen = 0.280;
@@ -73,21 +64,10 @@ public class Tunables {
 
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
 
-    /** vision / localization tunables (used in Vision.java and BozoTeleOp.java) **/
+    /** vision tunables (used in Vision.java) **/
 
-    public static boolean visionLocalization = true; // correct odometry x/y with the Limelight in TeleOp
     public static int visionMinTags = 2; // ignore Limelight frames that see fewer tags than this
     public static double visionMaxStalenessMs = 200; // ignore Limelight frames older than this
-    public static double visionMaxSpeed = 8.0; // in/s; only correct odometry while slower than this (frame latency skews a moving fix)
-    public static double visionMaxTurnRate = 0.6; // rad/s; only correct odometry while turning slower than this
-    public static double visionBlend = 0.4; // fraction of the vision-odometry gap closed per correction
-    public static double visionSnapDistance = 10.0; // in; bigger gaps are closed in a single correction
-    public static double visionFuseIntervalMs = 100; // minimum time between odometry corrections
     public static int hiveConfirmFrames = 3; // consecutive frames that must agree before the hive state changes
     public static double hiveMinTiltDeg = 3.0; // tilts smaller than this look flat and leave the hive state alone
-
-    /** auto turn tunables (used in BozoTeleOp.java) **/
-
-    public static double aimSettleMs = 150; // heading must stay on target this long before auto turn gives the sticks back
-    public static double aimTimeoutMs = 3000; // auto turn gives the sticks back after this long no matter what
 }

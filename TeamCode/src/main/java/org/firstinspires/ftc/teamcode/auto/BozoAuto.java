@@ -29,18 +29,29 @@ public abstract class BozoAuto extends OpMode {
     private double initMs;
 
     private enum State {
-        DRIVE_TO_SHOOT_PRELOAD,
         SHOOT_PRELOAD,
-        DRIVE_TO_GARDEN,
+        TIP_SPIN,
+        DRIVING_TO_GARDEN,
         GARDEN_PICKUP,
-        DRIVE_TO_SHOOT_GARDEN,
-        SHOOT_GARDEN,
-        PARK,
+        DRIVING_TO_SHOOT_GARDEN_BALLS,
+        SHOOT_GARDEN_BALLS,
+        DRIVING_TO_CLOSE_FLOWER,
+        CLOSE_FLOWER_PICKUP,
+        DRIVING_TO_SHOOT_CLOSE_FLOWER_BALLS,
+        SHOOT_CLOSE_FLOWER_BALLS,
+        DRIVING_TO_FAR_FLOWER,
+        FAR_FLOWER_PICKUP,
+        DRIVING_TO_SHOOT_FAR_FLOWER_BALLS,
+        SHOOT_FAR_FLOWER_BALLS,
+        DRIVING_TO_PARK,
         DONE
     }
-    State state = State.DRIVE_TO_SHOOT_PRELOAD;
+    State state = State.SHOOT_PRELOAD;
     private boolean launched;
-    private Path path1, path2, path3, path4;
+    private Vision.HiveState hiveBefore = Vision.HiveState.UNKNOWN; // hive state when the preload shot began
+    private long waitedMs; // rev-up, shot, intake and tip-spin time already spent
+    private int shotsLeft, intakesLeft; // fixed waits still to come, for the budget
+    private Path pathToGarden, pathToShootGarden, pathToCloseFlower, pathToSecondShot, pathToFarFlower, pathToLastShot, pathPark;
 
 
     private Path bezier(Pose start, Pose[] controls, Pose end) {
@@ -53,19 +64,38 @@ public abstract class BozoAuto extends OpMode {
     }
 
     private void buildPaths() {
-        path1 = bezier(startPose, config.shootPreloadControls, config.shootPreloadPose).linear(startPose, config.shootPreloadPose);
-        Path garden = bezier(config.shootPreloadPose, config.gardenControls, config.gardenPose);
-        if (config.gardenTangent) {
-            path2 = garden.tangent();
+        pathToGarden = tiltedHeading(bezier(config.shootPreloadPose, config.gardenControls, config.gardenPose), config.shootPreloadPose, config.gardenTiltRad, config.gardenPose);
+        pathToShootGarden = bezier(config.gardenPose, config.shootGardenControls, config.shootGardenPose).linear(config.gardenPose, config.shootGardenPose);
+        if (config.closeFlowerPose == null) {
+            pathPark = park(config.shootGardenPose);
         } else {
-            Pose gardenTilt = config.gardenPose.withHeading(config.gardenTiltRad);
-            path2 = garden.heading(Interpolator.piecewise()
-                    .until(0.5, Interpolator.linear(config.shootPreloadPose, gardenTilt))
-                    .until(0.75, Interpolator.constant(gardenTilt))
-                    .until(1, Interpolator.linear(gardenTilt, config.gardenPose)));
+            pathToCloseFlower = turnThenHold(bezier(config.shootGardenPose, config.closeFlowerControls, config.closeFlowerPose), config.shootGardenPose, config.closeFlowerPose);
+            pathToSecondShot = line(config.closeFlowerPose, config.secondShotPose).linear(config.closeFlowerPose, config.secondShotPose);
+            pathToFarFlower = turnThenHold(bezier(config.secondShotPose, config.farFlowerControls, config.farFlowerPose), config.secondShotPose, config.farFlowerPose);
+            pathToLastShot = bezier(config.farFlowerPose, config.lastShotControls, config.lastShotPose).heading(Interpolator.piecewise()
+                    .until(0.5, Interpolator.constant(config.farFlowerPose))
+                    .until(1, Interpolator.linear(config.farFlowerPose, config.lastShotPose)));
+            pathPark = park(config.lastShotPose);
         }
-        path3 = line(config.gardenPose, config.shootGardenPose).linear(config.gardenPose, config.shootGardenPose);
-        path4 = bezier(config.shootGardenPose, config.endControls, config.endPose).linear(config.shootGardenPose, config.endPose);
+    }
+
+    private Path park(Pose from) {
+        return config.closeFlowerPose == null
+                ? bezier(from, config.endControls, config.endPose).linear(from, config.endPose)
+                : bezier(from, config.endControls, config.endPose).tangent();
+    }
+    private Path tiltedHeading(Path path, Pose from, double tiltRad, Pose to) {
+        Pose tilt = to.withHeading(tiltRad);
+        return path.heading(Interpolator.piecewise()
+                .until(0.5, Interpolator.linear(from, tilt))
+                .until(0.75, Interpolator.constant(tilt))
+                .until(1, Interpolator.linear(tilt, to)));
+    }
+
+    private Path turnThenHold(Path path, Pose from, Pose to) { // heading finishes turning 70% of the way along, then holds
+        return path.heading(Interpolator.piecewise()
+                .until(0.7, Interpolator.linear(from, to))
+                .until(1, Interpolator.constant(to)));
     }
 
     private boolean arrived() {
@@ -81,8 +111,33 @@ public abstract class BozoAuto extends OpMode {
         setPathState(next);
     }
 
+    private long stateMs() {
+        return (long) stateTimer.get(TimeUnit.MILLISECONDS);
+    }
+
+    private long fixedWaitsLeftMs(int shots) { // launch sequence and intake dwells still to come; none of it can be shortened
+        long launchMs = (long) (Tunables.launchIntakeStopTime + Tunables.launchTransferOpeningTime + Tunables.launchShootingTime);
+        return shots * launchMs + intakesLeft * Tunables.intakeTimeMs;
+    }
+
+    // budget left for this shot's flywheel spin-up once every later wait is reserved at its fixed length
+    private long spinUpCapMs() {
+        return Math.max(0, Tunables.autoWaitBudgetMs - waitedMs - fixedWaitsLeftMs(shotsLeft));
+    }
+
+    // budget left after the shot in progress finishes and every later wait is reserved
+    private long tipPoolMs() {
+        return Tunables.autoWaitBudgetMs - waitedMs - stateMs() - fixedWaitsLeftMs(shotsLeft - 1);
+    }
+
+    // the hive tipped if Vision confirmed a different state than before the preload shot; no baseline counts as not tipped
+    private boolean hiveTipped() {
+        Vision.HiveState now = vision.getLastHiveState();
+        return hiveBefore != Vision.HiveState.UNKNOWN && now != Vision.HiveState.UNKNOWN && now != hiveBefore;
+    }
+
     private boolean shot() {
-        if (!launched && (flywheelReady() || stateTimer.get(TimeUnit.MILLISECONDS) > Tunables.shootSpinUpTimeoutMs)) {
+        if (!launched && (flywheelReady() || stateMs() >= spinUpCapMs())) {
             robot.startLaunch();
             launched = true;
         }
@@ -95,28 +150,72 @@ public abstract class BozoAuto extends OpMode {
 
     private void autoPathUpdate() {
         switch (state) {
-            case DRIVE_TO_SHOOT_PRELOAD:
-                if (arrived()) setPathState(State.SHOOT_PRELOAD);
-                break;
             case SHOOT_PRELOAD:
-                if (shot()) followThen(path2, State.DRIVE_TO_GARDEN);
+                if (shot()) {
+                    if (!hiveTipped() && tipPoolMs() >= Tunables.tipSpinMs) {
+                        setPathState(State.TIP_SPIN);
+                    } else {
+                        followThen(pathToGarden, State.DRIVING_TO_GARDEN);
+                    }
+                }
                 break;
-            case DRIVE_TO_GARDEN: // intake is running, so balls swept into the corner are picked up on the way
+            case TIP_SPIN: // the preload shot did not tip the hive: spin in place to shake it over
+                Pose here = follower.pose();
+                follower.hold(here.withHeading(here.heading() + Math.PI / 2));
+                for (int i = 0; i < 20; i++) telemetryM.addLine("f*ck");
+                requestOpModeStop();
+                break;
+            case DRIVING_TO_GARDEN: // intake is running, so balls swept into the corner are picked up on the way
                 if (arrived()) setPathState(State.GARDEN_PICKUP);
                 break;
             case GARDEN_PICKUP: // wait while the intake collects
-                if (dwelled(Tunables.intakeTimeMs)) followThen(path3, State.DRIVE_TO_SHOOT_GARDEN);
-                break;
-            case DRIVE_TO_SHOOT_GARDEN:
-                if (arrived()) setPathState(State.SHOOT_GARDEN);
-                break;
-            case SHOOT_GARDEN:
-                if (shot()) {
-                    robot.intake.off();
-                    followThen(path4, State.PARK);
+                if (dwelled(Tunables.intakeTimeMs)) {
+                    if (config.closeFlowerPose != null) robot.flower.goDown(); // arms drop on the way to the garden shot so they are well down before the close flowers
+                    followThen(pathToShootGarden, State.DRIVING_TO_SHOOT_GARDEN_BALLS);
                 }
                 break;
-            case PARK:
+            case DRIVING_TO_SHOOT_GARDEN_BALLS:
+                if (arrived()) setPathState(State.SHOOT_GARDEN_BALLS);
+                break;
+            case SHOOT_GARDEN_BALLS:
+                if (shot()) {
+                    if (config.closeFlowerPose == null) {
+                        robot.intake.off();
+                        followThen(pathPark, State.DRIVING_TO_PARK);
+                    } else {
+                        followThen(pathToCloseFlower, State.DRIVING_TO_CLOSE_FLOWER);
+                    }
+                }
+                break;
+            case DRIVING_TO_CLOSE_FLOWER:
+                if (arrived()) setPathState(State.CLOSE_FLOWER_PICKUP);
+                break;
+            case CLOSE_FLOWER_PICKUP: // wait while the intake collects
+                if (dwelled(Tunables.intakeTimeMs)) followThen(pathToSecondShot, State.DRIVING_TO_SHOOT_CLOSE_FLOWER_BALLS);
+                break;
+            case DRIVING_TO_SHOOT_CLOSE_FLOWER_BALLS:
+                if (arrived()) setPathState(State.SHOOT_CLOSE_FLOWER_BALLS);
+                break;
+            case SHOOT_CLOSE_FLOWER_BALLS:
+                if (shot()) followThen(pathToFarFlower, State.DRIVING_TO_FAR_FLOWER);
+                break;
+            case DRIVING_TO_FAR_FLOWER:
+                if (arrived()) setPathState(State.FAR_FLOWER_PICKUP);
+                break;
+            case FAR_FLOWER_PICKUP: // wait while the intake collects
+                if (dwelled(Tunables.intakeTimeMs)) followThen(pathToLastShot, State.DRIVING_TO_SHOOT_FAR_FLOWER_BALLS);
+                break;
+            case DRIVING_TO_SHOOT_FAR_FLOWER_BALLS:
+                if (arrived()) setPathState(State.SHOOT_FAR_FLOWER_BALLS);
+                break;
+            case SHOOT_FAR_FLOWER_BALLS:
+                if (shot()) {
+                    robot.intake.off();
+                    if (config.closeFlowerPose != null) robot.flower.goUp();
+                    followThen(pathPark, State.DRIVING_TO_PARK);
+                }
+                break;
+            case DRIVING_TO_PARK:
                 if (arrived()) {
                     setPathState(State.DONE);
                     requestOpModeStop();
@@ -128,6 +227,27 @@ public abstract class BozoAuto extends OpMode {
     }
 
     private void setPathState(State newState) {
+        switch (state) { // waits spent in the state we are leaving come out of the shared budget
+            case SHOOT_PRELOAD:
+            case SHOOT_GARDEN_BALLS:
+            case SHOOT_CLOSE_FLOWER_BALLS:
+            case SHOOT_FAR_FLOWER_BALLS:
+                waitedMs += stateMs();
+                shotsLeft--;
+                break;
+            case GARDEN_PICKUP:
+            case CLOSE_FLOWER_PICKUP:
+            case FAR_FLOWER_PICKUP:
+                waitedMs += stateMs();
+                intakesLeft--;
+                break;
+            case TIP_SPIN:
+                waitedMs += stateMs();
+                break;
+            default:
+                break;
+        }
+        if (newState == State.SHOOT_PRELOAD) hiveBefore = vision.getLastHiveState();
         state = newState;
         launched = false;
         stateTimer.reset();
@@ -137,9 +257,10 @@ public abstract class BozoAuto extends OpMode {
     public void loop() {
         loopTimer.reset();
         follower.update();
+        vision.update();
         updateHandoff();
         // flywheel stays spun up
-        robot.flywheel.update(state == State.PARK || state == State.DONE ? 0 : Tunables.autoShootRpm);
+        robot.flywheel.update(state == State.DRIVING_TO_PARK || state == State.DONE ? 0 : Tunables.autoShootRpm);
         robot.updateLaunch(); // ends a volley
         autoPathUpdate();
         if (Tunables.isDebugging) {
@@ -156,6 +277,9 @@ public abstract class BozoAuto extends OpMode {
         stateTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = new Robot(hardwareMap);
+        vision = new Vision(hardwareMap, config.isBlue);
+        shotsLeft = config.closeFlowerPose == null ? 2 : 4;
+        intakesLeft = config.closeFlowerPose == null ? 1 : 3;
         telemetryM.debug("Creating follower");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
@@ -175,11 +299,6 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.update(telemetry);
     }
 
-    @Override
-    public void start() {
-        robot.intake.forward();
-        followThen(path1, State.DRIVE_TO_SHOOT_PRELOAD);
-    }
 
     @Override
     public void stop() {
@@ -198,11 +317,11 @@ public abstract class BozoAuto extends OpMode {
             telemetryM.addLine("INIT COMPLETE");
             telemetryM.debug("Init " + initMs);
         }
-        telemetryM.debug("State " + state);
-        telemetryM.addData("x", follower.pose().x());
-        telemetryM.addData("y", follower.pose().y());
-        telemetryM.addData("Heading", follower.pose().heading());
-        telemetryM.addData("Flywheel RPM", robot.flywheel.getRPM());
-        telemetryM.debug("Time " + getRuntime());
+        telemetryM.debug("State: " + state);
+        telemetryM.addData("x: ", follower.pose().x());
+        telemetryM.addData("y: ", follower.pose().y());
+        telemetryM.addData("Heading: ", follower.pose().heading());
+        telemetryM.addData("Flywheel RPM: ", robot.flywheel.getRPM());
+        telemetryM.debug("Time: " + getRuntime());
     }
 }

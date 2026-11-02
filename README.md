@@ -144,8 +144,8 @@ the **start** button toggles between robot/field centric control
 
 ## triggers
 
-- **left trigger**: slow mode (scales drive speed down to `Tunables.slowModeMin` at full pull)
-- **right trigger**: *unused*
+- **left trigger**: slow mode (drive speed scales by `1 - left trigger`, so a full pull stops the drive)
+- **right trigger**: hold to lower the flower servo (`Flower.goDown()`); release raises it (`Flower.goUp()`)
 
 ## buttons
 
@@ -176,14 +176,15 @@ the **start** button toggles between robot/field centric control
 
 ## Auto
 
-Every auto runs the same sequence: preload, drive to the shooting spot and shoot, sweep the garden and intake from the corner, drive back to the shooting spot and shoot, park at the end pose. The state machine lives in `BozoAuto`; a route is just an `AutoConfig` (poses, bezier control points, how the garden path steers).
+`BozoAuto` runs the state machine: shoot the preload, sweep the garden and intake, shoot, then park (`BlueFarAuto`). A route is an `AutoConfig` (poses, bezier control points, how each leg steers). `BlueCloseAuto` continues after the garden shot with the flower legs: it lowers the flower servo (`Flower.goDown()`) before the close flower, intakes the close flower, shoots from the second pose, intakes the far flower with the servo still down, shoots from the last pose, then parks at the end pose.
 Each blue auto owns its route as `public static` poses (exported from the Pedro visualizer) plus a `route()` method. The red autos have no poses of their own: `RedFarAuto`/`RedCloseAuto` return `BlueFarAuto.route()`/`BlueCloseAuto.route()` rotated 180 degrees about field center (`AutoConfig.rotated()`), recomputed every time the auto is initialized. So change the blue auto and the red one follows; a new field added to `AutoConfig` has to be added to `rotated()` as well.
 Shooting reuses `Robot.startLaunch()` at `Tunables.autoShootRpm`.
+All rev-up, shot, intake and tip-spin waits in one auto share `Tunables.autoWaitBudgetMs` (8000 ms; path travel is not counted). Each shot waits for the flywheel only as long as the budget leaves after reserving the fixed launch and intake times still to come, then fires anyway. After the preload shot, if `Vision` did not see the hive change state, the robot spins in place for `Tunables.tipSpinMs` (printing `f*ck` 20 times to telemetry); the spin is skipped when the budget cannot cover it. `AutoConfig.isBlue` (true in the blue routes, flipped by `rotated()`) picks the Limelight pipeline.
 
 ### blue team
 
 - `BlueFarAuto`: starts at (125.9, 8.4) by the bottom triangle, garden swept with a slight tilt
-- `BlueCloseAuto`: starts at (83, 132) at the shooting spot, garden path follows its tangent
+- `BlueCloseAuto`: starts at (86.2, 136.2) at the shooting spot; the garden path bends through two control points and ends holding the garden heading
 
 ### red team
 
@@ -192,7 +193,7 @@ Shooting reuses `Robot.startLaunch()` at `Tunables.autoShootRpm`.
 ## Tuner
 
 - `FlywheelTuner`: tune flywheel PIDF
-- `ServoTuner`: tune servo positions
+- `ServoTuner`: tune servo positions (A: transfer, B: flower)
 - `VisionTuner`: tune vision
 
 # vision
@@ -215,9 +216,7 @@ Our localization approach is largely based off of theirs, but we use trigonometr
 - the camera assumes the hive is flat, so its pose is off when the hive tilts; `Vision` uses the known pivot height and the fact that the robot sits on the floor to get the true `y` and the tilt (tilt > 0 raises the scoring side, tilt < 0 the audience side)
 - the visible tag faces (audience: blue 38-41 / red 34-37, scoring: blue 42-45 / red 30-33) say which side of the hive the robot is on
 - a new hive state (`AUDIENCE_UP` / `SCORING_UP`) has to be seen on `Tunables.hiveConfirmFrames` frames in a row; it stays put until the camera confirms the opposite state
-- while the robot is nearly stopped and the latest fix is fresher than `Tunables.visionMaxStalenessMs`, `BozoTeleOp` pulls odometry `x`/`y` toward the Limelight position (heading always stays with odometry); turn it off with `Tunables.visionLocalization`
-- **auto turn** (left bumper) aims at the goal on the side that is up; if the camera hasn't confirmed the hive yet it aims at the nearest goal; the controller buzzes once if that shot can score
-  - the target is an absolute field heading, so it needs a real pose: after an auto the pose is handed over, otherwise it refuses (3 controller blips, reason in the `last auto turn` telemetry) until the heading is set with **X** and the Limelight has corrected `x`/`y` at least once
+- **auto turn** (left bumper) turns to the goal on the side that is up, using the last hive state the camera confirmed; if no state has been confirmed yet, it does nothing. The robot holds its position and turns until the heading is within `Tunables.shootHeadingMargin`; **back** cancels the turn.
 
 the Limelight web UI must have the camera's pose in robot space configured (position relative to the robot center and height off the floor), because `Vision` expects the botpose to be the robot's pose with `z` = 0 on the floor
 

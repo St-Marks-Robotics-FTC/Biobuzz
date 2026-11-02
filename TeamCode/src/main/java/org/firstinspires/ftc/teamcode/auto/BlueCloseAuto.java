@@ -6,28 +6,45 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 @Configurable
 @Autonomous(name = "BlueCloseAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
 public class BlueCloseAuto extends BozoAuto {
-    public static Pose startPose = new Pose(83, 132, Math.toRadians(270));
-    public static Pose shootPreloadPose = new Pose(83, 133, Math.toRadians(270));
-    public static Pose gardenPose = new Pose(135.5115, 135, Math.toRadians(0));
-    public static Pose shootGardenPose = new Pose(83.17, 126.1438, Math.toRadians(270));
-    public static Pose endPose = new Pose(133.58, 35.53, Math.toRadians(90));
+    public static Pose START_POSE = new Pose(86.1934, 136.179, Math.toRadians(270));
+    public static Pose SHOOT_PRELOAD_POSE = new Pose(86.1934, 136.179, Math.toRadians(270));
+    public static Pose GARDEN_POSE = new Pose(135.5498, 136.2053, Math.toRadians(0));
+    public static Pose SHOOT_GARDEN_POSE = new Pose(84.7873, 10.341, Math.toRadians(90));
+    public static Pose CLOSE_FLOWER_POSE = new Pose(135.9861, 97.1643, Math.toRadians(0));
+    public static Pose SHOOT_CLOSE_FLOWER_POSE = new Pose(84.7783, 10.4474, Math.toRadians(90));
+    public static Pose FAR_FLOWER_POSE = new Pose(97.383, 10.379, Math.toRadians(270));
+    public static Pose SHOOT_FAR_FLOWER_POSE = new Pose(84.8394, 10.3944, Math.toRadians(90));
+    public static Pose PARK_POSE = new Pose(130.48, 31.13, Math.toRadians(24.44));
 
-    public static Pose gardenControl1 = new Pose(103.3538, 123.0762);
-    public static Pose gardenControl2 = new Pose(103.8177, 133.3892);
-    public static Pose endControl1 = new Pose(114.1715, 94.9185);
+    public static Pose GARDEN_CONTROL_1 = new Pose(101.5002, 123.508);
+    public static Pose GARDEN_CONTROL_2 = new Pose(109.2238, 138.1771);
+    public static Pose SHOOT_GARDEN_CONTROL_1 = new Pose(122.5893, 29.7658);
+    public static Pose SHOOT_GARDEN_CONTROL_2 = new Pose(93.4437, 35.0448);
+    public static Pose CLOSE_FLOWER_CONTROL_1 = new Pose(133.76, 55.81);
+    public static Pose CLOSE_FLOWER_CONTROL_2 = new Pose(104.31, 102.77);
+    public static Pose FAR_FLOWER_CONTROL_1 = new Pose(98.5475, 34.8862);
+    public static Pose SHOOT_FAR_FLOWER_CONTROL_1 = new Pose(98.5634, 34.819);
 
     public static AutoConfig route() {
         return new AutoConfig(
-                startPose,
-                shootPreloadPose,
+                START_POSE,
+                SHOOT_PRELOAD_POSE,
                 new Pose[]{},
-                gardenPose,
-                new Pose[]{gardenControl1, gardenControl2},
-                0, // unused: the garden path follows its tangent
+                GARDEN_POSE,
+                new Pose[]{GARDEN_CONTROL_1, GARDEN_CONTROL_2},
+                GARDEN_POSE.heading(), // garden path ends holding the garden heading
+                SHOOT_GARDEN_POSE,
+                new Pose[]{SHOOT_GARDEN_CONTROL_1, SHOOT_GARDEN_CONTROL_2},
                 true,
-                shootGardenPose,
-                endPose,
-                new Pose[]{endControl1}
+                CLOSE_FLOWER_POSE,
+                new Pose[]{CLOSE_FLOWER_CONTROL_1, CLOSE_FLOWER_CONTROL_2},
+                SHOOT_CLOSE_FLOWER_POSE,
+                FAR_FLOWER_POSE,
+                new Pose[]{FAR_FLOWER_CONTROL_1},
+                SHOOT_FAR_FLOWER_POSE,
+                new Pose[]{SHOOT_FAR_FLOWER_CONTROL_1},
+                PARK_POSE,
+                new Pose[]{}
         );
     }
 
