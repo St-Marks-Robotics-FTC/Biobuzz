@@ -4,6 +4,8 @@ package org.firstinspires.ftc.teamcode.hwScheduler;
 
 import com.pedropathing.utils.Timer;
 
+import org.firstinspires.ftc.teamcode.Tunables;
+
 import java.util.ArrayList;
 
 // TODO: add ability to get hardwareMap from scheduler when adding devices
@@ -12,9 +14,6 @@ public class HWScheduler {
     private ArrayList<Device> deviceList = new ArrayList<>();
     private Timer updateTimer;
 
-    private double targetLoopLength = 15; // target loop length in ms
-
-    private double stalenessReduction = 2; // how important staleness is. higher values are less important
 
     public HWScheduler() {
         updateTimer = new Timer();
@@ -38,7 +37,7 @@ public class HWScheduler {
 
         // snapshot priority, staleness and score for every device (also resets isUpdated)
         for (Device device : deviceList) {
-            device.refresh(stalenessReduction);
+            device.refresh(Tunables.stalenessReduction);
         }
 
         // sort device list by score, highest first
@@ -54,7 +53,7 @@ public class HWScheduler {
 
         // this for loop will go from highest to least priority
         for (Device device : deviceList) {
-            double remainingLoopTime = targetLoopLength - elapsedTime - updateTimer.milliseconds();
+            double remainingLoopTime = Tunables.targetLoopLength - elapsedTime - updateTimer.milliseconds();
 
             if (remainingLoopTime <= 0) break; // out of time - everything else waits for next loop
 

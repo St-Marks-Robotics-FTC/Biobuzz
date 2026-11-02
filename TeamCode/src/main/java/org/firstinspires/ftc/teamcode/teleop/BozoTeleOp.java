@@ -77,9 +77,11 @@ public abstract class BozoTeleOp extends OpMode {
 
         robot.update(loopTimer.milliseconds()); // write subsystem hardware with whatever time is left in the loop
 
+        double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
+
         if (Tunables.isDebugging) updateTelemetry();
 
-        telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
+        telemetryM.addData("loop time (before telemetry)", loopTime);
         telemetryM.update(telemetry);
     }
 

@@ -66,4 +66,7 @@ public class Tunables {
 
     /** hardware scheduler tunables (used in HWScheduler.java) **/
 
+    public static double targetLoopLength = 20; // target loop length in ms
+
+    public static double stalenessReduction = 2; // how important staleness is. higher values are less important
 }
