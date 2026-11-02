@@ -63,4 +63,7 @@ public class Tunables {
     public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
 
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
+
+    /** hardware scheduler tunables (used in HWScheduler.java) **/
+
 }

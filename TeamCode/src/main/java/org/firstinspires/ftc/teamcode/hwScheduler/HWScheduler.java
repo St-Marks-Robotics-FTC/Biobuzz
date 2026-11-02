@@ -2,19 +2,23 @@
 
 package org.firstinspires.ftc.teamcode.hwScheduler;
 
-import android.bluetooth.BluetoothClass;
-
 import com.pedropathing.utils.Timer;
 
 import java.util.ArrayList;
 
 // TODO: add ability to get hardwareMap from scheduler when adding devices
+// TODO: measure with sub-millisecond accuracy
 public class HWScheduler {
     private ArrayList<Device> deviceList = new ArrayList<>();
+    private Timer updateTimer;
 
     private double targetLoopLength = 15; // target loop length in ms
 
     private double stalenessReduction = 2; // how important staleness is. higher values are less important
+
+    public HWScheduler() {
+        updateTimer = new Timer();
+    }
 
     public Device getDevice(String name) {
         for (Device device : deviceList) {
@@ -30,7 +34,7 @@ public class HWScheduler {
     }
 
     public double update(double elapsedTime) { // take in time we have already spent and return time our scheduler took
-        Timer updateTimer = new Timer();
+        updateTimer.reset();
 
         // snapshot priority, staleness and score for every device (also resets isUpdated)
         for (Device device : deviceList) {
