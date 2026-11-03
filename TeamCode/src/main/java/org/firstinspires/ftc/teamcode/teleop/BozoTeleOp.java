@@ -6,6 +6,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
@@ -197,8 +198,6 @@ public abstract class BozoTeleOp extends OpMode {
 
     private void updateTelemetry() {
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
-
-        if (Tunables.isDebugging) updateTelemetry();
 
         // always output these to telemetry
         telemetryM.addData("desired RPM", robot.flywheel.getLastSetRPM());
