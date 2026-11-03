@@ -238,7 +238,7 @@ public abstract class BozoAuto extends OpMode {
         shootToAudienceFlowerIntermediatePath = plainLine(shootPose, config.audienceFlowerIntermediatePose);
         audienceFlowerIntermediateToAudienceCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.audienceCheckpointPose);
         // CASE2A: checkpoint -> tippedShoot; the scoring flower round trip and the park reuse CASE1's paths
-        audienceCheckpointToTippedShootPath = curve(config.audienceCheckpointPose, config.checkpointToTippedShootControlPose, config.tippedShootPose)
+        audienceCheckpointToTippedShootPath = curve(config.audienceCheckpointPose, config.audienceCheckpointToTippedShootControlPose1, config.audienceCheckpointToTippedShootControlPose2, config.tippedShootPose)
                 .linear(config.audienceCheckpointPose, config.tippedShootPose);
         // CASE2B: checkpoint -> ORIGINAL shoot pose -> scoring flower (cubic curve, 2 control points) -> park (curve, 1 control point)
         audienceCheckpointToShootPath = plainLine(config.audienceCheckpointPose, shootPose);

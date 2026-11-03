@@ -69,6 +69,10 @@ public class AutoConfig {
     public final Pose audienceFlowerPose;
     /** where CASE2 stops to let the Limelight judge the hive after the audience flower (decides 2A vs 2B) **/
     public final Pose audienceCheckpointPose;
+    /** first control point of the cubic curve {@link #audienceCheckpointPose} -> {@link #tippedShootPose} (CASE2A) **/
+    public final Pose audienceCheckpointToTippedShootControlPose1;
+    /** second control point of the cubic curve {@link #audienceCheckpointPose} -> {@link #tippedShootPose} (CASE2A) **/
+    public final Pose audienceCheckpointToTippedShootControlPose2;
     /** first control point of the cubic curve {@link #shootPose} -> {@link #scoringFlowerIntermediatePose} (CASE2B) **/
     public final Pose shootToScoringFlowerControlPose1;
     /** second control point of the cubic curve {@link #shootPose} -> {@link #scoringFlowerIntermediatePose} (CASE2B) **/
@@ -99,6 +103,8 @@ public class AutoConfig {
             Pose audienceFlowerIntermediatePose,
             Pose audienceFlowerPose,
             Pose audienceCheckpointPose,
+            Pose audienceCheckpointToTippedShootControlPose1,
+            Pose audienceCheckpointToTippedShootControlPose2,
             Pose shootToScoringFlowerControlPose1,
             Pose shootToScoringFlowerControlPose2,
             Pose parkControlPoseFromShoot,
@@ -121,6 +127,8 @@ public class AutoConfig {
         this.audienceFlowerIntermediatePose = audienceFlowerIntermediatePose;
         this.audienceFlowerPose = audienceFlowerPose;
         this.audienceCheckpointPose = audienceCheckpointPose;
+        this.audienceCheckpointToTippedShootControlPose1 = audienceCheckpointToTippedShootControlPose1;
+        this.audienceCheckpointToTippedShootControlPose2 = audienceCheckpointToTippedShootControlPose2;
         this.shootToScoringFlowerControlPose1 = shootToScoringFlowerControlPose1;
         this.shootToScoringFlowerControlPose2 = shootToScoringFlowerControlPose2;
         this.parkControlPoseFromShoot = parkControlPoseFromShoot;

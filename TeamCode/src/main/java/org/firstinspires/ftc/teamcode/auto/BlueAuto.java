@@ -28,6 +28,8 @@ public abstract class BlueAuto extends BozoAuto {
     public static Pose audienceFlowerIntermediatePose = new Pose(120, 96, Math.toRadians(0));
     public static Pose audienceFlowerPose = new Pose(136, 96, Math.toRadians(0));
     public static Pose audienceCheckpointPose = new Pose(144, 144, Math.toRadians(180)); // UNTUNED (mirror of Red's 0,0 placeholder)
+    public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(132, 132, Math.toRadians(270)); // UNTUNED
+    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(126, 54, Math.toRadians(270)); // UNTUNED
     public static Pose shootToScoringFlowerControlPose1 = new Pose(132, 132, Math.toRadians(180));
     public static Pose shootToScoringFlowerControlPose2 = new Pose(132, 54, Math.toRadians(180));
 
@@ -58,6 +60,8 @@ public abstract class BlueAuto extends BozoAuto {
                 audienceFlowerIntermediatePose,
                 audienceFlowerPose,
                 audienceCheckpointPose,
+                audienceCheckpointToTippedShootControlPose1,
+                audienceCheckpointToTippedShootControlPose2,
                 shootToScoringFlowerControlPose1,
                 shootToScoringFlowerControlPose2,
                 parkControlPoseFromShoot,

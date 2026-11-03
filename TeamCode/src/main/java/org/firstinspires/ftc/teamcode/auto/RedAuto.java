@@ -21,13 +21,15 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose scoringFlowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
     public static Pose scoringFlowerPose = new Pose(48, 136, Math.toRadians(90));
     public static Pose checkpointPose = new Pose(12, 12, Math.toRadians(45));
-    public static Pose checkpointToTippedShootControlPose = new Pose(12, 120, Math.toRadians(90)); // UNTUNED: pulls the CASE1B return arc up the wall
+    public static Pose checkpointToTippedShootControlPose = new Pose(12, 120, Math.toRadians(90));
 
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + CASE2 checkpoint
-    public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 90, Math.toRadians(180));
+    public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
     public static Pose audienceFlowerPose = new Pose(8, 48, Math.toRadians(180));
-    public static Pose audienceCheckpointPose = new Pose(12, 12, Math.toRadians(45));
+    public static Pose audienceCheckpointPose = new Pose(44, 40, Math.toRadians(60));
+    public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(6, 6, Math.toRadians(90));
+    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(18, 80, Math.toRadians(90));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(12, 12, Math.toRadians(0));
     public static Pose shootToScoringFlowerControlPose2 = new Pose(12, 80, Math.toRadians(0));
 
@@ -58,6 +60,8 @@ public abstract class RedAuto extends BozoAuto {
                 audienceFlowerIntermediatePose,
                 audienceFlowerPose,
                 audienceCheckpointPose,
+                audienceCheckpointToTippedShootControlPose1,
+                audienceCheckpointToTippedShootControlPose2,
                 shootToScoringFlowerControlPose1,
                 shootToScoringFlowerControlPose2,
                 parkControlPoseFromShoot,
