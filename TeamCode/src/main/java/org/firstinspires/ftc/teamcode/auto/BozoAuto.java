@@ -331,12 +331,14 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_COLLECT_SCORING_FLOWER:
                 if (finishedCollecting()) {
-                    robot.flower.goUp(); // raise as soon as we leave the flower
                     driveThen(scoringFlowerToScoringFlowerIntermediatePath, State.CASE1_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
             case CASE1_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE:
-                if (!follower.isBusy()) driveThen(scoringFlowerIntermediateToTippedShootPath, State.CASE1_TRAVEL_TO_SHOOT_3);
+                if (!follower.isBusy()) {
+                    robot.flower.goUp();
+                    driveThen(scoringFlowerIntermediateToTippedShootPath, State.CASE1_TRAVEL_TO_SHOOT_3);
+                }
                 break;
             case CASE1_TRAVEL_TO_SHOOT_3:
                 if (!follower.isBusy()) setState(State.CASE1_SPEED_UP_SHOOT_3);
@@ -363,12 +365,14 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_COLLECT_AUDIENCE_FLOWER:
                 if (finishedCollecting()) {
-                    robot.flower.goUp();
                     driveThen(audienceFlowerToAudienceFlowerIntermediatePath, State.CASE1_TRAVEL_FROM_AUDIENCE_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
             case CASE1_TRAVEL_FROM_AUDIENCE_FLOWER_TO_INTERMEDIATE:
-                if (!follower.isBusy()) driveThen(audienceFlowerIntermediateToCheckpointPath, State.CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT);
+                if (!follower.isBusy()) {
+                    robot.flower.goUp();
+                    driveThen(audienceFlowerIntermediateToCheckpointPath, State.CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT);
+                }
                 break;
             case CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
@@ -434,16 +438,18 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2_COLLECT_AUDIENCE_FLOWER:
                 if (finishedCollecting()) {
-                    robot.flower.goUp();
                     driveThen(audienceFlowerToAudienceFlowerIntermediatePath, State.CASE2_TRAVEL_FROM_AUDIENCE_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
             case CASE2_TRAVEL_FROM_AUDIENCE_FLOWER_TO_INTERMEDIATE:
-                if (!follower.isBusy()) driveThen(audienceFlowerIntermediateToAudienceCheckpointPath, State.CASE2_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT);
+                if (!follower.isBusy()) {
+                    robot.flower.goUp();
+                    driveThen(audienceFlowerIntermediateToAudienceCheckpointPath, State.CASE2_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT);
+                }
                 break;
             case CASE2_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                    if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
                     else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
                 }
                 break;
