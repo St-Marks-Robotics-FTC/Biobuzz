@@ -70,4 +70,5 @@ public class Tunables {
 
     public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
     public static boolean softScheduling = false; // if true: update device once max staleness has been exceeded
+    public static double caching = 0.01; // caching threshold
 }

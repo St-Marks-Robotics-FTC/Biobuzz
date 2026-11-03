@@ -47,7 +47,7 @@ public class HWScheduler {
         }
 
         // sort device list by score, highest first
-        deviceList.sort((d1, d2) -> Double.compare(d2.score, d1.score));
+        deviceList.sort((d1, d2) -> Double.compare(d2.getScore(), d1.getScore()));
 
         if (Tunables.softScheduling) {
             // first update any devices that are past their max stale time
