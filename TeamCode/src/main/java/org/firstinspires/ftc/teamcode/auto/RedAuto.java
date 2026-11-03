@@ -17,26 +17,22 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose tippedControlPose2 = new Pose(18, 90, Math.toRadians(90));
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(270));
 
-    // ---------------------------------------------------------------- CASE1 / CASE2A: scoring-side flowers
-    public static Pose flowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
-    public static Pose flowerPose = new Pose(48, 136, Math.toRadians(90));
-    public static Pose flower2ControlPose = new Pose(18, 90, Math.toRadians(180));
-    public static Pose flower2IntermediatePose = new Pose(24, 48, Math.toRadians(180));
-    public static Pose flower2Pose = new Pose(8, 48, Math.toRadians(180));
+    // ---------------------------------------------------------------- SCORING SIDE: the scoring flower + CASE1 checkpoint
+    public static Pose scoringFlowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
+    public static Pose scoringFlowerPose = new Pose(48, 136, Math.toRadians(90));
+    public static Pose checkpointPose = new Pose(12, 12, Math.toRadians(45));               // UNTUNED
 
-    // ---------------------------------------------------------------- CASE1: Limelight checkpoint  (UNTUNED: 0,0)
-    public static Pose checkpointPose = new Pose(0, 0, Math.toRadians(0));
-
-    // ---------------------------------------------------------------- CASE2: audience-side flowers  (UNTUNED: 0,0)
-    public static Pose audienceFlowerIntermediatePose = new Pose(0, 0, Math.toRadians(0));
-    public static Pose audienceFlowerPose = new Pose(0, 0, Math.toRadians(0));
-    public static Pose audienceCheckpointPose = new Pose(0, 0, Math.toRadians(0));
-    public static Pose audienceFlower2ControlPose = new Pose(0, 0, Math.toRadians(0));
-    public static Pose audienceFlower2IntermediatePose = new Pose(0, 0, Math.toRadians(0));
-    public static Pose audienceFlower2Pose = new Pose(0, 0, Math.toRadians(0));
+    // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + CASE2 checkpoint
+    public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 90, Math.toRadians(180));
+    public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
+    public static Pose audienceFlowerPose = new Pose(8, 48, Math.toRadians(180));
+    public static Pose audienceCheckpointPose = new Pose(0, 0, Math.toRadians(0));          // UNTUNED
+    public static Pose shootToScoringFlowerControlPose = new Pose(0, 0, Math.toRadians(0)); // UNTUNED (CASE2B)
 
     // ---------------------------------------------------------------- PARK
-    public static Pose parkControlPose = new Pose(24, 24, Math.toRadians(0));
+    public static Pose parkControlPoseFromShoot = new Pose(0, 0, Math.toRadians(0));              // UNTUNED
+    public static Pose parkControlPoseFromTippedShoot = new Pose(24, 24, Math.toRadians(0));
+    public static Pose parkControlPoseFromScoringFlower = new Pose(0, 0, Math.toRadians(0));      // UNTUNED
     public static Pose parkPose = new Pose(12, 102, Math.toRadians(0));
 
     @Override
@@ -52,19 +48,17 @@ public abstract class RedAuto extends BozoAuto {
                 tippedControlPose1,
                 tippedControlPose2,
                 tippedShootPose,
-                flowerIntermediatePose,
-                flowerPose,
-                flower2ControlPose,
-                flower2IntermediatePose,
-                flower2Pose,
+                scoringFlowerIntermediatePose,
+                scoringFlowerPose,
                 checkpointPose,
+                tippedShootToAudienceFlowerControlPose,
                 audienceFlowerIntermediatePose,
                 audienceFlowerPose,
                 audienceCheckpointPose,
-                audienceFlower2ControlPose,
-                audienceFlower2IntermediatePose,
-                audienceFlower2Pose,
-                parkControlPose,
+                shootToScoringFlowerControlPose,
+                parkControlPoseFromShoot,
+                parkControlPoseFromTippedShoot,
+                parkControlPoseFromScoringFlower,
                 parkPose
         );
     }

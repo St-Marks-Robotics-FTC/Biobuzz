@@ -10,25 +10,29 @@ import com.pedropathing.math.Pose;
  * <ul>
  *   <li><b>audience side</b>: where {@link #shootPose} is; the side we start on.</li>
  *   <li><b>scoring side</b>: the far side, at {@link #tippedShootPose} (audience shoot pose mirrored over y = 72).</li>
+ *   <li><b>scoring flower</b>: the one flower on the scoring side ({@link #scoringFlowerPose}).</li>
+ *   <li><b>audience flower</b>: the one flower on the audience side ({@link #audienceFlowerPose}).</li>
  *   <li><b>intermediate pose</b>: a waypoint in front of a flower; we drive to it at full speed, then creep into the
  *       flower at reduced speed, and back out to it again.</li>
  *   <li><b>checkpoint pose</b>: a spot with a good view for the Limelight to judge the hive; the result picks the
  *       sub-case (1A/1B, 2A/2B).</li>
  * </ul>
+ * There are only two physical flowers. "first" and "second" flower in the route below only describe the order within
+ * one case; they are not names for a particular flower.
  *
  * <h3>Route</h3>
  * <pre>
  * SHARED   start -> shoot -> intermediate -> refuel -> shoot, then look at the hive:
  *
  * CASE1  (hive tipped)       shoot -> tippedShoot, then
- *                            flower1 -> tippedShoot -> flower2 -> checkpoint
+ *                            scoringFlower -> tippedShoot -> audienceFlower -> checkpoint
  *    CASE1A (made all 8)     checkpoint -> shoot -> park
- *    CASE1B (missed some)    checkpoint -> tippedShoot
+ *    CASE1B (missed some)    checkpoint -> tippedShoot -> park
  *
  * CASE2  (hive not tipped)   shoot again, then
- *                            audienceFlower1 -> audienceCheckpoint
- *    CASE2A (tipped now)     audienceCheckpoint -> tippedShoot -> flower2 -> tippedShoot -> park
- *    CASE2B (still not)      audienceCheckpoint -> shoot -> audienceFlower2 -> park
+ *                            audienceFlower -> audienceCheckpoint
+ *    CASE2A (tipped now)     audienceCheckpoint -> tippedShoot -> scoringFlower -> tippedShoot -> park
+ *    CASE2B (still not)      audienceCheckpoint -> shoot -> scoringFlower -> park
  * </pre>
  */
 public class AutoConfig {
@@ -49,36 +53,30 @@ public class AutoConfig {
     public final Pose tippedControlPose2;
     /** scoring-side shoot pose **/
     public final Pose tippedShootPose;
-
-    // ---------------------------------------------------------------- CASE1 / CASE2A: scoring-side flowers
-    /** waypoint in front of flower 1 (reached by a line from {@link #tippedShootPose}) **/
-    public final Pose flowerIntermediatePose;
-    public final Pose flowerPose;
-    /** control point of the curve {@link #tippedShootPose} -> {@link #flower2IntermediatePose} **/
-    public final Pose flower2ControlPose;
-    /** waypoint in front of flower 2 **/
-    public final Pose flower2IntermediatePose;
-    public final Pose flower2Pose;
-
-    // ---------------------------------------------------------------- CASE1: Limelight checkpoint
-    /** where CASE1 stops to let the Limelight judge the hive after flower 2 (decides 1A vs 1B) **/
+    /** waypoint in front of the scoring flower (reached by a line from {@link #tippedShootPose}) **/
+    public final Pose scoringFlowerIntermediatePose;
+    public final Pose scoringFlowerPose;
+    /** where CASE1 stops to let the Limelight judge the hive after the audience flower (decides 1A vs 1B) **/
     public final Pose checkpointPose;
 
-    // ---------------------------------------------------------------- CASE2: audience-side flowers
-    /** waypoint in front of the audience-side flower 1 (reached by a line from {@link #shootPose}) **/
+    // ---------------------------------------------------------------- AUDIENCE SIDE
+    /** control point of the curve {@link #tippedShootPose} -> {@link #audienceFlowerIntermediatePose} (CASE1) **/
+    public final Pose tippedShootToAudienceFlowerControlPose;
+    /** waypoint in front of the audience flower **/
     public final Pose audienceFlowerIntermediatePose;
     public final Pose audienceFlowerPose;
-    /** where CASE2 stops to let the Limelight judge the hive after flower 1 (decides 2A vs 2B) **/
+    /** where CASE2 stops to let the Limelight judge the hive after the audience flower (decides 2A vs 2B) **/
     public final Pose audienceCheckpointPose;
-    /** control point of the curve {@link #shootPose} -> {@link #audienceFlower2IntermediatePose} (CASE2B) **/
-    public final Pose audienceFlower2ControlPose;
-    /** waypoint in front of the audience-side flower 2 (CASE2B) **/
-    public final Pose audienceFlower2IntermediatePose;
-    public final Pose audienceFlower2Pose;
+    /** control point of the curve {@link #shootPose} -> {@link #scoringFlowerIntermediatePose} (CASE2B) **/
+    public final Pose shootToScoringFlowerControlPose;
 
     // ---------------------------------------------------------------- PARK
-    /** control point of the curve to {@link #parkPose} **/
-    public final Pose parkControlPose;
+    /** control point of the curve {@link #shootPose} -> {@link #parkPose} (CASE1A) **/
+    public final Pose parkControlPoseFromShoot;
+    /** control point of the curve {@link #tippedShootPose} -> {@link #parkPose} (CASE1B and CASE2A) **/
+    public final Pose parkControlPoseFromTippedShoot;
+    /** control point of the curve {@link #scoringFlowerIntermediatePose} -> {@link #parkPose} (CASE2B) **/
+    public final Pose parkControlPoseFromScoringFlower;
     public final Pose parkPose;
 
     public AutoConfig(
@@ -89,19 +87,17 @@ public class AutoConfig {
             Pose tippedControlPose1,
             Pose tippedControlPose2,
             Pose tippedShootPose,
-            Pose flowerIntermediatePose,
-            Pose flowerPose,
-            Pose flower2ControlPose,
-            Pose flower2IntermediatePose,
-            Pose flower2Pose,
+            Pose scoringFlowerIntermediatePose,
+            Pose scoringFlowerPose,
             Pose checkpointPose,
+            Pose tippedShootToAudienceFlowerControlPose,
             Pose audienceFlowerIntermediatePose,
             Pose audienceFlowerPose,
             Pose audienceCheckpointPose,
-            Pose audienceFlower2ControlPose,
-            Pose audienceFlower2IntermediatePose,
-            Pose audienceFlower2Pose,
-            Pose parkControlPose,
+            Pose shootToScoringFlowerControlPose,
+            Pose parkControlPoseFromShoot,
+            Pose parkControlPoseFromTippedShoot,
+            Pose parkControlPoseFromScoringFlower,
             Pose parkPose
     ) {
         this.startPose = startPose;
@@ -111,19 +107,17 @@ public class AutoConfig {
         this.tippedControlPose1 = tippedControlPose1;
         this.tippedControlPose2 = tippedControlPose2;
         this.tippedShootPose = tippedShootPose;
-        this.flowerIntermediatePose = flowerIntermediatePose;
-        this.flowerPose = flowerPose;
-        this.flower2ControlPose = flower2ControlPose;
-        this.flower2IntermediatePose = flower2IntermediatePose;
-        this.flower2Pose = flower2Pose;
+        this.scoringFlowerIntermediatePose = scoringFlowerIntermediatePose;
+        this.scoringFlowerPose = scoringFlowerPose;
         this.checkpointPose = checkpointPose;
+        this.tippedShootToAudienceFlowerControlPose = tippedShootToAudienceFlowerControlPose;
         this.audienceFlowerIntermediatePose = audienceFlowerIntermediatePose;
         this.audienceFlowerPose = audienceFlowerPose;
         this.audienceCheckpointPose = audienceCheckpointPose;
-        this.audienceFlower2ControlPose = audienceFlower2ControlPose;
-        this.audienceFlower2IntermediatePose = audienceFlower2IntermediatePose;
-        this.audienceFlower2Pose = audienceFlower2Pose;
-        this.parkControlPose = parkControlPose;
+        this.shootToScoringFlowerControlPose = shootToScoringFlowerControlPose;
+        this.parkControlPoseFromShoot = parkControlPoseFromShoot;
+        this.parkControlPoseFromTippedShoot = parkControlPoseFromTippedShoot;
+        this.parkControlPoseFromScoringFlower = parkControlPoseFromScoringFlower;
         this.parkPose = parkPose;
     }
 }
