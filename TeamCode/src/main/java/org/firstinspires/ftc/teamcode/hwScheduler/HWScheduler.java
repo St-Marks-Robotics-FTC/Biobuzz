@@ -65,7 +65,7 @@ public class HWScheduler {
 
             if (remainingLoopTime <= 0) break; // out of time - everything else waits for next loop
 
-            if (device.isUpdated || device.getPriority() == 0) {
+            if (device.isUpdated || device.getChange() == 0) {
                 continue;
             } // already written or nothing to write
 
@@ -103,15 +103,15 @@ public class HWScheduler {
 
             deviceStats.append("---" + device.name + "---\n");
             deviceStats.append("priority: " + device.getPriority() + "\n");
-            deviceStats.append("estimated update length: " + device.getEstimatedUpdateLength() + "\n");
-            deviceStats.append("staleness: " + device.getStaleness() + "\n");
-            deviceStats.append("total update time: " + device.getTotalUpdateTime() + "\n");
+            deviceStats.append("estimated update length: " + device.getEstimatedUpdateLength() / 1000000 + "\n");
+            deviceStats.append("staleness: " + device.getStaleness() / 1000000 + "\n");
+            deviceStats.append("total update time: " + device.getTotalUpdateTime() / 1000000 + "\n");
             deviceStats.append("total update time percent: " + updatePercent + "%\n");
         }
 
         overallStats.append("-----overall metrics-----\n");
-        overallStats.append("sum update time: " + sumUpdateTime + "\n");
-        overallStats.append("highest staleness: " + highestStaleness + "\n");
+        overallStats.append("sum update time: " + sumUpdateTime / 1000000 + "\n");
+        overallStats.append("highest staleness: " + highestStaleness / 1000000 + "\n");
 
         overallStats.append(deviceStats.toString());
 
