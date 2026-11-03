@@ -76,7 +76,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         follower.update();
 
-        robot.update(loopTimer.milliseconds()); // write subsystem hardware with whatever time is left in the loop
+        robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
 
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
 

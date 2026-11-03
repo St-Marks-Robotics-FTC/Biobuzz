@@ -1,4 +1,5 @@
 /** device wrapper used by HWScheduler **/
+/** all time values are in nanoseconds **/
 
 package org.firstinspires.ftc.teamcode.hwScheduler;
 
@@ -9,9 +10,9 @@ public abstract class Device {
 
     protected final double priorityMultiplier;
     protected final String name;
-    protected double estimatedUpdateLength; // both in millis
-    protected double maxStaleness = 100;
-    protected double totalUpdateTime = 0; // total amount of time in ms that we have spent updating this device
+    protected long estimatedUpdateLength;
+    protected long maxStaleness = 100;
+    protected long totalUpdateTime = 0; // total amount of time that we have spent updating this device
     boolean isUpdated = false;
     private boolean hasWritten = false; // we have to write at least once so the hardware matches what we think it is
     private Timer stalenessTimer; // measures time since this device has been waiting for a write (staleness)
@@ -19,7 +20,7 @@ public abstract class Device {
 
     // snapshot taken once per scheduler loop so the sort sees values that don't change while sorting
     private double priority = 0;
-    private double staleness = 0;
+    private long staleness = 0;
     double score = 0;
 
     public Device(String name, double priorityMultiplier) {
@@ -36,7 +37,7 @@ public abstract class Device {
 
         priority = hasWritten ? getChange() * priorityMultiplier : priorityMultiplier;
         if (priority == 0) { stalenessTimer.reset(); } // prevent staleness increasing while there is nothing to write
-        staleness = stalenessTimer.milliseconds();
+        staleness = stalenessTimer.nanoseconds();
 
         // staleness boosts priority over time so low priority devices can't be starved forever
         score = priority * (1 + staleness / stalenessReduction);
@@ -46,19 +47,19 @@ public abstract class Device {
         return priority;
     }
 
-    public double getStaleness() {
+    public long getStaleness() {
         return staleness;
     }
 
-    public double getEstimatedUpdateLength() {
+    public long getEstimatedUpdateLength() {
         return estimatedUpdateLength;
     }
 
-    public double getMaxStaleness() {
+    public long getMaxStaleness() {
         return maxStaleness;
     }
 
-    public double getTotalUpdateTime() {
+    public long getTotalUpdateTime() {
         return totalUpdateTime;
     }
 
@@ -72,9 +73,9 @@ public abstract class Device {
 
         write();
 
-        double updateLength = writeTimer.milliseconds();
+        long updateLength = writeTimer.nanoseconds();
         // smooth our estimate so one slow write doesn't lock this device out of the schedule
-        estimatedUpdateLength += (updateLength - estimatedUpdateLength) * UPDATE_LENGTH_SMOOTHING;
+        estimatedUpdateLength = (long) (estimatedUpdateLength + (updateLength - estimatedUpdateLength) * UPDATE_LENGTH_SMOOTHING);
         totalUpdateTime += updateLength;
         isUpdated = true;
         hasWritten = true;

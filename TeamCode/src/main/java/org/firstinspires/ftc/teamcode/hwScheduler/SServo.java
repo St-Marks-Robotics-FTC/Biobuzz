@@ -14,7 +14,7 @@ public class SServo extends Device {
     public SServo(String name, double priorityMultiplier, HardwareMap hw) {
         super(name, priorityMultiplier);
 
-        estimatedUpdateLength = 3; // estimated update time
+        estimatedUpdateLength = 3000; // estimated update time
 
         s = hw.get(Servo.class, name);
     }

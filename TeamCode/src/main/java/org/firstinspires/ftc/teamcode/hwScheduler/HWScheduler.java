@@ -9,7 +9,6 @@ import org.firstinspires.ftc.teamcode.Tunables;
 import java.util.ArrayList;
 
 // TODO: add ability to get hardwareMap from scheduler when adding devices
-// TODO: measure with sub-millisecond accuracy
 public class HWScheduler {
     private ArrayList<Device> deviceList = new ArrayList<>();
     private Timer updateTimer;
@@ -32,7 +31,8 @@ public class HWScheduler {
         deviceList.add(device);
     }
 
-    public double update(double elapsedTime) { // take in time we have already spent and return time our scheduler took
+    public double update(long elapsedTime) { // take in time we have already spent and return time our scheduler took
+        // elapsedTime is in nanoseconds
         updateTimer.reset();
 
         // snapshot priority, staleness and score for every device (also resets isUpdated)
@@ -55,7 +55,7 @@ public class HWScheduler {
 
         // this for loop will go from highest to least priority
         for (Device device : deviceList) {
-            double remainingLoopTime = Tunables.targetLoopLength - elapsedTime - updateTimer.milliseconds();
+            double remainingLoopTime = (Tunables.targetLoopLength * 1000) - elapsedTime - updateTimer.nanoseconds();
 
             if (remainingLoopTime <= 0) break; // out of time - everything else waits for next loop
 
@@ -69,7 +69,13 @@ public class HWScheduler {
             }
         }
 
-        return updateTimer.milliseconds(); // return time we took updating
+        return updateTimer.milliseconds(); // return time we took updating in milliseconds
+    }
+
+    public void forceUpdate() { // force update all devices
+        for (Device device : deviceList) {
+            device.forceUpdate();
+        }
     }
 
     public String getStatus() {

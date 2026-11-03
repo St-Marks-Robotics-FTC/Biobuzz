@@ -55,11 +55,6 @@ public class Robot {
         return (controlHub.getCurrent(CurrentUnit.AMPS) + expansionHub.getCurrent(CurrentUnit.AMPS));
     }
 
-    /** writes queued hardware changes - call this once at the end of every loop **/
-    public double update(double elapsedTime) { // take in time we have already spent this loop and return time the scheduler took
-        return scheduler.update(elapsedTime);
-    }
-
     public void startLaunch() {
         launchState = LaunchState.START_LAUNCH;
     }

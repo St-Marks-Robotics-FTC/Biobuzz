@@ -14,7 +14,7 @@ public class SDualServo extends Device {
     public SDualServo(String name1, String name2, double priorityMultiplier, HardwareMap hw) {
         super(name1 + name2, priorityMultiplier);
 
-        estimatedUpdateLength = 6; // estimated update time
+        estimatedUpdateLength = 6000; // estimated update time
 
         servo1 = hw.get(Servo.class, name1);
         servo2 = hw.get(Servo.class, name2);

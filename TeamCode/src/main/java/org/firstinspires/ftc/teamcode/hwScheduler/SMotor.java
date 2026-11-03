@@ -13,7 +13,7 @@ public class SMotor extends Device {
     public SMotor(String name, double priorityMultiplier, HardwareMap hw) {
         super(name, priorityMultiplier); // create Device
 
-        estimatedUpdateLength = 3; // estimated time
+        estimatedUpdateLength = 3000; // estimated time
 
         m = hw.get(DcMotorEx.class, name);
     }

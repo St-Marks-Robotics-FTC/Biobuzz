@@ -179,7 +179,8 @@ public abstract class BozoAuto extends OpMode {
         follower.update();
         robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target also dih
         autoUpdate();
-        robot.update(loopTimer.milliseconds()); // write subsystem hardware with whatever time is left in the loop
+
+        robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
 
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
 
@@ -229,7 +230,7 @@ public abstract class BozoAuto extends OpMode {
         if (robot != null) {
             shutOff();
             robot.flywheel.update(0);
-            robot.update(0); // flush the shutoff writes since loop() won't run again
+            robot.scheduler.forceUpdate(); // flush shutoff writes
         }
         updateHandoff();
     }
