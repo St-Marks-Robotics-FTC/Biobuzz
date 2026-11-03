@@ -11,7 +11,7 @@ import com.pedropathing.math.Pose;
 public class Tunables {
     // all members must be initialized with the keywords `public static`... in order to be usable
 
-    public static boolean isDebugging = false; // whether to print additional debug info (slow)
+    public static boolean isDebugging = true; // whether to print additional debug info (slow)
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
@@ -19,6 +19,7 @@ public class Tunables {
     public static double manualStartingRPM = 3250;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
+    public static boolean teleBrake = true;
 
     /** flywheel tunables (used in Flywheel.java) **/
 
@@ -73,4 +74,11 @@ public class Tunables {
     public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
 
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
+
+    /** hardware scheduler tunables (used in HWScheduler.java) **/
+
+    public static double targetLoopLength = 20; // target loop length in ms
+
+    public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
+    public static boolean softScheduling = false; // if true: update device once max staleness has been exceeded
 }

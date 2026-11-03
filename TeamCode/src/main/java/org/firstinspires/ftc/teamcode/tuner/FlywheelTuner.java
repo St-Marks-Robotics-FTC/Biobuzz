@@ -7,7 +7,6 @@ import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 
@@ -23,7 +22,8 @@ public class FlywheelTuner extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        Robot robot = new Robot(hardwareMap);
+        HWScheduler scheduler = new HWScheduler(hardwareMap);
+        Flywheel flywheel = new Flywheel(scheduler);
 
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
@@ -50,27 +50,29 @@ public class FlywheelTuner extends LinearOpMode {
 
             switch (mode) {
                 case NO_POWER:
-                    robot.flywheel.powerUpdate(0.0); // apply no power
+                    flywheel.powerUpdate(0.0); // apply no power
                     break;
                 case FULL_POWER:
-                    robot.flywheel.powerUpdate(1.0);
+                    flywheel.powerUpdate(1.0);
                     break;
                 case PIDF:
                     double desiredFlywheelRPM = (MAX_SET_RPM * gamepad1.right_trigger);
 
-                    robot.flywheel.update(desiredFlywheelRPM, robot.getExpansionHubVoltage());
+                    flywheel.update(desiredFlywheelRPM);
 
                     telemetryM.addData("desired flywheel RPM", desiredFlywheelRPM);
-                    telemetryM.addData("desired flywheel TPS", robot.flywheel.RPMToTPS(desiredFlywheelRPM));
+                    telemetryM.addData("desired flywheel TPS", flywheel.RPMToTPS(desiredFlywheelRPM));
                     break;
             }
 
-            telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
-            telemetryM.addData("flywheel TPS", robot.flywheel.getTPS());
+            scheduler.update(0); // write flywheel power
+
+            telemetryM.addData("flywheel RPM", flywheel.getRPM());
+            telemetryM.addData("flywheel TPS", flywheel.getTPS());
 
             telemetryM.debug("PIDF: " + Tunables.flywheelP + ", " + Tunables.flywheelI + ", " + Tunables.flywheelD + ", " + Tunables.flywheelF);
-            telemetryM.addData("flywheel power", robot.flywheel.getPower());
-            telemetryM.addData("flywheel current", robot.flywheel.getCurrent());
+            telemetryM.addData("flywheel power", flywheel.getPower());
+            telemetryM.addData("flywheel current", flywheel.getCurrent());
 
             telemetryM.update(telemetry); // update our telemetry
 

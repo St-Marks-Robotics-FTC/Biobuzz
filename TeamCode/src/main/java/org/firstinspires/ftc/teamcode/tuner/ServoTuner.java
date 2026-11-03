@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
 
 @TeleOp(name="ServoTuner", group="Tuner")
@@ -27,13 +28,15 @@ public class ServoTuner extends OpMode {
 
     private Transfer transfer;
     private Flower flower;
+    private HWScheduler scheduler;
 
     private TelemetryManager telemetryM;
 
     @Override
     public void init() {
-        transfer = new Transfer(hardwareMap);
-        flower = new Flower(hardwareMap);
+        scheduler = new HWScheduler(hardwareMap);
+        transfer = new Transfer(scheduler);
+        flower = new Flower(scheduler);
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
@@ -94,6 +97,8 @@ public class ServoTuner extends OpMode {
             case UNSELECTED:
                 throw new RuntimeException("make sure to select a tuning mode before starting!");
         }
+
+        scheduler.update(0); // write servo position
 
         telemetryM.update(telemetry);
     }
