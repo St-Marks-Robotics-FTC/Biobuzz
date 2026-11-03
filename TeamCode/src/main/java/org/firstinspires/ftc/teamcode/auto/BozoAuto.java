@@ -636,6 +636,5 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.addData("y", pose.y());
         telemetryM.addData("Heading", pose.heading());
         telemetryM.addData("tags detected", vision.getLatestResult().getBotposeTagCount());
-        telemetryM.debug("OpMode time (seconds): " + getRuntime());
     }
 }
