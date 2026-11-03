@@ -13,7 +13,7 @@ public class SMotor extends Device {
     public SMotor(String name, double priorityMultiplier, HardwareMap hw) {
         super(name, priorityMultiplier); // create Device
 
-        estimatedUpdateLength = 3000; // estimated time
+        estimatedUpdateLength = 3 * 1000000; // estimated time
 
         m = hw.get(DcMotorEx.class, name);
     }
@@ -27,7 +27,8 @@ public class SMotor extends Device {
     }
 
     protected double getChange() {
-        return Math.abs(lastPower - setPower);
+        // motors map from -1<->1 so we halve them to align with servos 0-1
+        return Math.abs(lastPower - setPower) / 2;
     }
 
     protected void write() {

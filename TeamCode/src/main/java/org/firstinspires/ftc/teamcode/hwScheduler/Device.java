@@ -11,7 +11,7 @@ public abstract class Device {
     protected final double priorityMultiplier;
     protected final String name;
     protected long estimatedUpdateLength;
-    protected long maxStaleness = 100;
+    protected long maxStaleness = 100 * 1000000;
     protected long totalUpdateTime = 0; // total amount of time that we have spent updating this device
     boolean isUpdated = false;
     private boolean hasWritten = false; // we have to write at least once so the hardware matches what we think it is

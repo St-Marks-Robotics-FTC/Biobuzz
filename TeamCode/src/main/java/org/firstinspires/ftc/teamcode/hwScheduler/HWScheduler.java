@@ -61,7 +61,7 @@ public class HWScheduler {
 
         // this for loop will go from highest to least priority
         for (Device device : deviceList) {
-            double remainingLoopTime = (Tunables.targetLoopLength * 1000) - elapsedTime - updateTimer.nanoseconds();
+            double remainingLoopTime = (Tunables.targetLoopLength * 1000000) - elapsedTime - updateTimer.nanoseconds();
 
             if (remainingLoopTime <= 0) break; // out of time - everything else waits for next loop
 

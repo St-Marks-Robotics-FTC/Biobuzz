@@ -12,9 +12,9 @@ public class SDualServo extends Device {
     private double setPos = 0; // position we want the servo to be set to
 
     public SDualServo(String name1, String name2, double priorityMultiplier, HardwareMap hw) {
-        super(name1 + name2, priorityMultiplier);
+        super(name1 + "-" + name2, priorityMultiplier);
 
-        estimatedUpdateLength = 6000; // estimated update time
+        estimatedUpdateLength = 6 * 1000000; // estimated update time
 
         servo1 = hw.get(Servo.class, name1);
         servo2 = hw.get(Servo.class, name2);
