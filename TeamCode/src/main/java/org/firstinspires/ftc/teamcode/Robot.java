@@ -42,11 +42,11 @@ public class Robot {
         controlHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         expansionHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
 
-        scheduler = new HWScheduler(); // subsystems register their devices with this
+        scheduler = new HWScheduler(hw); // subsystems register their devices with this
 
-        flywheel = new Flywheel(hw, scheduler);
-        intake = new Intake(hw, scheduler);
-        transfer = new Transfer(hw, scheduler);
+        flywheel = new Flywheel(scheduler);
+        intake = new Intake(scheduler);
+        transfer = new Transfer(scheduler);
 
         launchTimer = new Timer();
     }

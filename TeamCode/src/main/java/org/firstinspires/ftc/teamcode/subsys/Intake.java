@@ -22,8 +22,8 @@ public class Intake {
 
     private SMotor motor; // writes go through the scheduler, reads go straight to motor.m
 
-    public Intake(HardwareMap hw, HWScheduler scheduler) {
-        motor = new SMotor("intakeMotor", PRIORITY_MULTIPLIER, hw);
+    public Intake(HWScheduler scheduler) {
+        motor = new SMotor("intakeMotor", PRIORITY_MULTIPLIER, scheduler.hw());
         scheduler.addDevice(motor);
 
         // one-time config, so it doesn't need to be scheduled

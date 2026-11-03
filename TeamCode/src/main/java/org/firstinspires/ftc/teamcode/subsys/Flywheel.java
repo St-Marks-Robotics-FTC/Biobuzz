@@ -20,9 +20,9 @@ public class Flywheel {
     /** stuff that changes **/
     private PIDF pidf;
 
-    public Flywheel(HardwareMap hw, HWScheduler scheduler) {
+    public Flywheel(HWScheduler scheduler) {
         // launch motors (all are DcMotorEx for current monitoring)
-        launchMotor = new SMotor("launchMotor", priorityMultiplier, hw);
+        launchMotor = new SMotor("launchMotor", priorityMultiplier, scheduler.hw());
         scheduler.addDevice(launchMotor);
 
         // set up hardware (one-time config, so it doesn't need to be scheduled)

@@ -29,8 +29,8 @@ public class ServoTuner extends OpMode {
 
     @Override
     public void init() {
-        scheduler = new HWScheduler();
-        transfer = new Transfer(hardwareMap, scheduler);
+        scheduler = new HWScheduler(hardwareMap);
+        transfer = new Transfer(scheduler);
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 

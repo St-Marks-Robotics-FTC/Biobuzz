@@ -3,19 +3,25 @@
 package org.firstinspires.ftc.teamcode.hwScheduler;
 
 import com.pedropathing.utils.Timer;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 
 import java.util.ArrayList;
 
-// TODO: add ability to get hardwareMap from scheduler when adding devices
 public class HWScheduler {
+    private HardwareMap hardwareMap;
     private ArrayList<Device> deviceList = new ArrayList<>();
     private Timer updateTimer;
 
 
-    public HWScheduler() {
+    public HWScheduler(HardwareMap hw) {
+        hardwareMap = hw;
         updateTimer = new Timer();
+    }
+
+    public HardwareMap hw() {
+        return hardwareMap;
     }
 
     public Device getDevice(String name) {

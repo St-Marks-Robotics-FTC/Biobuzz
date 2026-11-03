@@ -13,11 +13,11 @@ public class Drive {
 
     private SMotor frontLeft, frontRight, backLeft, backRight;
 
-    public Drive(HardwareMap hw, HWScheduler scheduler) {
-        frontLeft = new SMotor("frontLeft", PRIORITY_MULTIPLIER, hw);
-        frontRight = new SMotor("frontRight", PRIORITY_MULTIPLIER, hw);
-        backLeft = new SMotor("backLeft", PRIORITY_MULTIPLIER, hw);
-        backRight = new SMotor("backRight", PRIORITY_MULTIPLIER, hw);
+    public Drive(HWScheduler scheduler) {
+        frontLeft = new SMotor("frontLeft", PRIORITY_MULTIPLIER, scheduler.hw());
+        frontRight = new SMotor("frontRight", PRIORITY_MULTIPLIER, scheduler.hw());
+        backLeft = new SMotor("backLeft", PRIORITY_MULTIPLIER, scheduler.hw());
+        backRight = new SMotor("backRight", PRIORITY_MULTIPLIER, scheduler.hw());
 
         frontLeft.m.setDirection(DcMotorEx.Direction.REVERSE);
         frontRight.m.setDirection(DcMotorEx.Direction.FORWARD);

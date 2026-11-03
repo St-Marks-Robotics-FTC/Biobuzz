@@ -23,8 +23,8 @@ public class FlywheelTuner extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        HWScheduler scheduler = new HWScheduler();
-        Flywheel flywheel = new Flywheel(hardwareMap, scheduler);
+        HWScheduler scheduler = new HWScheduler(hardwareMap);
+        Flywheel flywheel = new Flywheel(scheduler);
 
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 

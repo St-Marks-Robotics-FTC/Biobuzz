@@ -40,7 +40,7 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
         robot = new Robot(hardwareMap);
-        drive = new Drive(hardwareMap, robot.scheduler); // teleop only - auto drives through the follower
+        drive = new Drive(robot.scheduler); // teleop only - auto drives through the follower
         field = new Field(isBlueTeam());
         vision = new Vision(hardwareMap, isBlueTeam());
         follower = Constants.create(hardwareMap);

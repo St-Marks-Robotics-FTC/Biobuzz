@@ -18,8 +18,8 @@ public class Transfer {
 
     private State state = State.CLOSED;
 
-    public Transfer(HardwareMap hw, HWScheduler scheduler) {
-        servo = new SServo("transferServo", PRIORITY_MULTIPLIER, hw);
+    public Transfer(HWScheduler scheduler) {
+        servo = new SServo("transferServo", PRIORITY_MULTIPLIER, scheduler.hw());
         scheduler.addDevice(servo);
 
         servo.setPosition(Tunables.transferClosed); // start closed
