@@ -98,13 +98,13 @@ public abstract class BozoAuto extends OpMode {
         CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT,      // line to a spot where the Limelight can judge the hive; decides 1A vs 1B
 
         // ---- CASE1A: we made all 8 and the hive flipped a second time -> shoot from the ORIGINAL shoot pose and park
-        CASE1A_TRAVEL_TO_SHOOT_4,  // curve (1 control point) from the checkpoint to the original shoot pose
+        CASE1A_TRAVEL_TO_SHOOT_4,  // line from the checkpoint to the original shoot pose
         CASE1A_SPEED_UP_SHOOT_4,
         CASE1A_FEED_SHOOT_4,
         CASE1A_TRAVEL_TO_PARK,     // everything off; curve (1 control point) to the park pose
 
         // ---- CASE1B: we did not make all 8 -> go back to the SCORING side and shoot again
-        CASE1B_TRAVEL_TO_SHOOT_4,  // line from the checkpoint to the tipped shoot pose
+        CASE1B_TRAVEL_TO_SHOOT_4,  // curve (1 control point) from the checkpoint to the tipped shoot pose
         CASE1B_SPEED_UP_SHOOT_4,
         CASE1B_FEED_SHOOT_4,
         CASE1B_TRAVEL_TO_PARK,     // everything off; curve (1 control point) from the tipped shoot pose to the park pose
@@ -223,13 +223,13 @@ public abstract class BozoAuto extends OpMode {
         audienceFlowerIntermediateToAudienceFlowerPath = creepLine(config.audienceFlowerIntermediatePose, config.audienceFlowerPose);
         audienceFlowerToAudienceFlowerIntermediatePath = plainLine(config.audienceFlowerPose, config.audienceFlowerIntermediatePose);
         audienceFlowerIntermediateToCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.checkpointPose);
-        // CASE1A: checkpoint -> ORIGINAL shoot pose (curve, 1 control point) -> park (curve, 1 control point)
-        checkpointToShootPath = curve(config.checkpointPose, config.checkpointToShootControlPose, shootPose)
-                .linear(config.checkpointPose, shootPose);
+        // CASE1A: checkpoint -> ORIGINAL shoot pose (plain line) -> park (curve, 1 control point)
+        checkpointToShootPath = plainLine(config.checkpointPose, shootPose);
         shootToParkPath = curve(shootPose, config.parkControlPoseFromShoot, config.parkPose)
                 .linear(shootPose, config.parkPose);
-        // CASE1B: checkpoint -> tippedShoot -> park (curve, 1 control point)
-        checkpointToTippedShootPath = plainLine(config.checkpointPose, config.tippedShootPose);
+        // CASE1B: checkpoint -> tippedShoot (curve, 1 control point) -> park (curve, 1 control point)
+        checkpointToTippedShootPath = curve(config.checkpointPose, config.checkpointToTippedShootControlPose, config.tippedShootPose)
+                .linear(config.checkpointPose, config.tippedShootPose);
         tippedShootToParkPath = curve(config.tippedShootPose, config.parkControlPoseFromTippedShoot, config.parkPose)
                 .linear(config.tippedShootPose, config.parkPose);
 

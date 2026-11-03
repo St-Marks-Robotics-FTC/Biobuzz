@@ -21,7 +21,7 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose scoringFlowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
     public static Pose scoringFlowerPose = new Pose(48, 136, Math.toRadians(90));
     public static Pose checkpointPose = new Pose(12, 12, Math.toRadians(45));
-    public static Pose checkpointToShootControlPose = new Pose(12, 120, Math.toRadians(90)); // UNTUNED: pulls the CASE1A return arc inward
+    public static Pose checkpointToTippedShootControlPose = new Pose(12, 120, Math.toRadians(90)); // UNTUNED: pulls the CASE1B return arc up the wall
 
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + CASE2 checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 90, Math.toRadians(180));
@@ -53,7 +53,7 @@ public abstract class RedAuto extends BozoAuto {
                 scoringFlowerIntermediatePose,
                 scoringFlowerPose,
                 checkpointPose,
-                checkpointToShootControlPose,
+                checkpointToTippedShootControlPose,
                 tippedShootToAudienceFlowerControlPose,
                 audienceFlowerIntermediatePose,
                 audienceFlowerPose,

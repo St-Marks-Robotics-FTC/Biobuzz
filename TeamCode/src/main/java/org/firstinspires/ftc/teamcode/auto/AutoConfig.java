@@ -58,8 +58,8 @@ public class AutoConfig {
     public final Pose scoringFlowerPose;
     /** where CASE1 stops to let the Limelight judge the hive after the audience flower (decides 1A vs 1B) **/
     public final Pose checkpointPose;
-    /** control point of the curve {@link #checkpointPose} -> {@link #shootPose} (CASE1A) **/
-    public final Pose checkpointToShootControlPose;
+    /** control point of the curve {@link #checkpointPose} -> {@link #tippedShootPose} (CASE1B) **/
+    public final Pose checkpointToTippedShootControlPose;
 
     // ---------------------------------------------------------------- AUDIENCE SIDE
     /** control point of the curve {@link #tippedShootPose} -> {@link #audienceFlowerIntermediatePose} (CASE1) **/
@@ -94,7 +94,7 @@ public class AutoConfig {
             Pose scoringFlowerIntermediatePose,
             Pose scoringFlowerPose,
             Pose checkpointPose,
-            Pose checkpointToShootControlPose,
+            Pose checkpointToTippedShootControlPose,
             Pose tippedShootToAudienceFlowerControlPose,
             Pose audienceFlowerIntermediatePose,
             Pose audienceFlowerPose,
@@ -116,7 +116,7 @@ public class AutoConfig {
         this.scoringFlowerIntermediatePose = scoringFlowerIntermediatePose;
         this.scoringFlowerPose = scoringFlowerPose;
         this.checkpointPose = checkpointPose;
-        this.checkpointToShootControlPose = checkpointToShootControlPose;
+        this.checkpointToTippedShootControlPose = checkpointToTippedShootControlPose;
         this.tippedShootToAudienceFlowerControlPose = tippedShootToAudienceFlowerControlPose;
         this.audienceFlowerIntermediatePose = audienceFlowerIntermediatePose;
         this.audienceFlowerPose = audienceFlowerPose;
