@@ -4,8 +4,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
+import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
+
 public class Flower {
-    private Servo flowerServo;
+    private SServo flowerServo;
 
     private enum State {
         UP,
@@ -14,8 +17,9 @@ public class Flower {
 
     private Flower.State state = Flower.State.DOWN;
 
-    public Flower(HardwareMap hw) {
-        flowerServo = hw.get(Servo.class, "flowerServo");
+    public Flower(HWScheduler scheduler) {
+        flowerServo = new SServo("flowerServo", 1, scheduler.hw());
+        scheduler.addDevice(flowerServo);
 
         flowerServo.setPosition(Tunables.flowerUp); // start up
     }
