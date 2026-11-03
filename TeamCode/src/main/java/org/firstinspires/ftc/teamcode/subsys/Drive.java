@@ -5,6 +5,7 @@ package org.firstinspires.ftc.teamcode.subsys;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
 
@@ -25,7 +26,11 @@ public class Drive {
         backRight.m.setDirection(DcMotorEx.Direction.FORWARD);
 
         for (SMotor motor : new SMotor[]{frontLeft, frontRight, backLeft, backRight}) {
-            motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+            if (Tunables.teleBrake) {
+                motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+            } else {
+                motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+            }
             motor.m.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
             scheduler.addDevice(motor);
         }

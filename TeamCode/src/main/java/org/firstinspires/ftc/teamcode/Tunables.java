@@ -17,6 +17,7 @@ public class Tunables {
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
+    public static boolean teleBrake = true;
 
     /** flywheel tunables (used in Flywheel.java) **/
 
