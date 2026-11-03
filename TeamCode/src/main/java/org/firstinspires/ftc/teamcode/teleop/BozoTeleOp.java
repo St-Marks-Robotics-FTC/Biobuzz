@@ -88,7 +88,7 @@ public abstract class BozoTeleOp extends OpMode {
     private void handleDrive() {
         if (gamepad1.startWasPressed()) isRobotCentric = !isRobotCentric;
 
-        double slowModeMultiplier = (gamepad1.left_trigger - 1) * -1; // amount to multiply for by slow mode
+        double slowModeMultiplier = Range.scale(gamepad1.left_trigger, 0, 1, 1, 0.5);
 
         if (!isTurning) {
             double forward = -gamepad1.left_stick_y;
