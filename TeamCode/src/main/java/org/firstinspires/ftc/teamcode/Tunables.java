@@ -23,7 +23,7 @@ public class Tunables {
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.004;
+    public static double flywheelP = 0.008;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
@@ -45,22 +45,22 @@ public class Tunables {
     public static double transferOpen = 0.41;
     public static double transferClosed = 0.108;
 
-    public static double flowerDown = 0.883;
-    public static double flowerUp = 0.413;
+    public static double flowerDown = 0.7246;
+    public static double flowerUp = 0.2795;
 
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 500;
+    public static double launchShootingTime = 400;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
     public static double tagThreshold = 2; // amount of tags we need at least
     public static double shootRPM = 3130; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
-    public static long refuelDurationMillis = 500; // how long to intake while driving through the refuel line
-    public static double maxTravelToRefuelTime = 3000; // timeout for travel to picking up balls (if it gets stuck on a ball)
+    public static long refuelDurationMillis = 250; // how long to intake while driving through the refuel line
+    public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
 
     /** field tunables (used in Field.java) **/
 

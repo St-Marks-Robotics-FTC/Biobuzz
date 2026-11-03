@@ -246,24 +246,6 @@ public abstract class BozoAuto extends OpMode {
                 .linear(config.scoringFlowerIntermediatePose, config.parkPose);
     }
 
-    /**
-     * Decision at the CASE1 checkpoint.
-     * @return true if we made all 8 balls and the hive flipped a second time (-> CASE1A); false if we missed some
-     *         (-> CASE1B). Currently hard-coded; replace with a real Limelight check.
-     */
-    private boolean madeAllEight() {
-        return true;
-    }
-
-    /**
-     * Decision at the CASE2 checkpoint.
-     * @return true if the hive is now tipped (-> CASE2A); false if it still is not (-> CASE2B). Currently
-     *         hard-coded; replace with a real Limelight check.
-     */
-    private boolean hiveTippedAtCheckpoint() {
-        return true;
-    }
-
     /** @return true once a path has finished, or {@link Tunables#maxTravelToRefuelTime} passed (stuck on a ball). **/
     private boolean finishedCreepingIntoFlower() {
         return !follower.isBusy() || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime;
@@ -390,7 +372,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (madeAllEight()) driveThen(checkpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
+                    if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(checkpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
                     else driveThen(checkpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
                 }
                 break;
@@ -461,7 +443,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (hiveTippedAtCheckpoint()) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                    if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
                     else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
                 }
                 break;
