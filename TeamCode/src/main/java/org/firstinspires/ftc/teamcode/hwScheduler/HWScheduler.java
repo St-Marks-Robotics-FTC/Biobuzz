@@ -73,8 +73,11 @@ public class HWScheduler {
     }
 
     public String getStatus() {
-        StringBuilder returnString = new StringBuilder();
+        StringBuilder deviceStats = new StringBuilder();
+        StringBuilder overallStats = new StringBuilder();
+
         double sumUpdateTime = 0;
+        double highestStaleness = 0;
 
         // calc sum update time
         for (Device device : deviceList) {
@@ -84,17 +87,22 @@ public class HWScheduler {
         for (Device device : deviceList) {
             double updatePercent = sumUpdateTime > 0 ? device.getTotalUpdateTime() / sumUpdateTime * 100 : 0;
 
-            returnString.append("---" + device.name + "---\n");
-            returnString.append("priority: " + device.getPriority() + "\n");
-            returnString.append("estimated update length: " + device.getEstimatedUpdateLength() + "\n");
-            returnString.append("staleness: " + device.getStaleness() + "\n");
-            returnString.append("total update time: " + device.getTotalUpdateTime() + "\n");
-            returnString.append("total update time percent: " + updatePercent + "%\n");
+            if (device.getStaleness() >= highestStaleness) highestStaleness = device.getStaleness();
+
+            deviceStats.append("---" + device.name + "---\n");
+            deviceStats.append("priority: " + device.getPriority() + "\n");
+            deviceStats.append("estimated update length: " + device.getEstimatedUpdateLength() + "\n");
+            deviceStats.append("staleness: " + device.getStaleness() + "\n");
+            deviceStats.append("total update time: " + device.getTotalUpdateTime() + "\n");
+            deviceStats.append("total update time percent: " + updatePercent + "%\n");
         }
 
-        returnString.append("-----overall metrics-----\n");
-        returnString.append("sum update time: " + sumUpdateTime);
+        overallStats.append("-----overall metrics-----\n");
+        overallStats.append("sum update time: " + sumUpdateTime + "\n");
+        overallStats.append("highest staleness: " + highestStaleness + "\n");
 
-        return returnString.toString();
+        overallStats.append(deviceStats.toString());
+
+        return overallStats.toString();
     }
 }
