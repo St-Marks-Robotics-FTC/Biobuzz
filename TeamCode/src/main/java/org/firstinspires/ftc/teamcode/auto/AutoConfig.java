@@ -67,8 +67,10 @@ public class AutoConfig {
     public final Pose audienceFlowerPose;
     /** where CASE2 stops to let the Limelight judge the hive after the audience flower (decides 2A vs 2B) **/
     public final Pose audienceCheckpointPose;
-    /** control point of the curve {@link #shootPose} -> {@link #scoringFlowerIntermediatePose} (CASE2B) **/
-    public final Pose shootToScoringFlowerControlPose;
+    /** first control point of the cubic curve {@link #shootPose} -> {@link #scoringFlowerIntermediatePose} (CASE2B) **/
+    public final Pose shootToScoringFlowerControlPose1;
+    /** second control point of the cubic curve {@link #shootPose} -> {@link #scoringFlowerIntermediatePose} (CASE2B) **/
+    public final Pose shootToScoringFlowerControlPose2;
 
     // ---------------------------------------------------------------- PARK
     /** control point of the curve {@link #shootPose} -> {@link #parkPose} (CASE1A) **/
@@ -94,7 +96,8 @@ public class AutoConfig {
             Pose audienceFlowerIntermediatePose,
             Pose audienceFlowerPose,
             Pose audienceCheckpointPose,
-            Pose shootToScoringFlowerControlPose,
+            Pose shootToScoringFlowerControlPose1,
+            Pose shootToScoringFlowerControlPose2,
             Pose parkControlPoseFromShoot,
             Pose parkControlPoseFromTippedShoot,
             Pose parkControlPoseFromScoringFlower,
@@ -114,7 +117,8 @@ public class AutoConfig {
         this.audienceFlowerIntermediatePose = audienceFlowerIntermediatePose;
         this.audienceFlowerPose = audienceFlowerPose;
         this.audienceCheckpointPose = audienceCheckpointPose;
-        this.shootToScoringFlowerControlPose = shootToScoringFlowerControlPose;
+        this.shootToScoringFlowerControlPose1 = shootToScoringFlowerControlPose1;
+        this.shootToScoringFlowerControlPose2 = shootToScoringFlowerControlPose2;
         this.parkControlPoseFromShoot = parkControlPoseFromShoot;
         this.parkControlPoseFromTippedShoot = parkControlPoseFromTippedShoot;
         this.parkControlPoseFromScoringFlower = parkControlPoseFromScoringFlower;

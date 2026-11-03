@@ -14,25 +14,26 @@ public abstract class BlueAuto extends BozoAuto {
 
     // ---------------------------------------------------------------- SCORING SIDE (shootPose mirrored over y = 72)
     public static Pose tippedControlPose1 = new Pose(132, 132, Math.toRadians(270));
-    public static Pose tippedControlPose2 = new Pose(126, 20, Math.toRadians(270));
+    public static Pose tippedControlPose2 = new Pose(126, 54, Math.toRadians(270));
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(90));
 
     // ---------------------------------------------------------------- SCORING SIDE: the scoring flower + CASE1 checkpoint
     public static Pose scoringFlowerIntermediatePose = new Pose(96, 24, Math.toRadians(270));
-    public static Pose scoringFlowerPose = new Pose(96, 14, Math.toRadians(270));
-    public static Pose checkpointPose = new Pose(0, 0, Math.toRadians(0));                  // UNTUNED
+    public static Pose scoringFlowerPose = new Pose(96, 8, Math.toRadians(270));
+    public static Pose checkpointPose = new Pose(132, 132, Math.toRadians(225));
 
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + CASE2 checkpoint
-    public static Pose tippedShootToAudienceFlowerControlPose = new Pose(120, 24, Math.toRadians(0));
+    public static Pose tippedShootToAudienceFlowerControlPose = new Pose(126, 54, Math.toRadians(0));
     public static Pose audienceFlowerIntermediatePose = new Pose(120, 96, Math.toRadians(0));
-    public static Pose audienceFlowerPose = new Pose(130, 96, Math.toRadians(0));
-    public static Pose audienceCheckpointPose = new Pose(0, 0, Math.toRadians(0));          // UNTUNED
-    public static Pose shootToScoringFlowerControlPose = new Pose(0, 0, Math.toRadians(0)); // UNTUNED (CASE2B)
+    public static Pose audienceFlowerPose = new Pose(136, 96, Math.toRadians(0));
+    public static Pose audienceCheckpointPose = new Pose(144, 144, Math.toRadians(180)); // UNTUNED (mirror of Red's 0,0 placeholder)
+    public static Pose shootToScoringFlowerControlPose1 = new Pose(132, 132, Math.toRadians(180));
+    public static Pose shootToScoringFlowerControlPose2 = new Pose(132, 54, Math.toRadians(180));
 
     // ---------------------------------------------------------------- PARK
-    public static Pose parkControlPoseFromShoot = new Pose(0, 0, Math.toRadians(180));              // UNTUNED
+    public static Pose parkControlPoseFromShoot = new Pose(132, 132, Math.toRadians(180));
     public static Pose parkControlPoseFromTippedShoot = new Pose(120, 120, Math.toRadians(180));
-    public static Pose parkControlPoseFromScoringFlower = new Pose(0, 0, Math.toRadians(180));      // UNTUNED
+    public static Pose parkControlPoseFromScoringFlower = new Pose(96, 24, Math.toRadians(180));
     public static Pose parkPose = new Pose(132, 42, Math.toRadians(180));
 
     @Override
@@ -55,7 +56,8 @@ public abstract class BlueAuto extends BozoAuto {
                 audienceFlowerIntermediatePose,
                 audienceFlowerPose,
                 audienceCheckpointPose,
-                shootToScoringFlowerControlPose,
+                shootToScoringFlowerControlPose1,
+                shootToScoringFlowerControlPose2,
                 parkControlPoseFromShoot,
                 parkControlPoseFromTippedShoot,
                 parkControlPoseFromScoringFlower,

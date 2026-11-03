@@ -138,7 +138,7 @@ public abstract class BozoAuto extends OpMode {
         CASE2B_TRAVEL_TO_SHOOT_3,   // line from the checkpoint to the original shoot pose
         CASE2B_SPEED_UP_SHOOT_3,
         CASE2B_FEED_SHOOT_3,
-        CASE2B_TRAVEL_TO_SCORING_FLOWER_INTERMEDIATE,      // full-speed curve (1 control point) from the shoot pose
+        CASE2B_TRAVEL_TO_SCORING_FLOWER_INTERMEDIATE,      // full-speed cubic curve (2 control points) from the shoot pose
         CASE2B_TRAVEL_TO_SCORING_FLOWER,
         CASE2B_COLLECT_SCORING_FLOWER,
         CASE2B_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE,
@@ -238,9 +238,9 @@ public abstract class BozoAuto extends OpMode {
         audienceFlowerIntermediateToAudienceCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.audienceCheckpointPose);
         // CASE2A: checkpoint -> tippedShoot; the scoring flower round trip and the park reuse CASE1's paths
         audienceCheckpointToTippedShootPath = plainLine(config.audienceCheckpointPose, config.tippedShootPose);
-        // CASE2B: checkpoint -> ORIGINAL shoot pose -> scoring flower (curve, 1 control point) -> park (curve, 1 control point)
+        // CASE2B: checkpoint -> ORIGINAL shoot pose -> scoring flower (cubic curve, 2 control points) -> park (curve, 1 control point)
         audienceCheckpointToShootPath = plainLine(config.audienceCheckpointPose, shootPose);
-        shootToScoringFlowerIntermediatePath = curve(shootPose, config.shootToScoringFlowerControlPose, config.scoringFlowerIntermediatePose)
+        shootToScoringFlowerIntermediatePath = curve(shootPose, config.shootToScoringFlowerControlPose1, config.shootToScoringFlowerControlPose2, config.scoringFlowerIntermediatePose)
                 .linear(shootPose, config.scoringFlowerIntermediatePose);
         scoringFlowerIntermediateToParkPath = curve(config.scoringFlowerIntermediatePose, config.parkControlPoseFromScoringFlower, config.parkPose)
                 .linear(config.scoringFlowerIntermediatePose, config.parkPose);
