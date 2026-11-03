@@ -5,8 +5,6 @@ package org.firstinspires.ftc.teamcode.hwScheduler;
 
 import com.pedropathing.utils.Timer;
 
-import org.firstinspires.ftc.teamcode.Tunables;
-
 public abstract class Device {
     private static final double UPDATE_LENGTH_SMOOTHING = 0.2; // how much each new measurement moves our update length estimate (0-1)
 
@@ -23,7 +21,7 @@ public abstract class Device {
     // snapshot taken once per scheduler loop so the sort sees values that don't change while sorting
     private double priority = 0;
     private long staleness = 0;
-    private double score = 0;
+    double score = 0;
 
     public Device(String name, double priorityMultiplier) {
         this.name = name;
@@ -43,10 +41,6 @@ public abstract class Device {
 
         // staleness boosts priority over time so low priority devices can't be starved forever
         score = priority * (1 + staleness / stalenessReduction);
-
-        if (hasWritten && getChange() <= Tunables.caching) {
-            score = 0; // it's cached
-        }
     }
 
     public double getPriority() {
@@ -55,10 +49,6 @@ public abstract class Device {
 
     public long getStaleness() {
         return staleness;
-    }
-
-    public double getScore() {
-        return score;
     }
 
     public long getEstimatedUpdateLength() {
