@@ -238,7 +238,8 @@ public abstract class BozoAuto extends OpMode {
         shootToAudienceFlowerIntermediatePath = plainLine(shootPose, config.audienceFlowerIntermediatePose);
         audienceFlowerIntermediateToAudienceCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.audienceCheckpointPose);
         // CASE2A: checkpoint -> tippedShoot; the scoring flower round trip and the park reuse CASE1's paths
-        audienceCheckpointToTippedShootPath = plainLine(config.audienceCheckpointPose, config.tippedShootPose);
+        audienceCheckpointToTippedShootPath = curve(config.audienceCheckpointPose, config.checkpointToTippedShootControlPose, config.tippedShootPose)
+                .linear(config.audienceCheckpointPose, config.tippedShootPose);
         // CASE2B: checkpoint -> ORIGINAL shoot pose -> scoring flower (cubic curve, 2 control points) -> park (curve, 1 control point)
         audienceCheckpointToShootPath = plainLine(config.audienceCheckpointPose, shootPose);
         shootToScoringFlowerIntermediatePath = curve(shootPose, config.shootToScoringFlowerControlPose1, config.shootToScoringFlowerControlPose2, config.scoringFlowerIntermediatePose)
@@ -450,7 +451,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                    if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
                     else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
                 }
                 break;

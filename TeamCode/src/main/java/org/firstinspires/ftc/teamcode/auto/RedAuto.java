@@ -14,7 +14,7 @@ public abstract class RedAuto extends BozoAuto {
 
     // ---------------------------------------------------------------- SCORING SIDE (shootPose mirrored over y = 72)
     public static Pose tippedControlPose1 = new Pose(12, 12, Math.toRadians(90));
-    public static Pose tippedControlPose2 = new Pose(18, 90, Math.toRadians(90));
+    public static Pose tippedControlPose2 = new Pose(18, 80, Math.toRadians(90));
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(270));
 
     // ---------------------------------------------------------------- SCORING SIDE: the scoring flower + CASE1 checkpoint
@@ -29,7 +29,7 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose audienceFlowerPose = new Pose(8, 48, Math.toRadians(180));
     public static Pose audienceCheckpointPose = new Pose(12, 12, Math.toRadians(45));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(12, 12, Math.toRadians(0));
-    public static Pose shootToScoringFlowerControlPose2 = new Pose(12, 90, Math.toRadians(0));
+    public static Pose shootToScoringFlowerControlPose2 = new Pose(12, 80, Math.toRadians(0));
 
     // ---------------------------------------------------------------- PARK
     public static Pose parkControlPoseFromShoot = new Pose(12, 12, Math.toRadians(0));
