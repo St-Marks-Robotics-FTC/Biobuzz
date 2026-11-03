@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
 import com.pedropathing.math.Pose;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
@@ -56,8 +57,10 @@ public class Field {
 
     // take in distance in inches and return ideal flywheel RPM
     public double calcIdealRPM(double dist) {
-        // insert regression here
-        return 0;
+        // from Desmos https://www.desmos.com/calculator/vzl5asi9fo
+        // 10-31-2026
+        double calcRPM = (0.182518 * dist * dist) - (7.65866 * dist) + 3191.20234;
+        return Range.clip(calcRPM, 2500, 6000); // keep RPM from going too low
     }
 
     public class ScoringData {

@@ -44,11 +44,11 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addLine("left bumper: " + mode0);
             telemetryM.addLine("right bumper: " + mode1);
 
-            if (gamepad1.aWasReleased()) {
+            if (gamepad1.rightBumperWasPressed()) {
                 mode = mode0;
                 vision.startPipeline(Vision.Pipeline.BLUE);
             }
-            if (gamepad1.bWasReleased()) {
+            if (gamepad1.leftBumperWasPressed()) {
                 mode = mode1;
                 vision.startPipeline(Vision.Pipeline.RED);
             }
@@ -57,6 +57,11 @@ public class VisionTuner extends LinearOpMode {
             if (gamepad1.bWasPressed()) calibrationSpot = "B";
             if (gamepad1.xWasPressed()) calibrationSpot = "X";
             if (gamepad1.yWasPressed()) calibrationSpot = "Y";
+
+            if (gamepad1.dpadUpWasPressed()) calibrationSpot = "U";
+            if (gamepad1.dpadDownWasPressed()) calibrationSpot = "D";
+            if (gamepad1.dpadLeftWasPressed()) calibrationSpot = "L";
+            if (gamepad1.dpadRightWasPressed()) calibrationSpot = "R";
 
             if (gamepad1.startWasPressed()) isCalibrating = !isCalibrating;
 

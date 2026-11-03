@@ -69,7 +69,7 @@ make sure to save the config with the Limelight under a new name, as scanning ma
 | `2`         | GoBILDA 5202/3/4 series | `backLeft`    | ❌        |
 | `3`         | GoBILDA 5202/3/4 series | `backRight`   | ❌        |
 
-make sure to connect every motor with the correct polarity; the reversing is done in software
+make sure to connect every motor to the correct port with the correct polarity; the reversing is done in software
 
 ### servos
 
@@ -101,7 +101,7 @@ make sure to connect every motor with the correct polarity; the reversing is don
 | motor port   | motor type              | verbatim name | encoder?    |
 |:-------------|-------------------------|:--------------|:------------|
 | `0`          | GoBILDA 5202/3/4 series | `intakeMotor` | ✅           |
-| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ❌           |
+| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ✅           |
 | `2`          | *unused*                | *unused*      | ❌           |
 | `3`          | *unused*                | *unused*      | ❌           |
 
@@ -152,9 +152,8 @@ the **start** button toggles between robot/field centric control
 ### face buttons
 - **A**: toggle intake
 - **B**: toggle flywheel power
-- **Y**: toggle intake reverse
-- **X**: reset field centric heading
-  - make sure to orient the robot towards the top of the field (in between the goals)
+- **X**: toggle intake reverse
+- **Y**: toggle auto RPM
 
 ### d-pad
 - **up**: increment flywheel RPM
@@ -175,13 +174,8 @@ the **start** button toggles between robot/field centric control
 
 ## Auto
 
-### blue team
-
-- `BlueAuto`: starting by bottom triangle
-
-### red team
-
-- `RedAuto`: starting by bottom triangle
+- `BlueAuto`: start in middle of tile touching wall directly across from goal
+- `RedAuto`: start in middle of tile touching wall directly across from goal
 
 ## Tuner
 
