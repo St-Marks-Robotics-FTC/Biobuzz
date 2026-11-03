@@ -75,7 +75,10 @@ public abstract class Device {
 
         long updateLength = writeTimer.nanoseconds();
         // smooth our estimate so one slow write doesn't lock this device out of the schedule
-        estimatedUpdateLength = (long) (estimatedUpdateLength + (updateLength - estimatedUpdateLength) * UPDATE_LENGTH_SMOOTHING);
+        //estimatedUpdateLength = (long) (estimatedUpdateLength + (updateLength - estimatedUpdateLength) * UPDATE_LENGTH_SMOOTHING);
+        if (updateLength > 2) { // reject impossible update times
+            estimatedUpdateLength = updateLength;
+        }
         totalUpdateTime += updateLength;
         isUpdated = true;
         hasWritten = true;
