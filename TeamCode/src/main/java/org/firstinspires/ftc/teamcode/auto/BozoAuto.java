@@ -98,7 +98,7 @@ public abstract class BozoAuto extends OpMode {
         CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT,      // line to a spot where the Limelight can judge the hive; decides 1A vs 1B
 
         // ---- CASE1A: we made all 8 and the hive flipped a second time -> shoot from the ORIGINAL shoot pose and park
-        CASE1A_TRAVEL_TO_SHOOT_4,  // line from the checkpoint to the original shoot pose
+        CASE1A_TRAVEL_TO_SHOOT_4,  // curve (1 control point) from the checkpoint to the original shoot pose
         CASE1A_SPEED_UP_SHOOT_4,
         CASE1A_FEED_SHOOT_4,
         CASE1A_TRAVEL_TO_PARK,     // everything off; curve (1 control point) to the park pose
@@ -223,8 +223,9 @@ public abstract class BozoAuto extends OpMode {
         audienceFlowerIntermediateToAudienceFlowerPath = creepLine(config.audienceFlowerIntermediatePose, config.audienceFlowerPose);
         audienceFlowerToAudienceFlowerIntermediatePath = plainLine(config.audienceFlowerPose, config.audienceFlowerIntermediatePose);
         audienceFlowerIntermediateToCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.checkpointPose);
-        // CASE1A: checkpoint -> ORIGINAL shoot pose -> park (curve, 1 control point)
-        checkpointToShootPath = plainLine(config.checkpointPose, shootPose);
+        // CASE1A: checkpoint -> ORIGINAL shoot pose (curve, 1 control point) -> park (curve, 1 control point)
+        checkpointToShootPath = curve(config.checkpointPose, config.checkpointToShootControlPose, shootPose)
+                .linear(config.checkpointPose, shootPose);
         shootToParkPath = curve(shootPose, config.parkControlPoseFromShoot, config.parkPose)
                 .linear(shootPose, config.parkPose);
         // CASE1B: checkpoint -> tippedShoot -> park (curve, 1 control point)
