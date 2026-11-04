@@ -217,7 +217,7 @@ public abstract class BozoAuto extends OpMode {
         scoringFlowerIntermediateToScoringFlowerPath = creepLine(config.scoringFlowerIntermediatePose, config.scoringFlowerPose);
         scoringFlowerToScoringFlowerIntermediatePath = plainLine(config.scoringFlowerPose, config.scoringFlowerIntermediatePose)
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(0.25)
+                        Constants.foresightConfig.maxPathSpeed.at(0.35)
                 );;
         scoringFlowerIntermediateToTippedShootPath = plainLine(config.scoringFlowerIntermediatePose, config.tippedShootPose);
         // audience flower: like the scoring flower but the full-speed approach is a curve (1 control point); then on to the checkpoint
@@ -226,7 +226,7 @@ public abstract class BozoAuto extends OpMode {
         audienceFlowerIntermediateToAudienceFlowerPath = creepLine(config.audienceFlowerIntermediatePose, config.audienceFlowerPose);
         audienceFlowerToAudienceFlowerIntermediatePath = plainLine(config.audienceFlowerPose, config.audienceFlowerIntermediatePose)
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(0.25)
+                        Constants.foresightConfig.maxPathSpeed.at(0.35)
                 );;
         audienceFlowerIntermediateToAudienceCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.audienceCheckpointPose);
         // CASE1A: audienceCheckpoint -> ORIGINAL shoot pose (plain line, shared with CASE2B) -> park (curve, 1 control point)
