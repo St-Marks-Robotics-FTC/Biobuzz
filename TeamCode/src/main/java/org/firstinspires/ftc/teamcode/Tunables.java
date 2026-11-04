@@ -16,7 +16,7 @@ public class Tunables {
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
 
-    public static double manualStartingRPM = 3250;
+    public static double manualStartingRPM = 3150;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
     public static boolean teleBrake = true;
@@ -65,6 +65,10 @@ public class Tunables {
     public static double maxTravelToRefuelTime = 4000; // timeout for travel to picking up balls (if it gets stuck on a ball)
 
     /** field tunables (used in Field.java) **/
+
+    // auto RPM
+    public static double autoRPMMultiplier = 1; // multiply auto RPM output by this
+    public static double autoRPMAddition = 0; // add this many RPMs to auto RPM output
 
     // goal poses
     // headings should be to score a ball, not the direction that the goal faces
