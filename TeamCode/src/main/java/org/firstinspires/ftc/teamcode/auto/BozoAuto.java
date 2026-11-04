@@ -565,7 +565,7 @@ public abstract class BozoAuto extends OpMode {
         loopTimer.reset();
         vision.update();
         follower.update();
-        robot.flywheel.update(targetRPM); // re-run PIDF every loop so RPM actually converges on target also dih
+        robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
         robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
         if (Tunables.isDebugging) {
@@ -614,7 +614,7 @@ public abstract class BozoAuto extends OpMode {
     public void stop() {
         if (robot != null) {
             shutOff();
-            robot.flywheel.update(0);
+            robot.flywheel.update(0, robot.getExpansionHubVoltage());
         }
         updateHandoff();
     }
