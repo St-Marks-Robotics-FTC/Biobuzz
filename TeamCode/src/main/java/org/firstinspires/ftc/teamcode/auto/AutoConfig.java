@@ -14,8 +14,8 @@ import com.pedropathing.math.Pose;
  *   <li><b>audience flower</b>: the one flower on the audience side ({@link #audienceFlowerPose}).</li>
  *   <li><b>intermediate pose</b>: a waypoint in front of a flower; we drive to it at full speed, then creep into the
  *       flower at reduced speed, and back out to it again.</li>
- *   <li><b>checkpoint pose</b>: a spot with a good view for the Limelight to judge the hive; the result picks the
- *       sub-case (1A/1B, 2A/2B).</li>
+ *   <li><b>checkpoint pose</b>: a spot on the audience side with a good view for the Limelight to judge the hive after
+ *       the audience flower; the result picks the sub-case (1A/1B, 2A/2B).</li>
  * </ul>
  * There are only two physical flowers. "first" and "second" flower in the route below only describe the order within
  * one case; they are not names for a particular flower.
@@ -25,9 +25,9 @@ import com.pedropathing.math.Pose;
  * SHARED   start -> shoot -> intermediate -> refuel -> shoot, then look at the hive:
  *
  * CASE1  (hive tipped)       shoot -> tippedShoot, then
- *                            scoringFlower -> tippedShoot -> audienceFlower -> checkpoint
- *    CASE1A (made all 8)     checkpoint -> shoot -> park
- *    CASE1B (missed some)    checkpoint -> tippedShoot -> park
+ *                            scoringFlower -> tippedShoot -> audienceFlower -> audienceCheckpoint
+ *    CASE1A (made all 8)     audienceCheckpoint -> shoot -> park
+ *    CASE1B (missed some)    audienceCheckpoint -> tippedShoot -> park
  *
  * CASE2  (hive not tipped)   shoot again, then
  *                            audienceFlower -> audienceCheckpoint
@@ -56,10 +56,6 @@ public class AutoConfig {
     /** waypoint in front of the scoring flower (reached by a line from {@link #tippedShootPose}) **/
     public final Pose scoringFlowerIntermediatePose;
     public final Pose scoringFlowerPose;
-    /** where CASE1 stops to let the Limelight judge the hive after the audience flower (decides 1A vs 1B) **/
-    public final Pose checkpointPose;
-    /** control point of the curve {@link #checkpointPose} -> {@link #tippedShootPose} (CASE1B) **/
-    public final Pose checkpointToTippedShootControlPose;
 
     // ---------------------------------------------------------------- AUDIENCE SIDE
     /** control point of the curve {@link #tippedShootPose} -> {@link #audienceFlowerIntermediatePose} (CASE1) **/
@@ -67,11 +63,11 @@ public class AutoConfig {
     /** waypoint in front of the audience flower **/
     public final Pose audienceFlowerIntermediatePose;
     public final Pose audienceFlowerPose;
-    /** where CASE2 stops to let the Limelight judge the hive after the audience flower (decides 2A vs 2B) **/
+    /** where CASE1 and CASE2 stop to let the Limelight judge the hive after the audience flower (decides 1A vs 1B, 2A vs 2B) **/
     public final Pose audienceCheckpointPose;
-    /** first control point of the cubic curve {@link #audienceCheckpointPose} -> {@link #tippedShootPose} (CASE2A) **/
+    /** first control point of the cubic curve {@link #audienceCheckpointPose} -> {@link #tippedShootPose} (CASE1B and CASE2A) **/
     public final Pose audienceCheckpointToTippedShootControlPose1;
-    /** second control point of the cubic curve {@link #audienceCheckpointPose} -> {@link #tippedShootPose} (CASE2A) **/
+    /** second control point of the cubic curve {@link #audienceCheckpointPose} -> {@link #tippedShootPose} (CASE1B and CASE2A) **/
     public final Pose audienceCheckpointToTippedShootControlPose2;
     /** first control point of the cubic curve {@link #shootPose} -> {@link #scoringFlowerIntermediatePose} (CASE2B) **/
     public final Pose shootToScoringFlowerControlPose1;
@@ -97,8 +93,6 @@ public class AutoConfig {
             Pose tippedShootPose,
             Pose scoringFlowerIntermediatePose,
             Pose scoringFlowerPose,
-            Pose checkpointPose,
-            Pose checkpointToTippedShootControlPose,
             Pose tippedShootToAudienceFlowerControlPose,
             Pose audienceFlowerIntermediatePose,
             Pose audienceFlowerPose,
@@ -121,8 +115,6 @@ public class AutoConfig {
         this.tippedShootPose = tippedShootPose;
         this.scoringFlowerIntermediatePose = scoringFlowerIntermediatePose;
         this.scoringFlowerPose = scoringFlowerPose;
-        this.checkpointPose = checkpointPose;
-        this.checkpointToTippedShootControlPose = checkpointToTippedShootControlPose;
         this.tippedShootToAudienceFlowerControlPose = tippedShootToAudienceFlowerControlPose;
         this.audienceFlowerIntermediatePose = audienceFlowerIntermediatePose;
         this.audienceFlowerPose = audienceFlowerPose;

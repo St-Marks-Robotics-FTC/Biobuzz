@@ -17,13 +17,11 @@ public abstract class RedAuto extends BozoAuto {
     public static Pose tippedControlPose2 = new Pose(18, 80, Math.toRadians(90));
     public static Pose tippedShootPose = new Pose(shootPose.x(), 144 - shootPose.y(), Math.toRadians(270));
 
-    // ---------------------------------------------------------------- SCORING SIDE: the scoring flower + CASE1 checkpoint
+    // ---------------------------------------------------------------- SCORING SIDE: the scoring flower
     public static Pose scoringFlowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
     public static Pose scoringFlowerPose = new Pose(48, 136, Math.toRadians(90));
-    public static Pose checkpointPose = new Pose(12, 12, Math.toRadians(45));
-    public static Pose checkpointToTippedShootControlPose = new Pose(12, 120, Math.toRadians(90));
 
-    // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + CASE2 checkpoint
+    // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
     public static Pose audienceFlowerPose = new Pose(8, 48, Math.toRadians(180));
@@ -54,8 +52,6 @@ public abstract class RedAuto extends BozoAuto {
                 tippedShootPose,
                 scoringFlowerIntermediatePose,
                 scoringFlowerPose,
-                checkpointPose,
-                checkpointToTippedShootControlPose,
                 tippedShootToAudienceFlowerControlPose,
                 audienceFlowerIntermediatePose,
                 audienceFlowerPose,
