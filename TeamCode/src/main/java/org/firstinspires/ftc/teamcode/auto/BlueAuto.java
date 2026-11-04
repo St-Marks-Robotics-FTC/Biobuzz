@@ -6,6 +6,8 @@ import com.bylazar.configurables.annotations.Configurable;
 /** Blue-alliance poses. See {@link AutoConfig} for what each pose means and the route that uses it. **/
 @Configurable
 public abstract class BlueAuto extends BozoAuto {
+    // LAST MIRRORED: 11/2/26 (OUT-OF-DATE)
+
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(84, 137.246, Math.toRadians(270));
     public static Pose shootPose = new Pose(84, 134, Math.toRadians(270));
