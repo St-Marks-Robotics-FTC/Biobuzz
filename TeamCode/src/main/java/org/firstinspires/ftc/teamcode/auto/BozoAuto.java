@@ -215,13 +215,19 @@ public abstract class BozoAuto extends OpMode {
         // scoring flower: full-speed line out, creep in, line back out, line to tippedShoot
         tippedShootToScoringFlowerIntermediatePath = plainLine(config.tippedShootPose, config.scoringFlowerIntermediatePose);
         scoringFlowerIntermediateToScoringFlowerPath = creepLine(config.scoringFlowerIntermediatePose, config.scoringFlowerPose);
-        scoringFlowerToScoringFlowerIntermediatePath = plainLine(config.scoringFlowerPose, config.scoringFlowerIntermediatePose);
+        scoringFlowerToScoringFlowerIntermediatePath = plainLine(config.scoringFlowerPose, config.scoringFlowerIntermediatePose)
+                .with(
+                        Constants.foresightConfig.maxPathSpeed.at(0.25)
+                );;
         scoringFlowerIntermediateToTippedShootPath = plainLine(config.scoringFlowerIntermediatePose, config.tippedShootPose);
         // audience flower: like the scoring flower but the full-speed approach is a curve (1 control point); then on to the checkpoint
         tippedShootToAudienceFlowerIntermediatePath = curve(config.tippedShootPose, config.tippedShootToAudienceFlowerControlPose, config.audienceFlowerIntermediatePose)
                 .linear(config.tippedShootPose, config.audienceFlowerIntermediatePose);
         audienceFlowerIntermediateToAudienceFlowerPath = creepLine(config.audienceFlowerIntermediatePose, config.audienceFlowerPose);
-        audienceFlowerToAudienceFlowerIntermediatePath = plainLine(config.audienceFlowerPose, config.audienceFlowerIntermediatePose);
+        audienceFlowerToAudienceFlowerIntermediatePath = plainLine(config.audienceFlowerPose, config.audienceFlowerIntermediatePose)
+                .with(
+                        Constants.foresightConfig.maxPathSpeed.at(0.25)
+                );;
         audienceFlowerIntermediateToCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.checkpointPose);
         // CASE1A: checkpoint -> ORIGINAL shoot pose (plain line) -> park (curve, 1 control point)
         checkpointToShootPath = plainLine(config.checkpointPose, shootPose);

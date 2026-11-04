@@ -8,7 +8,7 @@ import com.bylazar.configurables.annotations.Configurable;
 public abstract class RedAuto extends BozoAuto {
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(60, 6.754, Math.toRadians(90));
-    public static Pose shootPose = new Pose(60, 10, Math.toRadians(90));
+    public static Pose shootPose = new Pose(60, 8, Math.toRadians(90));
     public static Pose intermediatePose = new Pose(22, 11.75, Math.toRadians(210));
     public static Pose refuelPose = new Pose(10, 6.754, Math.toRadians(180));
 
