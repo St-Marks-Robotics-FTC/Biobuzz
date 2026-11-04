@@ -564,10 +564,10 @@ public abstract class BozoAuto extends OpMode {
         robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
         robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
+        robot.scheduler.update(loopTimer.nanoseconds()); // write hardware first: skipping this budget starves every device
         if (Tunables.isDebugging) {
             sendTelemetry(false);
         }
-        robot.scheduler.update(loopTimer.nanoseconds());
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
         telemetryM.update(telemetry);
     }

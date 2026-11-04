@@ -49,7 +49,7 @@ public class HWScheduler {
         // sort device list by score, highest first
         deviceList.sort((d1, d2) -> Double.compare(d2.score, d1.score));
 
-        if (Tunables.softScheduling) {
+        if (Tunables.softScheduling || Tunables.isDebugging) { // debugging adds slow telemetry, so always guard against starving devices
             // first update any devices that are past their max stale time
             // this ignores our time budget - otherwise a slow loop would let devices go stale forever
             for (Device device : deviceList) {

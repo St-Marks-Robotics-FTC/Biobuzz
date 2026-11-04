@@ -11,7 +11,7 @@ import com.pedropathing.math.Pose;
 public class Tunables {
     // all members must be initialized with the keywords `public static`... in order to be usable
 
-    public static boolean isDebugging = true; // whether to print additional debug info (slow)
+    public static boolean isDebugging = false; // whether to print additional debug info (slow)
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
@@ -85,5 +85,5 @@ public class Tunables {
     public static double targetLoopLength = 20; // target loop length in ms
 
     public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
-    public static boolean softScheduling = false; // if true: update device once max staleness has been exceeded
+    public static boolean softScheduling = false; // if true (or isDebugging is true): update device once max staleness has been exceeded
 }
