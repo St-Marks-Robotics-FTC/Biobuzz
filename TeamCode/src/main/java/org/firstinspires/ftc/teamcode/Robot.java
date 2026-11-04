@@ -24,7 +24,6 @@ public class Robot {
 
     public Flower flower;
 
-    private boolean isLaunching = false;
     private Timer launchTimer;
 
     private enum LaunchState {
@@ -103,7 +102,7 @@ public class Robot {
                 break;
         }
 
-        intake.update(isLaunching);
+        intake.update(isLaunching());
     }
 
     public boolean isLaunching() {
