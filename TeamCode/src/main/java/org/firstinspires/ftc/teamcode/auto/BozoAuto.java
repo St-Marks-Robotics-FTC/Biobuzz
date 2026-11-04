@@ -255,9 +255,9 @@ public abstract class BozoAuto extends OpMode {
         return !follower.isBusy() || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime;
     }
 
-    /** @return true once we have sat on a flower with the intake running for {@link Tunables#refuelDurationMillis}. **/
+    /** @return true once we have sat on a flower with the intake running for {@link Tunables#flowerRefuelDurationMillis}. **/
     private boolean finishedCollecting() {
-        return stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis;
+        return stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.flowerRefuelDurationMillis;
     }
 
     /** Starts driving {@code path} and switches to {@code next}; the one place a state change starts a path. **/
@@ -293,7 +293,7 @@ public abstract class BozoAuto extends OpMode {
                 if (finishedCreepingIntoFlower()) setState(State.REFUEL);
                 break;
             case REFUEL:
-                if (finishedCollecting()) {
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
                     robot.intake.forward();
                     driveThen(refuelToShootPath, State.TRAVEL_TO_SHOOT);
                 }
