@@ -55,7 +55,7 @@ public class Tunables {
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
 
     /** vision tunables (used in Vision.java) **/
-
+    public static int cameraHeight = 9;
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
 
     /** fusion tunables (used in Fusion.java) **/

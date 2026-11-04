@@ -30,7 +30,10 @@ import java.util.List;
 public class Vision {
     private double HIVE_PIVOT_HEIGHT = 43.95; // hive pivot height in inches
     private double HIVE_PIVOT_Y = 72; // y-coordinate of hive pivot
-    private double HIVE_MAX_TILT = Math.toRadians(35); // max tilt of hive in radians
+    private double HIVE_MAX_TILT = Math.toRadians(45); // max tilt of hive in radians; widened from 35 because the Z offset below makes the measured tilt ~40 deg at the extremes
+    private double CAMERA_Z_OFFSET = -6.5; // inches added to the Limelight's raw Z before the hive math; fitted from the 10-31 calibration log (spots B/U/D/X/R), re-tune
+
+    private double HIVE_REASONABLE_TILT = Math.toRadians(20);
 
     public static Limelight3A limelight;
 
@@ -95,6 +98,8 @@ public class Vision {
     private int lastTagCount = 0; // number of tags seen in the last update
     private long lastCaptureTimeMs = 0; // when the image behind lastBotPose was taken (System.currentTimeMillis() clock)
     private VisionResult latestResult = null; // result from the newest frame, null if the newest frame wasn't valid
+    private Position lastRawPosition = null; // newest valid Limelight pose in Pedro units, before the hive fix and before CAMERA_Z_OFFSET
+    private double lastRawFrameStamp = Double.NaN; // Control Hub timestamp of the frame behind lastRawPosition; changes once per new frame
 
     public Vision(HardwareMap hw, boolean isBlueTeam) {
         limelight = hw.get(Limelight3A.class, "limelight");
@@ -136,10 +141,12 @@ public class Vision {
 
         if (isReasonable(result)) {
             Position botpose = convertToPedro(result.getBotpose());
+            lastRawPosition = botpose;
+            lastRawFrameStamp = result.getControlHubTimeStamp();
 
             double x = botpose.x;
             double y = botpose.y;
-            double z = botpose.z;
+            double z = botpose.z + CAMERA_Z_OFFSET;
 
             double relativeY = y - HIVE_PIVOT_Y;
             double relativeZ = z - HIVE_PIVOT_HEIGHT;
@@ -161,8 +168,10 @@ public class Vision {
                 lastHiveState = HiveState.AUDIENCE_UP;
             } else if (0 < hiveTilt && hiveTilt < HIVE_MAX_TILT) {
                 lastHiveState = HiveState.SCORING_UP;
-            } else {
+            } else if (HIVE_REASONABLE_TILT < hiveTilt || -HIVE_REASONABLE_TILT > hiveTilt ) {
                 return; // hive is at an impossible tilt
+            } else {
+
             }
 
             if (trueRelativeY == 0) return; // directly under the pivot; the std dev math below would divide by zero
@@ -229,6 +238,16 @@ public class Vision {
 
     public Pose getLastBotPose () {
         return lastBotPose;
+    }
+
+    // newest valid Limelight pose in Pedro units, unfixed (null until the first valid frame)
+    public Position getLastRawPosition() {
+        return lastRawPosition;
+    }
+
+    // changes every time update() sees a new valid Limelight frame, including frames the hive fix later rejects
+    public double getLastRawFrameStamp() {
+        return lastRawFrameStamp;
     }
 
     public HiveState getLastHiveState() {
