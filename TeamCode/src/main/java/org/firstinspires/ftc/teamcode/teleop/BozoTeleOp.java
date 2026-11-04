@@ -217,6 +217,7 @@ public abstract class BozoTeleOp extends OpMode {
             telemetryM.addData("odo y", follower.pose().y());
 
             // Field
+            telemetryM.addData("last hive state", vision.getLastHiveState());
             if (lastScoringData != null) {
                 telemetryM.addLine(lastScoringData.toString());
             } else {
