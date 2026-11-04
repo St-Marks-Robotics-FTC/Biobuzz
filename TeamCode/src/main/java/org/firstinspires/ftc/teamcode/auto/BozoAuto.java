@@ -34,10 +34,6 @@ import java.util.concurrent.TimeUnit;
  *     tipped now      -> CASE2A: tippedShoot, shoot, scoring flower, tippedShoot, shoot, park
  *     still not       -> CASE2B: original shoot pose, shoot, scoring flower, park
  * </pre>
- *
- * The two "judge the hive" decisions at the checkpoints ({@link #madeAllEight()} and
- * {@link #hiveTippedAtCheckpoint()}) are hard-coded to {@code true} (CASE1A / CASE2A); replace with Limelight checks.
- * Poses marked UNTUNED in BlueAuto/RedAuto (checkpoints, CASE2B curve control points) are (0, 0): tune them before running.
  */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
@@ -571,6 +567,7 @@ public abstract class BozoAuto extends OpMode {
         if (Tunables.isDebugging) {
             sendTelemetry(false);
         }
+        robot.scheduler.update(loopTimer.nanoseconds());
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
         telemetryM.update(telemetry);
     }
