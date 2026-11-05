@@ -15,7 +15,8 @@ public class Flower {
         DOWN
     }
 
-    private Flower.State state = Flower.State.DOWN;
+    /** Must match the position commanded in the constructor; goUp/goDown skip the write when the state already matches. */
+    private Flower.State state = Flower.State.UP;
 
     public Flower(HWScheduler scheduler) {
         flowerServo = new SServo("flowerServo", 1, scheduler.hw());
