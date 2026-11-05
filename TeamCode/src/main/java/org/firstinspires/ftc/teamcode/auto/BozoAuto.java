@@ -335,7 +335,37 @@ public abstract class BozoAuto extends OpMode {
             case CASE1_COLLECT_SCORING_FLOWER:
                 if (finishedCollecting()) {
                     robot.flower.goDown();
-                    driveThen(scoringFlowerToScoringFlowerIntermediatePath, State.CASE1_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE);
+                    Biobuzz testing/hardware  ❯ omp commit
+● Resolving model...
+                    No staged changes detected, staging all changes...
+  └─ Muse Spark 1.3 Contributor
+● Detecting changelog targets...
+  └─ (none found)
+● Discovering context files...
+  └─ (none found)
+● Starting commit agent...
+● Proposing your staged commit — first mapping the changes.
+ GitOverview
+● Mapped the touched files — now inspecting the specific edits.
+ GitFileDiff
+  ⎿ files: TeamCode/src/main/java/org/firstinspires/ftc/teamcode/auto/BozoAuto.java, TeamCode/src/main/java/org/firstinspires/ftc/teamcode/subsys/Flower.java, TeamCode/src/main/java/org/firstinspires/ftc/teamcode/Tunables.java
+● Got a partial view — gathering the remaining details to finalize the message.
+ AnalyzeFiles
+  ⎿ files: TeamCode/src/main/java/org/firstinspires/ftc/teamcode/auto/BozoAuto.java, TeamCode/src/main/java/org/firstinspires/ftc/teamcode/subsys/Flower.java, TeamCode/src/main/java/org/firstinspires/ftc/teamcode/Tunables.java
+    └ goal: Summarize functional changes in staged diff for conventional commit scope and summary
+ ProposeCommit
+  ⎿ scope: auto
+    ├ summary: added intermediate flower collect pose to auto sequence
+    └ type: feat
+● feat(auto): added intermediate flower collect pose to auto sequence
+
+                    - Introduced COLLECTING state and goCollect command driven by flowerCollect position.
+                            - Sequenced collect on flower arrival and guard drop on collection finish across cases.
+                    - Deferred flower stow until intermediate travel and pre-park legs.
+                            - Lowered auto shoot RPM target from 2990 to 2975.
+● agent finished (5 messages, 4 tools)
+● Creating commit...
+                    Commit created.                 driveThen(scoringFlowerToScoringFlowerIntermediatePath, State.CASE1_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
             case CASE1_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE:
