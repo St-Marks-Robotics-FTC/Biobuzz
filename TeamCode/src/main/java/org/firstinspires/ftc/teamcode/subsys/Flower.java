@@ -12,6 +12,7 @@ public class Flower {
 
     private enum State {
         UP,
+        COLLECTING,
         DOWN
     }
 
@@ -34,6 +35,13 @@ public class Flower {
         if (state != Flower.State.UP) {
             flowerServo.setPosition(Tunables.flowerUp);
             state = Flower.State.UP;
+        }
+    }
+
+    public void goCollect() {
+        if (state != State.COLLECTING) {
+            flowerServo.setPosition(Tunables.flowerCollect);
+            state = Flower.State.COLLECTING;
         }
     }
 

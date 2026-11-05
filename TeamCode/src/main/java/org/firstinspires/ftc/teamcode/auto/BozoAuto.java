@@ -327,10 +327,14 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case CASE1_TRAVEL_TO_SCORING_FLOWER:
-                if (finishedCreepingIntoFlower()) setState(State.CASE1_COLLECT_SCORING_FLOWER);
+                if (finishedCreepingIntoFlower()) {
+                    robot.flower.goCollect();
+                    setState(State.CASE1_COLLECT_SCORING_FLOWER);
+                }
                 break;
             case CASE1_COLLECT_SCORING_FLOWER:
                 if (finishedCollecting()) {
+                    robot.flower.goDown();
                     driveThen(scoringFlowerToScoringFlowerIntermediatePath, State.CASE1_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
@@ -361,10 +365,14 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case CASE1_TRAVEL_TO_AUDIENCE_FLOWER:
-                if (finishedCreepingIntoFlower()) setState(State.CASE1_COLLECT_AUDIENCE_FLOWER);
+                if (finishedCreepingIntoFlower()) {
+                    robot.flower.goCollect();
+                    setState(State.CASE1_COLLECT_AUDIENCE_FLOWER);
+                }
                 break;
             case CASE1_COLLECT_AUDIENCE_FLOWER:
                 if (finishedCollecting()) {
+                    robot.flower.goDown();
                     driveThen(audienceFlowerToAudienceFlowerIntermediatePath, State.CASE1_TRAVEL_FROM_AUDIENCE_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
@@ -434,10 +442,14 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case CASE2_TRAVEL_TO_AUDIENCE_FLOWER:
-                if (finishedCreepingIntoFlower()) setState(State.CASE2_COLLECT_AUDIENCE_FLOWER);
+                if (finishedCreepingIntoFlower()) {
+                    robot.flower.goCollect();
+                    setState(State.CASE2_COLLECT_AUDIENCE_FLOWER);
+                }
                 break;
             case CASE2_COLLECT_AUDIENCE_FLOWER:
                 if (finishedCollecting()) {
+                    robot.flower.goDown();
                     driveThen(audienceFlowerToAudienceFlowerIntermediatePath, State.CASE2_TRAVEL_FROM_AUDIENCE_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
@@ -474,16 +486,22 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case CASE2A_TRAVEL_TO_SCORING_FLOWER:
-                if (finishedCreepingIntoFlower()) setState(State.CASE2A_COLLECT_SCORING_FLOWER);
+                if (finishedCreepingIntoFlower()) {
+                    robot.flower.goCollect();
+                    setState(State.CASE2A_COLLECT_SCORING_FLOWER);
+                }
                 break;
             case CASE2A_COLLECT_SCORING_FLOWER:
                 if (finishedCollecting()) {
-                    robot.flower.goUp();
+                    robot.flower.goDown();
                     driveThen(scoringFlowerToScoringFlowerIntermediatePath, State.CASE2A_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
             case CASE2A_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE:
-                if (!follower.isBusy()) driveThen(scoringFlowerIntermediateToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_4);
+                if (!follower.isBusy()) {
+                    robot.flower.goUp();
+                    driveThen(scoringFlowerIntermediateToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_4);
+                }
                 break;
             case CASE2A_TRAVEL_TO_SHOOT_4:
                 if (!follower.isBusy()) setState(State.CASE2A_SPEED_UP_SHOOT_4);
@@ -521,16 +539,20 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case CASE2B_TRAVEL_TO_SCORING_FLOWER:
-                if (finishedCreepingIntoFlower()) setState(State.CASE2B_COLLECT_SCORING_FLOWER);
+                if (finishedCreepingIntoFlower()) {
+                    robot.flower.goCollect();
+                    setState(State.CASE2B_COLLECT_SCORING_FLOWER);
+                }
                 break;
             case CASE2B_COLLECT_SCORING_FLOWER:
                 if (finishedCollecting()) {
-                    robot.flower.goUp();
+                    robot.flower.goDown();
                     driveThen(scoringFlowerToScoringFlowerIntermediatePath, State.CASE2B_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
             case CASE2B_TRAVEL_FROM_SCORING_FLOWER_TO_INTERMEDIATE:
                 if (!follower.isBusy()) {
+                    robot.flower.goUp();
                     shutOff(); // last stop before park
                     driveThen(scoringFlowerIntermediateToParkPath, State.CASE2B_TRAVEL_TO_PARK);
                 }
