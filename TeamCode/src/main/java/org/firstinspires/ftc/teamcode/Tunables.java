@@ -20,6 +20,11 @@ public class Tunables {
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
 
+    /** Adjustable Hood tunables (will be used in Hood.java) **/
+
+    public static double flowerPos = 0.4;
+    public static double pollenPos = 0.6;
+
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
