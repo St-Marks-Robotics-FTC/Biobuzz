@@ -6,8 +6,8 @@ import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 
@@ -24,8 +24,8 @@ public class AdjustableHood extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        Robot robot = new Robot(hardwareMap);
-        Flywheel flywheel = robot.flywheel;
+        Flywheel flywheel = new Flywheel(hardwareMap);
+        VoltageSensor batteryVoltage = hardwareMap.voltageSensor.iterator().next();
         Servo hood = hardwareMap.get(Servo.class, "hoodServo");
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
@@ -39,7 +39,7 @@ public class AdjustableHood extends LinearOpMode {
 
             double targetRpm = ball == Ball.FLOWER ? flowerRpm : pollenRpm;
             hood.setPosition(ball == Ball.FLOWER ? Tunables.flowerPos : Tunables.pollenPos);
-            flywheel.update(targetRpm, robot.getExpansionHubVoltage());
+            flywheel.update(targetRpm, batteryVoltage.getVoltage());
 
             telemetryM.addLine("left bumper: FLOWER, right bumper: POLLEN");
             telemetryM.addData("mode", ball);
@@ -51,6 +51,6 @@ public class AdjustableHood extends LinearOpMode {
             idle();
         }
 
-        flywheel.update(0, robot.getExpansionHubVoltage());
+        flywheel.update(0, batteryVoltage.getVoltage());
     }
 }
