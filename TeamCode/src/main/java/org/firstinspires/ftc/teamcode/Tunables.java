@@ -71,6 +71,31 @@ public class Tunables {
     public static long refuelDurationMillis = 200; // how long to intake while driving through the refuel line
     public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
 
+    /** vision tunables (used in subsys/Vision.java) **/
+
+    // HIVE correction; fit with limelight/fit_hive.py (h, pivot_y, z_offset, z_per_dist)
+    public static double visionHivePivotHeight = 43.95; // in
+    public static double visionHivePivotY = 72; // in, pedro y
+    public static double visionZOffset = 0; // in, subtracted from raw z
+    public static double visionZPerDist = 0; // in/in of avg tag distance, subtracted from raw z
+
+    // limelight - pedro = R(heading) * (forward, left) + bias; Vision subtracts it
+    // fit on better_z_vision.csv (11-07), non-flip frames
+    public static double visionCameraErrorForward = 0.356; // in, robot frame
+    public static double visionCameraErrorLeft = -3.763;  // in, robot frame
+    public static double visionBlueBiasX = -3.426; // in, field frame
+    public static double visionBlueBiasY = -0.260;
+    public static double visionRedBiasX = -1.477;
+    public static double visionRedBiasY = 0.130;
+
+    // reject vision poses farther than visionMaxSpeed * (time since last accepted) + visionJumpMargin
+    public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
+    public static double visionJumpMargin = 4; // in, allowed frame noise
+
+    // VisionTuner: tape-measured pose of the current calibration spot (A button applies it)
+    public static double visionTunerSpotX = 72;
+    public static double visionTunerSpotY = 72;
+
     /** field tunables (used in Field.java) **/
 
     // auto RPM

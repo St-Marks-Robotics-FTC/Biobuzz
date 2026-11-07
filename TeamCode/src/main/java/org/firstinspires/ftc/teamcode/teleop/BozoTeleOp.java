@@ -65,7 +65,7 @@ public abstract class BozoTeleOp extends OpMode {
     public void loop() {
         loopTimer.reset();
 
-        vision.update();
+        vision.update(follower.pose().heading());
 
         updateLastScoringData();
         handleDrive();
