@@ -7,6 +7,7 @@ import com.pedropathing.utils.Timer;
 
 public abstract class Device {
     private static final double UPDATE_LENGTH_SMOOTHING = 0.2; // how much each new measurement moves our update length estimate (0-1)
+                                                               // higher values smooth more
 
     protected final double priorityMultiplier;
     protected final String name;
@@ -74,10 +75,10 @@ public abstract class Device {
         write();
 
         long updateLength = writeTimer.nanoseconds();
-        // smooth our estimate so one slow write doesn't lock this device out of the schedule
-        //estimatedUpdateLength = (long) (estimatedUpdateLength + (updateLength - estimatedUpdateLength) * UPDATE_LENGTH_SMOOTHING);
+
         if (updateLength > 2 * 1000000) { // reject impossible update times
-            estimatedUpdateLength = updateLength;
+            // smooth our estimate so one slow write doesn't lock this device out of the schedule
+            estimatedUpdateLength = (long) (estimatedUpdateLength + (updateLength - estimatedUpdateLength) * UPDATE_LENGTH_SMOOTHING);
         }
         totalUpdateTime += updateLength;
         isUpdated = true;
@@ -86,7 +87,7 @@ public abstract class Device {
     }
 
     /** how far the hardware is from what we want it to be (0 means nothing to write) **/
-    protected abstract double getChange();
+    protected abstract double getChange(); // this must be normalized to 0-1
 
     protected abstract void write();
 }

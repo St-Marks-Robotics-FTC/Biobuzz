@@ -13,6 +13,7 @@ public class HWScheduler {
     private HardwareMap hardwareMap;
     private ArrayList<Device> deviceList = new ArrayList<>();
     private Timer updateTimer;
+    private boolean isAuto = false; // use auto loop length instead
 
 
     public HWScheduler(HardwareMap hw) {
@@ -22,6 +23,10 @@ public class HWScheduler {
 
     public HardwareMap hw() {
         return hardwareMap;
+    }
+
+    public void setAutoLoopLength() {
+        isAuto = true;
     }
 
     public Device getDevice(String name) {
@@ -49,7 +54,7 @@ public class HWScheduler {
         // sort device list by score, highest first
         deviceList.sort((d1, d2) -> Double.compare(d2.score, d1.score));
 
-        if (Tunables.softScheduling || Tunables.isDebugging) { // debugging adds slow telemetry, so always guard against starving devices
+        if (Tunables.softScheduling || isAuto) { // force soft scheduling in auto to increase consistency
             // first update any devices that are past their max stale time
             // this ignores our time budget - otherwise a slow loop would let devices go stale forever
             for (Device device : deviceList) {
@@ -61,7 +66,14 @@ public class HWScheduler {
 
         // this for loop will go from highest to least priority
         for (Device device : deviceList) {
-            double remainingLoopTime = (Tunables.targetLoopLength * 1000000) - elapsedTime - updateTimer.nanoseconds();
+            long target; // target loop length
+            if (isAuto) {
+                target = Tunables.autoTargetLoopLength * 1000000; // convert millis to nanoseconds
+            } else {
+                target = Tunables.teleTargetLoopLength * 1000000; // convert millis to nanoseconds
+            }
+
+            long remainingLoopTime = target - elapsedTime - updateTimer.nanoseconds();
 
             if (remainingLoopTime <= 0) break; // out of time - everything else waits for next loop
 

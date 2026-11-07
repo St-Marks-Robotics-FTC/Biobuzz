@@ -602,6 +602,7 @@ public abstract class BozoAuto extends OpMode {
         telemetryTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = new Robot(hardwareMap);
+        robot.scheduler.setAutoLoopLength(); // make sure we use the longer auto loops
         vision = new Vision(hardwareMap, isBlueTeam());
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);

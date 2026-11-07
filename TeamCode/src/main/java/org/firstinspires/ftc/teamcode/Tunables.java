@@ -83,7 +83,8 @@ public class Tunables {
 
     /** hardware scheduler tunables (used in HWScheduler.java) **/
 
-    public static double targetLoopLength = 20; // target loop length in ms
+    public static long teleTargetLoopLength = 20; // target loop length in ms
+    public static long autoTargetLoopLength = 25; // autos generally have longer loops
 
     public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
     public static boolean softScheduling = false; // if true (or isDebugging is true): update device once max staleness has been exceeded
