@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 /** Red-alliance poses. See {@link AutoConfig} for what each pose means and the route that uses it. **/
 @Configurable
 @Autonomous(name = "RedCloseAuto", group = "Red", preselectTeleOp = "RedTeleOp")
-public abstract class RedAuto extends BozoAuto {
+public class RedAuto extends BozoAuto {
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(60, 6.754, Math.toRadians(90));
     public static Pose shootPose = new Pose(60, 10, Math.toRadians(90));

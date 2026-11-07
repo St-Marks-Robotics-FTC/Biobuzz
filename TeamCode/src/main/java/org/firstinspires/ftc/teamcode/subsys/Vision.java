@@ -139,7 +139,7 @@ public class Vision {
             double newX = x - errorX;
             double newY = realY - errorY;
 
-            // reject jumps farther than the robot could drive at top speed since the last accepted pose
+            // reject jumps farther than the robot could drive at top speed since the last accepted pose (to prevent the teleportation)
             if (hasBotPose) {
                 double seconds = staleTimer.get(TimeUnit.MILLISECONDS) / 1000.0;
                 double maxTravel = Tunables.visionMaxSpeed * seconds + Tunables.visionJumpMargin;
