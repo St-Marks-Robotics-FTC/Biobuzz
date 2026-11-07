@@ -52,8 +52,8 @@ public class Tunables {
     public static double transferOpen = 0.41;
     public static double transferClosed = 0.108;
 
-    public static double flowerDown = 0.6746;
-    public static double flowerUp = 0.16;
+    public static double flowerDown = 0.85;
+    public static double flowerUp = 0.31;
     public static double flowerCollect = 0.63;
 
     /** robot tunables (used in Robot.java) **/
