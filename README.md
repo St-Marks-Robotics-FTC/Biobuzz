@@ -21,7 +21,7 @@ Input our Panels presets by going to [panels-configs.md](doc/panels-configs.md)
 
 # hardware map
 
-driver station config name: `v0`
+INSTEAD OF ENTERING IN THE HARDWARE MAP MANUALLY FOLLOW [THE GUIDE](doc/configs/CONFIGS.md) TO IMPORT AUTOMATICALLY
 
 ## control hub
 
