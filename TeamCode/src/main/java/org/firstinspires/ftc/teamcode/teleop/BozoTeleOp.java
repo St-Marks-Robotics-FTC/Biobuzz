@@ -48,7 +48,7 @@ public abstract class BozoTeleOp extends OpMode {
         vision = new Vision(hardwareMap, isBlueTeam());
         follower = Constants.create(hardwareMap);
 
-        follower.setPose(HandoffState.pose);
+        follower.setPose(new Pose(72, 72, HandoffState.pose.heading())); // temp: force center start
 
         robot.transfer.close();
 
