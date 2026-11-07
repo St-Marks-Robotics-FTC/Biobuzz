@@ -581,7 +581,7 @@ public abstract class BozoAuto extends OpMode {
     @Override
     public void loop() {
         loopTimer.reset();
-        vision.update();
+        vision.update(follower.pose().heading());
         follower.update();
         robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
         robot.update(); // advances the shooting state machine and intake power-save

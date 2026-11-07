@@ -21,6 +21,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
@@ -29,8 +30,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Vision {
-    private double HIVE_PIVOT_HEIGHT = 43.95; // hive pivot height in inches
-    private double HIVE_PIVOT_Y = 72; // y-coordinate of hive pivot
     private double HIVE_MAX_TILT = Math.toRadians(35); // max tilt of hive in radians
 
     public static Limelight3A limelight;
@@ -49,6 +48,7 @@ public class Vision {
     private boolean started = false;
     private boolean isBlueTeam;
     private Pose lastBotPose = new Pose(0, 0);
+    private boolean hasBotPose = false; // lastBotPose is a real reading (enables the jump check)
     private HiveState lastHiveState = HiveState.UNKNOWN;
 
     private Timer staleTimer; // how stale lastBotPose is
@@ -74,7 +74,8 @@ public class Vision {
     // return staleness of botpose in milliseconds
     public double getStaleness() { return staleTimer.get(TimeUnit.MILLISECONDS);}
 
-    public void update() {
+    // heading: follower.pose().heading(), radians
+    public void update(double heading) {
         /**
          *         pivot ●
          *               |\
@@ -89,37 +90,62 @@ public class Vision {
 
         if (isReasonable(result)) {
             Position botpose = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH);
+            boolean isRed = getPipeline() == Pipeline.RED;
             double x = botpose.y + 72; // convert to pedro units
             double y = 72 - botpose.x; // convert to pedro units
-            double z = botpose.z;
+            double avgDist = result.getBotposeAvgDist() * 39.37; // m -> in
+            double z = botpose.z - Tunables.visionZOffset - Tunables.visionZPerDist * avgDist;
 
-            double relativeY = y - HIVE_PIVOT_Y;
-            double relativeZ = z - HIVE_PIVOT_HEIGHT;
+            double pivotHeight = Tunables.visionHivePivotHeight;
+            double pivotY = Tunables.visionHivePivotY;
+
+            double relativeY = y - pivotY;
+            double relativeZ = z - pivotHeight;
 
             double dToHive = Math.sqrt(Math.pow(relativeY, 2) + Math.pow(relativeZ, 2));
 
-            if (dToHive < HIVE_PIVOT_HEIGHT) return; // impossible state -> reject data
+            if (dToHive < pivotHeight) return; // impossible state -> reject data
 
-            double horizontalSquared = dToHive * dToHive - HIVE_PIVOT_HEIGHT * HIVE_PIVOT_HEIGHT;
+            double horizontalSquared = dToHive * dToHive - pivotHeight * pivotHeight;
 
             double trueRelativeY = Math.sqrt(Math.abs(horizontalSquared)) * Math.signum(relativeY);
 
             double reportedAngle = Math.atan2(relativeZ, relativeY);
-            double trueAngle = Math.atan2(-HIVE_PIVOT_HEIGHT, trueRelativeY);
+            double trueAngle = Math.atan2(-pivotHeight, trueRelativeY);
 
             double hiveTilt = AngleUnit.normalizeRadians(trueAngle - reportedAngle);
 
+            HiveState hiveState;
             if (-HIVE_MAX_TILT < hiveTilt && hiveTilt < 0) {
-                lastHiveState = HiveState.AUDIENCE_UP;
+                hiveState = HiveState.AUDIENCE_UP;
             } else if (0 < hiveTilt && hiveTilt < HIVE_MAX_TILT) {
-                lastHiveState = HiveState.SCORING_UP;
+                hiveState = HiveState.SCORING_UP;
             } else {
                 return; // hive is at an impossible tilt
             }
 
-            double realY = HIVE_PIVOT_Y + trueRelativeY;
+            double realY = pivotY + trueRelativeY;
 
-            lastBotPose = new Pose(x, realY);
+            // subtract fitted limelight - pedro error (see Tunables)
+            double cos = Math.cos(heading);
+            double sin = Math.sin(heading);
+            double forward = Tunables.visionCameraErrorForward;
+            double left = Tunables.visionCameraErrorLeft;
+            double errorX = forward * cos - left * sin + (isRed ? Tunables.visionRedBiasX : Tunables.visionBlueBiasX);
+            double errorY = forward * sin + left * cos + (isRed ? Tunables.visionRedBiasY : Tunables.visionBlueBiasY);
+            double newX = x - errorX;
+            double newY = realY - errorY;
+
+            // reject jumps farther than the robot could drive at top speed since the last accepted pose
+            if (hasBotPose) {
+                double seconds = staleTimer.get(TimeUnit.MILLISECONDS) / 1000.0;
+                double maxTravel = Tunables.visionMaxSpeed * seconds + Tunables.visionJumpMargin;
+                if (Math.hypot(newX - lastBotPose.x(), newY - lastBotPose.y()) > maxTravel) return;
+            }
+
+            lastHiveState = hiveState;
+            lastBotPose = new Pose(newX, newY);
+            hasBotPose = true;
             staleTimer.reset();
         }
         else return;
