@@ -12,7 +12,7 @@ public class Flower {
         DOWN
     }
 
-    private Flower.State state = Flower.State.DOWN;
+    private Flower.State state = Flower.State.UP;
 
     public Flower(HardwareMap hw) {
         flowerServo = hw.get(Servo.class, "flowerServo");

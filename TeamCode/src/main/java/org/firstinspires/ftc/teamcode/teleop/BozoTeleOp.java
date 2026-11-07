@@ -8,6 +8,7 @@ import com.pedropathing.follower.ManualDrive;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
+import com.pedropathing.utils.Angle;
 
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
@@ -74,7 +75,6 @@ public abstract class BozoTeleOp extends OpMode {
         handleIntake();
         handleFlower();
         handleShoot();
-        handleFlower();
 
 
         if (gamepad1.xWasPressed()) { // reset field centric heading
@@ -114,9 +114,10 @@ public abstract class BozoTeleOp extends OpMode {
             }
         } else {
             // under what conditions to exit turning
-            if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) isTurning = false;
-            // emergency exit if pose is invalid
+            // emergency exit if pose is invalid; otherwise exit once heading is close to target (headings wrap at 2pi)
             if (follower.pose() == null || follower.pose().equals(new Pose(0, 0, 0))) {
+                isTurning = false;
+            } else if (Angle.smallestDifference(follower.pose().heading(), lastTurnPose.heading()) < Tunables.shootHeadingMargin) {
                 isTurning = false;
             }
 
@@ -139,7 +140,7 @@ public abstract class BozoTeleOp extends OpMode {
             if (isManualRPM) {
                 robot.flywheel.update(setRPM, robot.getExpansionHubVoltage());
             } else { // automatic RPM
-                robot.flywheel.update(lastScoringData.idealRPM(), robot.getExpansionHubVoltage());
+                robot.flywheel.update(lastScoringData == null ? 0 : lastScoringData.idealRPM(), robot.getExpansionHubVoltage());
             }
         } else {
             robot.flywheel.update(0, robot.getExpansionHubVoltage());
@@ -154,11 +155,6 @@ public abstract class BozoTeleOp extends OpMode {
     private void handleIntake() {
         if (gamepad1.aWasPressed()) robot.intake.toggle();
         if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
-    }
-
-    private void handleFlower() {
-        if (gamepad1.right_trigger_pressed) robot.flower.goDown();
-        else robot.flower.goUp();
     }
 
     private void handleShoot() {

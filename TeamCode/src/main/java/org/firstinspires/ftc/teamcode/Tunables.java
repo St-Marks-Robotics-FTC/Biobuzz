@@ -12,7 +12,7 @@ public class Tunables {
     // all members must be initialized with the keywords `public static`... in order to be usable
 
     public static boolean isDebugging = false; // whether to print additional debug info (slow)
-    public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
+    public static double turnRateMultiplier = 0.90; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
 
@@ -78,4 +78,8 @@ public class Tunables {
     public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
 
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
+
+    /** Vision tunables (used in Vision.java) **/
+
+    public static
 }

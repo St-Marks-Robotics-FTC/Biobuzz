@@ -22,7 +22,6 @@ public class Robot {
 
     public Flower flower;
 
-    private boolean isLaunching = false;
     private Timer launchTimer;
 
     private enum LaunchState {
@@ -73,6 +72,7 @@ public class Robot {
                 launchTimer.reset();
                 intake.off();
                 launchState = LaunchState.STOPPING_INTAKE;
+                break;
             case STOPPING_INTAKE:
                 if (launchTimer.milliseconds() >= Tunables.launchIntakeStopTime) {
                     // we've waited for intake to slow down so we can now open transfer without killing the servo
@@ -100,7 +100,7 @@ public class Robot {
                 break;
         }
 
-        intake.update(isLaunching);
+        intake.update(isLaunching());
     }
 
     public boolean isLaunching() {

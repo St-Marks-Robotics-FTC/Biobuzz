@@ -15,17 +15,10 @@ import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Autonomous: start at the start pose, drive linearly to the shoot pose (flywheel spinning up on the way), shoot,
- * drive linearly to an intermediate pose and then to the refuel pose to pick up balls, drive back to the shoot pose,
- * shoot again, then curve over to the park pose.
- *
- * Sequence: TRAVEL_TO_FIRST_SHOOT -> SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE
- *           -> TRAVEL_TO_REFUEL -> REFUEL -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT
- *           -> TRAVEL_TO_PARK -> DONE
- */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
@@ -33,122 +26,134 @@ public abstract class BozoAuto extends OpMode {
     private Follower follower;
     private Timer stateTimer, loopTimer, telemetryTimer;
     private TelemetryManager telemetryM;
-    private Pose startPose, shootPose;
 
     /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
     private double targetRPM = 0;
 
-    /** true once the flywheel is within {@link Tunables#flywheelRPMMargin} of a nonzero target RPM **/
     private boolean isFlywheelWithinMargin() {
         return targetRPM > 0 && Math.abs(robot.flywheel.getRPM() - targetRPM) <= Tunables.flywheelRPMMargin;
     }
 
-    private enum State {
-        TRAVEL_TO_FIRST_SHOOT, // driving linearly from the start pose to the shoot pose; flywheel already spinning up
-        SPIN_UP_FIRST_SHOOT,   // at the shoot pose; waiting for flywheel to reach target RPM
-        FEED_FIRST_SHOOT,      // transfer open + intake running, feeding the preload through the flywheel
-        TRAVEL_TO_INTERMEDIATE, // driving linearly to the intermediate pose with intake running; flywheel keeps spinning
-        TRAVEL_TO_REFUEL,      // driving linearly from the intermediate pose to the refuel pose with intake running
-        REFUEL,                // sitting on the refuel pose with intake running to pick up balls
-        TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake off, flywheel keeps spinning
-        SPIN_UP_SECOND_SHOOT,  // back at the shoot pose; waiting for flywheel to be at target RPM
-        FEED_SECOND_SHOOT,     // transfer open + intake running, feeding the refueled balls through the flywheel
-        TRAVEL_TO_PARK,        // everything off; driving a bezier curve from the shoot pose to the park pose
-        DONE                   // parked; waiting for the OpMode to be stopped
+    /** what the robot does when a leg ends **/
+    private enum Arrival { SHOOT, PICKUP, PARK }
+
+    private static final class Leg {
+        final Path path;
+        final Arrival arrival;
+
+        Leg(Path path, Arrival arrival) {
+            this.path = path;
+            this.arrival = arrival;
+        }
     }
 
-    private State state = State.TRAVEL_TO_FIRST_SHOOT;
+    private enum State {
+        DRIVE,   // following legs.get(legIndex); intake running unless the leg parks
+        SPIN_UP, // at a shoot stop; waiting for the flywheel to reach target RPM
+        FEED,    // transfer open + intake running, feeding balls through the flywheel
+        PICKUP,  // at a pickup stop; intake running for refuelDurationMillis
+        DONE     // parked; waiting for the OpMode to be stopped
+    }
 
-    /** startPose -> shootPose, then shootPose -> intermediatePose -> refuelPose and back. Built in {@link #init()}. **/
-    private Path startToShootPath, shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
+    private State state = State.DRIVE;
 
-    /** Bezier curve from the shoot pose to the park pose, bent by {@link AutoConfig#parkControlPose}. Built in {@link #init()}. **/
-    private Path shootToParkPath;
 
-    private static final double REFUEL_ROTATE_START = 0.7;
+    private List<Leg> legs;
+    private int legIndex;
+
+    private static Pose[] controlPoints(Pose start, Pose[] controls, Pose end) {
+        Pose[] points = new Pose[controls.length + 2];
+        points[0] = start;
+        System.arraycopy(controls, 0, points, 1, controls.length);
+        points[points.length - 1] = end;
+        return points;
+    }
+
+
+    private static Path bezier(Pose start, Pose[] controls, Pose end) {
+        if (controls.length == 0) return line(start, end).linear(start, end);
+        return curve(controlPoints(start, controls, end)).linear(start, end);
+    }
 
     private void buildPaths() {
-        startToShootPath = line(startPose, shootPose).linear(startPose, shootPose);
-        shootToIntermediatePath = line(shootPose, config.intermediatePose).linear(shootPose, config.intermediatePose);
-        intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose)
+        legs = new ArrayList<>();
+        legs.add(new Leg(bezier(config.startPose, config.shootPreloadControls, config.shootPreloadPose), Arrival.SHOOT));
+
+        // heading turns toward the tilt over the first half of the garden path, then holds it through the pickup
+        Pose gardenTilt = config.gardenPose.withHeading(config.gardenTiltRad);
+        Path garden = curve(controlPoints(config.shootPreloadPose, config.gardenControls, config.gardenPose))
                 .heading(Interpolator.piecewise()
-                        .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
-                        .until(1.0, Interpolator.linear(config.intermediatePose, config.refuelPose)))
-                .with(
-                        Constants.foresightConfig.maxPathSpeed.at(0.35)
-                );
-        refuelToShootPath = line(config.refuelPose, shootPose).linear(config.refuelPose, shootPose);
-        // curve(start, control, end): the control point is not driven through, it only pulls the path toward it.
-        shootToParkPath = curve(shootPose, config.parkControlPose, config.parkPose)
-                .linear(shootPose, config.parkPose);
+                        .until(0.5, Interpolator.linear(config.shootPreloadPose, gardenTilt))
+                        .until(1.0, Interpolator.constant(gardenTilt)))
+                .with(Constants.foresightConfig.maxPathSpeed.at(0.35));
+        legs.add(new Leg(garden, Arrival.PICKUP));
+
+        // starts from the tilted garden pose so the heading carries through from the pickup
+        legs.add(new Leg(bezier(gardenTilt, config.shootGardenControls, config.shootGardenPose), Arrival.SHOOT));
+
+        Pose finalShotPose = config.shootGardenPose;
+        if (config.closeFlowerPose != null) {
+            legs.add(new Leg(bezier(config.shootGardenPose, config.closeFlowerControls, config.closeFlowerPose), Arrival.PICKUP));
+            legs.add(new Leg(bezier(config.closeFlowerPose, new com.pedropathing.math.Pose[]{}, config.secondShotPose), Arrival.SHOOT));
+            legs.add(new Leg(bezier(config.secondShotPose, config.farFlowerControls, config.farFlowerPose), Arrival.PICKUP));
+            legs.add(new Leg(bezier(config.farFlowerPose, config.lastShotControls, config.lastShotPose), Arrival.SHOOT));
+            finalShotPose = config.lastShotPose;
+        }
+        legs.add(new Leg(bezier(finalShotPose, config.endControls, config.endPose), Arrival.PARK));
+    }
+
+    /** the current leg is done driving; pickup legs also end on timeout in case the robot gets stuck on a ball **/
+    private boolean atLegEnd() {
+        if (!follower.isBusy()) return true;
+        return legs.get(legIndex).arrival == Arrival.PICKUP
+                && stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.maxTravelToRefuelTime;
+    }
+
+    private void advanceLeg() {
+        legIndex++;
+        Leg next = legs.get(legIndex);
+        if (next.arrival == Arrival.PARK) {
+            shutOff(); // last shot is done: flywheel and intake off for the drive to park
+        } else {
+            robot.intake.forward(); // intake on while driving so we're collecting as we arrive
+        }
+        follower.follow(next.path);
+        setState(State.DRIVE);
     }
 
     private void autoUpdate() {
         switch (state) {
-            case TRAVEL_TO_FIRST_SHOOT:
-                if (!follower.isBusy()) {
-                    setState(State.SPIN_UP_FIRST_SHOOT);
+            case DRIVE:
+                if (atLegEnd()) {
+                    switch (legs.get(legIndex).arrival) {
+                        case SHOOT:
+                            setState(State.SPIN_UP);
+                            break;
+                        case PICKUP:
+                            setState(State.PICKUP);
+                            break;
+                        case PARK:
+                            setState(State.DONE);
+                            break;
+                    }
                 }
                 break;
-            case SPIN_UP_FIRST_SHOOT:
+            case SPIN_UP:
                 if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
                     startShooting();
-                    setState(State.FEED_FIRST_SHOOT);
+                    setState(State.FEED);
                 }
                 break;
-            case FEED_FIRST_SHOOT:
-                // FEEDING IS HERE
+            case FEED:
                 // the if statement below represents AFTER we've fed the balls
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
                     robot.transfer.close();
-                    robot.intake.forward(); // intake on while driving so we're collecting as we arrive
-                    follower.follow(shootToIntermediatePath);
-                    setState(State.TRAVEL_TO_INTERMEDIATE);
+                    advanceLeg();
                 }
                 break;
-            case TRAVEL_TO_INTERMEDIATE:
-                if (!follower.isBusy()) {
-                    follower.follow(intermediateToRefuelPath);
-                    setState(State.TRAVEL_TO_REFUEL);
-                }
-                break;
-            case TRAVEL_TO_REFUEL:
-                if (!follower.isBusy()
-                        // make sure it times out after getting stuck on a ball
-                        || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime) {
-                    setState(State.REFUEL);
-                }
-                break;
-            case REFUEL:
+            case PICKUP:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
-                    robot.intake.forward();
-                    follower.follow(refuelToShootPath);
-                    setState(State.TRAVEL_TO_SHOOT);
-                }
-                break;
-            case TRAVEL_TO_SHOOT:
-                if (!follower.isBusy()) {
-                    setState(State.SPIN_UP_SECOND_SHOOT);
-                }
-                break;
-            case SPIN_UP_SECOND_SHOOT:
-                if (isFlywheelWithinMargin()) {
-                    startShooting();
-                    setState(State.FEED_SECOND_SHOOT);
-                }
-                break;
-            case FEED_SECOND_SHOOT:
-                // FEEDING IS HERE
-                // the if statement below represents AFTER we've fed the balls
-                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
-                    shutOff();
-                    follower.follow(shootToParkPath);
-                    setState(State.TRAVEL_TO_PARK);
-                }
-                break;
-            case TRAVEL_TO_PARK:
-                if (!follower.isBusy()) {
-                    setState(State.DONE);
+                    advanceLeg();
                 }
                 break;
             case DONE:
@@ -177,7 +182,7 @@ public abstract class BozoAuto extends OpMode {
     public void loop() {
         loopTimer.reset();
         follower.update();
-        robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
+        robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target
         autoUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
@@ -197,9 +202,7 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
-        startPose = config.startPose;
-        shootPose = config.shootPose;
-        follower.setPose(startPose);
+        follower.setPose(config.startPose);
         buildPaths();
         sendTelemetry(true);
         telemetryM.update(telemetry);
@@ -216,8 +219,9 @@ public abstract class BozoAuto extends OpMode {
         targetRPM = Tunables.shootRPM; // begin spinning up immediately
         telemetryTimer.reset();
         loopTimer.reset(); // so the first loop() doesn't report init time as loop time
-        follower.follow(startToShootPath);
-        setState(State.TRAVEL_TO_FIRST_SHOOT);
+        legIndex = 0;
+        follower.follow(legs.get(0).path);
+        setState(State.DRIVE);
     }
 
     @Override
@@ -228,6 +232,7 @@ public abstract class BozoAuto extends OpMode {
         }
         updateHandoff();
     }
+
     public void updateHandoff() {
         if (follower != null) {
             HandoffState.pose = follower.pose();
@@ -243,6 +248,7 @@ public abstract class BozoAuto extends OpMode {
         }
         Pose pose = follower.pose(); // read once; each call may allocate
         telemetryM.debug("State: " + state);
+        telemetryM.addData("leg", legIndex + " / " + (legs == null ? 0 : legs.size()));
         telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
         telemetryM.addData("flywheel target RPM", targetRPM);
         telemetryM.addData("x", pose.x());
