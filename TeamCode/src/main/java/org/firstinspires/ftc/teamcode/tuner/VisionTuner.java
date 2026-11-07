@@ -80,6 +80,9 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addData("odo pos", follower.pose().toString());
             telemetryM.addData("pipeline", vision.getPipeline());
 
+            telemetryM.addData("diff y", follower.pose().y() - vision.getLastBotPose().y());
+            telemetryM.addData("Tags seen", vision.getLatestResult().getBotposeTagCount());
+
             if (isCalibrating) {
                 LLResult result = vision.getLatestResult();
                 if (vision.isReasonable(result)) {

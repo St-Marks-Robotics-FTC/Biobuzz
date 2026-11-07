@@ -125,6 +125,8 @@ public class Vision {
                 if (Math.hypot(newX - lastBotPose.x(), newY - lastBotPose.y()) > maxTravel) return;
             }
 
+            if (limelight.getLatestResult().getBotposeTagCount() < 3) {return;} //To little tags
+
             lastHiveState = hiveState;
             lastBotPose = new Pose(newX, newY);
             hasBotPose = true;
@@ -151,6 +153,10 @@ public class Vision {
         if (!newBotPose) return null;
         newBotPose = false;
         return lastBotPose;
+    }
+
+    public boolean hasBotPose() {
+        return hasBotPose;
     }
 
     public HiveState getLastHiveState() {

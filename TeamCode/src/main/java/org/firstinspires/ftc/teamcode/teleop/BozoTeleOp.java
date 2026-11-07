@@ -48,7 +48,7 @@ public abstract class BozoTeleOp extends OpMode {
         vision = new Vision(hardwareMap, isBlueTeam());
         follower = Constants.create(hardwareMap);
 
-        follower.setPose(new Pose(72, 72, HandoffState.pose.heading())); // temp: force center start
+        follower.setPose(HandoffState.pose);
 
         robot.transfer.close();
 
@@ -67,7 +67,6 @@ public abstract class BozoTeleOp extends OpMode {
 
         vision.update(follower.pose().heading());
         relocalize();
-
         updateLastScoringData();
         handleDrive();
         handleFlywheel();
@@ -82,7 +81,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         follower.update();
 
-        robot.scheduler.update(loopTimer.nanoseconds());
+        robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
 
         updateTelemetry();
     }
@@ -162,7 +161,8 @@ public abstract class BozoTeleOp extends OpMode {
             if (isManualRPM) {
                 robot.flywheel.update(setRPM, robot.getExpansionHubVoltage());
             } else { // automatic RPM
-                robot.flywheel.update(lastScoringData.idealRPM(), robot.getExpansionHubVoltage());
+                double rpm = lastScoringData != null ? lastScoringData.idealRPM() : 0;
+                robot.flywheel.update(rpm, robot.getExpansionHubVoltage());
             }
         } else {
             robot.flywheel.update(0, robot.getExpansionHubVoltage());
@@ -212,6 +212,7 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.addData("desired RPM", robot.flywheel.getLastSetRPM());
         telemetryM.addData("loop time (before telemetry)", loopTime);
 
+        // only output debug values if we're debugging - these kill our loop times
         if (Tunables.isDebugging) {
             // intake
             telemetryM.addData("power save", robot.intake.getPowerSaveTrigger());
