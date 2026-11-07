@@ -66,6 +66,7 @@ public abstract class BozoTeleOp extends OpMode {
         loopTimer.reset();
 
         vision.update(follower.pose().heading());
+        relocalize();
 
         updateLastScoringData();
         handleDrive();
@@ -84,6 +85,19 @@ public abstract class BozoTeleOp extends OpMode {
         robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
 
         updateTelemetry();
+    }
+
+    // nudge odometry x/y toward each new vision frame; skipped while turning or moving fast (camera latency)
+    private void relocalize() {
+        Pose visionPose = vision.takeNewBotPose();
+        if (visionPose == null || isTurning) return;
+        if (follower.velocity().linSpeed() > Tunables.visionPoseMaxSpeed) return;
+        Pose pose = follower.pose();
+        double gain = Tunables.visionPoseGain;
+        follower.setPose(new Pose(
+                pose.x() + gain * (visionPose.x() - pose.x()),
+                pose.y() + gain * (visionPose.y() - pose.y()),
+                pose.heading()));
     }
 
     private void handleDrive() {
@@ -223,6 +237,8 @@ public abstract class BozoTeleOp extends OpMode {
             } else {
                 telemetryM.addLine("lastScoringData is null!");
             }
+            telemetryM.addData("vision pose", vision.getLastBotPose().toString());
+            telemetryM.addData("vision staleness (ms)", vision.getStaleness());
 
             // hardware scheduler
             telemetryM.addLine(robot.scheduler.getStatus());

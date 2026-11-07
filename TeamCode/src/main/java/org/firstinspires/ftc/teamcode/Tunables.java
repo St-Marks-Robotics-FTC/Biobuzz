@@ -91,6 +91,8 @@ public class Tunables {
     // reject vision poses farther than visionMaxSpeed * (time since last accepted) + visionJumpMargin
     public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
     public static double visionJumpMargin = 4; // in, allowed frame noise
+    public static double visionPoseGain = 0.1; // teleop: fraction of vision - odometry x/y applied per new frame (0 = off)
+    public static double visionPoseMaxSpeed = 10; // in/s, teleop relocalizes only below this
 
     // VisionTuner: tape-measured pose of the current calibration spot (A button applies it)
     public static double visionTunerSpotX = 72;

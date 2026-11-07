@@ -49,6 +49,8 @@ public class Vision {
     private boolean isBlueTeam;
     private Pose lastBotPose = new Pose(0, 0);
     private boolean hasBotPose = false; // lastBotPose is a real reading (enables the jump check)
+    private boolean newBotPose = false; // accepted since last takeNewBotPose()
+    private long lastFrameTime = -1; // control hub timestamp of the last processed frame
     private HiveState lastHiveState = HiveState.UNKNOWN;
 
     private Timer staleTimer; // how stale lastBotPose is
@@ -88,7 +90,8 @@ public class Vision {
          */
         LLResult result = limelight.getLatestResult();
 
-        if (isReasonable(result)) {
+        if (isReasonable(result) && result.getControlHubTimeStamp() != lastFrameTime) {
+            lastFrameTime = result.getControlHubTimeStamp(); // getLatestResult repeats frames between camera updates
             Position botpose = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH);
             boolean isRed = getPipeline() == Pipeline.RED;
             double x = botpose.y + 72; // convert to pedro units
@@ -146,6 +149,7 @@ public class Vision {
             lastHiveState = hiveState;
             lastBotPose = new Pose(newX, newY);
             hasBotPose = true;
+            newBotPose = true;
             staleTimer.reset();
         }
         else return;
@@ -160,6 +164,13 @@ public class Vision {
     }
 
     public Pose getLastBotPose () {
+        return lastBotPose;
+    }
+
+    // accepted pose since the last call, else null
+    public Pose takeNewBotPose() {
+        if (!newBotPose) return null;
+        newBotPose = false;
         return lastBotPose;
     }
 
