@@ -73,14 +73,14 @@ make sure to connect every motor to the correct port with the correct polarity; 
 
 ### servos
 
-| servo port   | servo type | verbatim name  |
-|:-------------|------------|:---------------|
-| `0`          | Servo      | `flowerServo`  |
-| `1`          | *unused*   | *unused*       |
-| `2`          | *unused*   | *unused*       |
-| `3`          | *unused*   | *unused*       |
-| `4`          | *unused*   | *unused*       |
-| `5`          | *unused*   | *unused*       |
+| servo port   | servo type | verbatim name |
+|:-------------|------------|:--------------|
+| `0`          | Servo      | `flowerServo` |
+| `1`          | Servo      | `hoodServo`   |
+| `2`          | *unused*   | *unused*      |
+| `3`          | *unused*   | *unused*      |
+| `4`          | *unused*   | *unused*      |
+| `5`          | *unused*   | *unused*      |
 
 ## expansion hub
 

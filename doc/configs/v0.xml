@@ -12,6 +12,7 @@
             <goBILDA5202SeriesMotor name="backLeft" port="2" />
             <goBILDA5202SeriesMotor name="backRight" port="3" />
             <Servo name="flowerServo" port="0" />
+            <Servo name="hoodServo" port="1" />
             <goBILDAPinpoint name="odo" port="0" bus="1" />
         </LynxModule>
     </LynxUsbDevice>
