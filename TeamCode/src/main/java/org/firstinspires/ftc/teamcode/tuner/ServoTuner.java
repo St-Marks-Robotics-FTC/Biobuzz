@@ -31,7 +31,7 @@ public class ServoTuner extends OpMode {
     private HWScheduler scheduler;
 
     private TelemetryManager telemetryM;
-    private double JOG_AMOUNT = 0.05;
+    private double JOG_AMOUNT = 0.01; // large adjustments should be made with the joystick anyways
 
     @Override
     public void init() {
