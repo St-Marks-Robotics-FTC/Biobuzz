@@ -65,6 +65,8 @@ public class FlywheelTuner extends LinearOpMode {
                     break;
             }
 
+            robot.scheduler.update(0); // write flywheel power
+
             telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
             telemetryM.addData("flywheel TPS", robot.flywheel.getTPS());
 

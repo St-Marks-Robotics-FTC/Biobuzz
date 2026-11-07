@@ -6,8 +6,12 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
+import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
 
 public class Intake {
+    private static final double PRIORITY_MULTIPLIER = 1;
+
     public enum State {
         OFF, // intake completely unpowered
         FORWARD, // intake full power
@@ -28,14 +32,16 @@ public class Intake {
     private PowerSaveTrigger powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
     double lastIntakeHoldPower = Tunables.intakeHoldPower;
 
-    private DcMotorEx motor;
+    private SMotor motor; // writes go through the scheduler, reads go straight to motor.m
 
-    public Intake(HardwareMap hw) {
-        motor = hw.get(DcMotorEx.class, "intakeMotor");
+    public Intake(HWScheduler scheduler) {
+        motor = new SMotor("intakeMotor", PRIORITY_MULTIPLIER, scheduler.hw());
+        scheduler.addDevice(motor);
 
-        motor.setDirection(DcMotorEx.Direction.FORWARD);
-        motor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
-        motor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); // we're just running our intake at 100% speed all the time, so we don't need the encoder
+        // one-time config, so it doesn't need to be scheduled
+        motor.m.setDirection(DcMotorEx.Direction.FORWARD);
+        motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
+        motor.m.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); // we're just running our intake at 100% speed all the time, so we don't need the encoder
 
         powerSaveWaitTimer = new Timer();
         powerSaveCheckTimer = new Timer();
@@ -166,15 +172,8 @@ public class Intake {
         return state == State.REVERSE;
     }
 
-    public double getCurrent() { return motor.getCurrent(CurrentUnit.AMPS); } // return intake current in amps
-    public double getVelocity() { return motor.getVelocity(); } // get velocity in tps
     public PowerSaveTrigger getPowerSaveTrigger() { return powerSaveTrigger; }
-
-    public DcMotorEx getMotor() { // get our intake motor whose encoder is used by Turret.java
-        return motor;
-    }
-
-    public State getState() {
-        return state;
-    }
+    public State getState() { return state; }
+    public double getCurrent() { return motor.m.getCurrent(CurrentUnit.AMPS); } // return intake current in amps
+    public double getVelocity() { return motor.m.getVelocity(); } // get velocity in tps
 }
