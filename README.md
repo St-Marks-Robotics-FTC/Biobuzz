@@ -73,14 +73,14 @@ make sure to connect every motor with the correct polarity; the reversing is don
 
 ### servos
 
-| servo port   | servo type       | verbatim name |
-|:-------------|------------------|:--------------|
-| `0`          | *unused*         | *unused*      |
-| `1`          | *unused*         | *unused*      |
-| `2`          | *unused*         | *unused*      |
-| `3`          | *unused*         | *unused*      |
-| `4`          | *unused*         | *unused*      |
-| `5`          | *unused*         | *unused*      |
+| servo port   | servo type | verbatim name  |
+|:-------------|------------|:---------------|
+| `0`          | Servo      | `flowerServo`  |
+| `1`          | *unused*   | *unused*       |
+| `2`          | *unused*   | *unused*       |
+| `3`          | *unused*   | *unused*       |
+| `4`          | *unused*   | *unused*       |
+| `5`          | *unused*   | *unused*       |
 
 ## expansion hub
 
@@ -101,7 +101,7 @@ make sure to connect every motor with the correct polarity; the reversing is don
 | motor port   | motor type              | verbatim name | encoder?    |
 |:-------------|-------------------------|:--------------|:------------|
 | `0`          | GoBILDA 5202/3/4 series | `intakeMotor` | ✅           |
-| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ✅           |
+| `1`          | GoBILDA 5202/3/4 series | `launchMotor` | ❌           |
 | `2`          | *unused*                | *unused*      | ❌           |
 | `3`          | *unused*                | *unused*      | ❌           |
 
@@ -139,23 +139,21 @@ the **start** button toggles between robot/field centric control
 
 ## bumpers
 
-- **left bumper**: auto turn (faces the goal that is up, see [localization](#localization-and-hive-detection-teleop))
+- **left bumper**: auto turn
 - **right bumper**: shoot all balls
 
 ## triggers
 
-- **left trigger**: slow mode (drive speed scales by `1 - left trigger`, so a full pull stops the drive)
-- **right trigger**: hold to lower the flower servo (`Flower.goDown()`); release raises it (`Flower.goUp()`)
+- **left trigger**: slow mode
+- **right trigger**: hold to lower flower mechanism
 
 ## buttons
 
 ### face buttons
 - **A**: toggle intake
 - **B**: toggle flywheel power
-- **Y**: toggle intake reverse
-- **X**: reset field centric heading
-  - make sure to orient the robot towards the top of the field (in between the goals)
-  - the Limelight never corrects heading, so after a TeleOp-only start (no auto run before it) press this before using auto turn
+- **X**: toggle intake reverse
+- **Y**: toggle auto RPM
 
 ### d-pad
 - **up**: increment flywheel RPM
@@ -176,24 +174,18 @@ the **start** button toggles between robot/field centric control
 
 ## Auto
 
-`BozoAuto` runs the state machine: shoot the preload, sweep the garden and intake, shoot, then park (`BlueFarAuto`). A route is an `AutoConfig` (poses, bezier control points, how each leg steers). `BlueCloseAuto` continues after the garden shot with the flower legs: it lowers the flower servo (`Flower.goDown()`) before the close flower, intakes the close flower, shoots from the second pose, intakes the far flower with the servo still down, shoots from the last pose, then parks at the end pose.
-Each blue auto owns its route as `public static` poses (exported from the Pedro visualizer) plus a `route()` method. The red autos have no poses of their own: `RedFarAuto`/`RedCloseAuto` return `BlueFarAuto.route()`/`BlueCloseAuto.route()` rotated 180 degrees about field center (`AutoConfig.rotated()`), recomputed every time the auto is initialized. So change the blue auto and the red one follows; a new field added to `AutoConfig` has to be added to `rotated()` as well.
-Shooting reuses `Robot.startLaunch()` at `Tunables.autoShootRpm`.
-All rev-up, shot, intake and tip-spin waits in one auto share `Tunables.autoWaitBudgetMs` (8000 ms; path travel is not counted). Each shot waits for the flywheel only as long as the budget leaves after reserving the fixed launch and intake times still to come, then fires anyway. After the preload shot, if `Vision` did not see the hive change state, the robot spins in place for `Tunables.tipSpinMs` (printing `f*ck` 20 times to telemetry); the spin is skipped when the budget cannot cover it. `AutoConfig.isBlue` (true in the blue routes, flipped by `rotated()`) picks the Limelight pipeline.
-
 ### blue team
 
-- `BlueFarAuto`: starts at (125.9, 8.4) by the bottom triangle, garden swept with a slight tilt
-- `BlueCloseAuto`: starts at (86.2, 136.2) at the shooting spot; the garden path bends through two control points and ends holding the garden heading
+- `BlueAuto`: starting by bottom triangle
 
 ### red team
 
-- `RedFarAuto`, `RedCloseAuto`: the blue routes above, rotated 180 degrees
+- `RedAuto`: starting by bottom triangle
 
 ## Tuner
 
 - `FlywheelTuner`: tune flywheel PIDF
-- `ServoTuner`: tune servo positions (A: transfer, B: flower)
+- `ServoTuner`: tune servo positions
 - `VisionTuner`: tune vision
 
 # vision
@@ -209,16 +201,6 @@ We are using a Limelight 3A
 
 Many thanks to [Team 19725](https://github.com/BluePowerRobotics/Team19725_BIOBUZZ) for providing their `.fmap` files for localization!
 Our localization approach is largely based off of theirs, but we use trigonometry instead of transformation matrices.
-
-## localization and hive detection (TeleOp)
-
-`Vision` turns each Limelight frame into a robot position and tells us which way the hive is tilted:
-- the camera assumes the hive is flat, so its pose is off when the hive tilts; `Vision` uses the known pivot height and the fact that the robot sits on the floor to get the true `y` and the tilt (tilt > 0 raises the scoring side, tilt < 0 the audience side)
-- the visible tag faces (audience: blue 38-41 / red 34-37, scoring: blue 42-45 / red 30-33) say which side of the hive the robot is on
-- a new hive state (`AUDIENCE_UP` / `SCORING_UP`) has to be seen on `Tunables.hiveConfirmFrames` frames in a row; it stays put until the camera confirms the opposite state
-- **auto turn** (left bumper) turns to the goal on the side that is up, using the last hive state the camera confirmed; if no state has been confirmed yet, it does nothing. The robot holds its position and turns until the heading is within `Tunables.shootHeadingMargin`; **back** cancels the turn.
-
-the Limelight web UI must have the camera's pose in robot space configured (position relative to the robot center and height off the floor), because `Vision` expects the botpose to be the robot's pose with `z` = 0 on the floor
 
 # telemetry IPs and ports
 

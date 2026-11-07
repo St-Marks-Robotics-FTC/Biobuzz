@@ -1,3 +1,5 @@
+/** this class is used to provide auto parameters **/
+
 package org.firstinspires.ftc.teamcode.auto;
 
 import com.pedropathing.math.Pose;

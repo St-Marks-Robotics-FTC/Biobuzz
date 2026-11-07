@@ -1,57 +1,72 @@
+/** class that holds all of our constants that we want to be able to tune quickly
+ * all values in are milliseconds unless otherwise stated
+ */
+
 package org.firstinspires.ftc.teamcode;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.math.Pose;
 
-
-
 @Configurable
 public class Tunables {
-    public static double shooterToleranceRpm = 15.0; //Gap between target and acceptable actual
-    public static double autoShootRpm = 3170; // flywheel RPM used by every auto volley (BozoTeleOp's default setRPM)
-    public static long autoWaitBudgetMs = 10000; // all rev-up, shot, intake and tip-spin waits in one auto must fit in this; path travel is not counted
-    public static long tipSpinMs = 600; // how long the post-preload tip-spin runs when the hive did not tip
-    public static long intakeTimeMs = 700;
-    public static long pathTimeoutMs = 3000;
     // all members must be initialized with the keywords `public static`... in order to be usable
 
-    public static boolean isDebugging = true; // whether to print additional debug info (slow)
+    public static boolean isDebugging = false; // whether to print additional debug info (slow)
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
+
+    public static double manualStartingRPM = 3250;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(5);
+
+    /** Adjustable Hood tunables (will be used in Hood.java) **/
+
+    public static double flowerPos = 0.4;
+    public static double pollenPos = 0.6;
 
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.006;
+    public static double flywheelP = 0.001;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
-    public static double maxFlywheelBraking = 0.05; // max amount of breaking (negative power) to apply to launch motors
-    // disable this for now
-    public static double flywheelQuickStartThreshold = 10000000; // if TPS diff is greater than this, set full power (~1000rpm)
+    public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
+    public static double flywheelVoltageStart = 12.0; // start voltage of compensation scale
+    public static double flywheelVoltageEnd = 13.5;   // end voltage of compensation scale
+    public static double flywheelCompensationMax = 1.2; // max amount to scale voltage
 
     /** intake tunables (used in Intake.java) **/
 
-    public static double intakeForwardPower = 1.0;
-    public static double intakeForwardLaunchingPower = 0.3;
-
-    /** flower tunables (used in Flower.java) **/
-    public static double flowerDown = 0.4;
-    public static double flowerUp = 0.9;
+    public static boolean intakeUsePowerSave = true;
+    public static int intakePowerSaveWaitInterval = 30; // how often to check for a stalled intake while running
+    public static int intakePowerSaveCheckInterval = 30; // how often to update intake power/velocity check in millis
+    public static double intakePowerSaveTriggerAmps = 6; // if we are drawing more amps than this, trigger power save
+    public static double intakePowerSaveTriggerVelocity = 0; // if we have a tps less than this, trigger power save
+    public static double intakeHoldPower = 0.0; // minimum power for balls to not fall out of intake
 
     /** transfer tunables (used in Transfer.java) **/
 
-    public static double transferOpen = 0.280;
-    public static double transferClosed = 0.00;
+    public static double transferOpen = 0.41;
+    public static double transferClosed = 0.108;
+
+    public static double flowerDown = 0.908;
+    public static double flowerUp = 0.39;
 
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 800;
+    public static double launchShootingTime = 1600;
+
+    /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
+
+    public static double shootRPM = 3100; // target flywheel RPM while lined up to shoot
+    public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
+    public static long feedDurationMillis = 3000; // how long to run the transfer + intake to feed balls through the flywheel
+    public static long refuelDurationMillis = 2250; // how long to intake while driving through the refuel line
+    public static double maxTravelToRefuelTime = 4000; // timeout for travel to picking up balls (if it gets stuck on a ball)
 
     /** field tunables (used in Field.java) **/
 
@@ -63,11 +78,4 @@ public class Tunables {
     public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
 
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
-
-    /** vision tunables (used in Vision.java) **/
-
-    public static int visionMinTags = 2; // ignore Limelight frames that see fewer tags than this
-    public static double visionMaxStalenessMs = 200; // ignore Limelight frames older than this
-    public static int hiveConfirmFrames = 3; // consecutive frames that must agree before the hive state changes
-    public static double hiveMinTiltDeg = 3.0; // tilts smaller than this look flat and leave the hive state alone
 }

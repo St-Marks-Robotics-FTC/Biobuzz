@@ -4,252 +4,172 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
-import com.pedropathing.paths.Path;
 import static com.pedropathing.api.Paths.*;
+import com.pedropathing.paths.Path;
 import com.pedropathing.paths.interpolator.Interpolator;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
-import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Autonomous: start at the start pose, drive linearly to the shoot pose (flywheel spinning up on the way), shoot,
+ * drive linearly to an intermediate pose and then to the refuel pose to pick up balls, drive back to the shoot pose,
+ * shoot again, then curve over to the park pose.
+ *
+ * Sequence: TRAVEL_TO_FIRST_SHOOT -> SPIN_UP_FIRST_SHOOT -> FEED_FIRST_SHOOT -> TRAVEL_TO_INTERMEDIATE
+ *           -> TRAVEL_TO_REFUEL -> REFUEL -> TRAVEL_TO_SHOOT -> SPIN_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT
+ *           -> TRAVEL_TO_PARK -> DONE
+ */
 public abstract class BozoAuto extends OpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
     private Robot robot;
     private Follower follower;
-    private Timer stateTimer, loopTimer;
-    private Vision vision;
+    private Timer stateTimer, loopTimer, telemetryTimer;
     private TelemetryManager telemetryM;
-    private Pose startPose;
-    private double initMs;
+    private Pose startPose, shootPose;
+
+    /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
+    private double targetRPM = 0;
+
+    /** true once the flywheel is within {@link Tunables#flywheelRPMMargin} of a nonzero target RPM **/
+    private boolean isFlywheelWithinMargin() {
+        return targetRPM > 0 && Math.abs(robot.flywheel.getRPM() - targetRPM) <= Tunables.flywheelRPMMargin;
+    }
 
     private enum State {
-        SHOOT_PRELOAD,
-        TIP_SPIN,
-        DRIVING_TO_GARDEN,
-        GARDEN_PICKUP,
-        DRIVING_TO_SHOOT_GARDEN_BALLS,
-        SHOOT_GARDEN_BALLS,
-        DRIVING_TO_CLOSE_FLOWER,
-        CLOSE_FLOWER_PICKUP,
-        DRIVING_TO_SHOOT_CLOSE_FLOWER_BALLS,
-        SHOOT_CLOSE_FLOWER_BALLS,
-        DRIVING_TO_FAR_FLOWER,
-        FAR_FLOWER_PICKUP,
-        DRIVING_TO_SHOOT_FAR_FLOWER_BALLS,
-        SHOOT_FAR_FLOWER_BALLS,
-        DRIVING_TO_PARK,
-        DONE
+        TRAVEL_TO_FIRST_SHOOT, // driving linearly from the start pose to the shoot pose; flywheel already spinning up
+        SPIN_UP_FIRST_SHOOT,   // at the shoot pose; waiting for flywheel to reach target RPM
+        FEED_FIRST_SHOOT,      // transfer open + intake running, feeding the preload through the flywheel
+        TRAVEL_TO_INTERMEDIATE, // driving linearly to the intermediate pose with intake running; flywheel keeps spinning
+        TRAVEL_TO_REFUEL,      // driving linearly from the intermediate pose to the refuel pose with intake running
+        REFUEL,                // sitting on the refuel pose with intake running to pick up balls
+        TRAVEL_TO_SHOOT,       // driving back to the shoot pose; intake off, flywheel keeps spinning
+        SPIN_UP_SECOND_SHOOT,  // back at the shoot pose; waiting for flywheel to be at target RPM
+        FEED_SECOND_SHOOT,     // transfer open + intake running, feeding the refueled balls through the flywheel
+        TRAVEL_TO_PARK,        // everything off; driving a bezier curve from the shoot pose to the park pose
+        DONE                   // parked; waiting for the OpMode to be stopped
     }
-    State state = State.SHOOT_PRELOAD;
-    private boolean launched;
-    private Vision.HiveState hiveBefore = Vision.HiveState.UNKNOWN; // hive state when the preload shot began
-    private long waitedMs; // rev-up, shot, intake and tip-spin time already spent
-    private int shotsLeft, intakesLeft; // fixed waits still to come, for the budget
-    private Path pathToGarden, pathToShootGarden, pathToCloseFlower, pathToSecondShot, pathToFarFlower, pathToLastShot, pathPark;
 
+    private State state = State.TRAVEL_TO_FIRST_SHOOT;
 
-    private Path bezier(Pose start, Pose[] controls, Pose end) {
-        if (controls.length == 0) return line(start, end);
-        Pose[] points = new Pose[controls.length + 2];
-        points[0] = start;
-        System.arraycopy(controls, 0, points, 1, controls.length);
-        points[points.length - 1] = end;
-        return curve(points);
-    }
+    /** startPose -> shootPose, then shootPose -> intermediatePose -> refuelPose and back. Built in {@link #init()}. **/
+    private Path startToShootPath, shootToIntermediatePath, intermediateToRefuelPath, refuelToShootPath;
+
+    /** Bezier curve from the shoot pose to the park pose, bent by {@link AutoConfig#parkControlPose}. Built in {@link #init()}. **/
+    private Path shootToParkPath;
+
+    private static final double REFUEL_ROTATE_START = 0.7;
 
     private void buildPaths() {
-        pathToGarden = tiltedHeading(bezier(config.shootPreloadPose, config.gardenControls, config.gardenPose), config.shootPreloadPose, config.gardenTiltRad, config.gardenPose);
-        pathToShootGarden = bezier(config.gardenPose, config.shootGardenControls, config.shootGardenPose).linear(config.gardenPose, config.shootGardenPose);
-        if (config.closeFlowerPose == null) {
-            pathPark = park(config.shootGardenPose);
-        } else {
-            pathToCloseFlower = turnThenHold(bezier(config.shootGardenPose, config.closeFlowerControls, config.closeFlowerPose), config.shootGardenPose, config.closeFlowerPose);
-            pathToSecondShot = line(config.closeFlowerPose, config.secondShotPose).linear(config.closeFlowerPose, config.secondShotPose);
-            pathToFarFlower = turnThenHold(bezier(config.secondShotPose, config.farFlowerControls, config.farFlowerPose), config.secondShotPose, config.farFlowerPose);
-            pathToLastShot = bezier(config.farFlowerPose, config.lastShotControls, config.lastShotPose).heading(Interpolator.piecewise()
-                    .until(0.5, Interpolator.constant(config.farFlowerPose))
-                    .until(1, Interpolator.linear(config.farFlowerPose, config.lastShotPose)));
-            pathPark = park(config.lastShotPose);
-        }
+        startToShootPath = line(startPose, shootPose).linear(startPose, shootPose);
+        shootToIntermediatePath = line(shootPose, config.intermediatePose).linear(shootPose, config.intermediatePose);
+        intermediateToRefuelPath = line(config.intermediatePose, config.refuelPose)
+                .heading(Interpolator.piecewise()
+                        .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
+                        .until(1.0, Interpolator.linear(config.intermediatePose, config.refuelPose)))
+                .with(
+                        Constants.foresightConfig.maxPathSpeed.at(0.35)
+                );
+        refuelToShootPath = line(config.refuelPose, shootPose).linear(config.refuelPose, shootPose);
+        // curve(start, control, end): the control point is not driven through, it only pulls the path toward it.
+        shootToParkPath = curve(shootPose, config.parkControlPose, config.parkPose)
+                .linear(shootPose, config.parkPose);
     }
 
-    private Path park(Pose from) {
-        return config.closeFlowerPose == null
-                ? bezier(from, config.endControls, config.endPose).linear(from, config.endPose)
-                : bezier(from, config.endControls, config.endPose).tangent();
-    }
-    private Path tiltedHeading(Path path, Pose from, double tiltRad, Pose to) {
-        Pose tilt = to.withHeading(tiltRad);
-        return path.heading(Interpolator.piecewise()
-                .until(0.5, Interpolator.linear(from, tilt))
-                .until(0.75, Interpolator.constant(tilt))
-                .until(1, Interpolator.linear(tilt, to)));
-    }
-
-    private Path turnThenHold(Path path, Pose from, Pose to) { // heading finishes turning 70% of the way along, then holds
-        return path.heading(Interpolator.piecewise()
-                .until(0.7, Interpolator.linear(from, to))
-                .until(1, Interpolator.constant(to)));
-    }
-
-    private boolean arrived() {
-        return !follower.isBusy() || stateTimer.get(TimeUnit.MILLISECONDS) > Tunables.pathTimeoutMs;
-    }
-
-    private boolean dwelled(long dwellMs) {
-        return stateTimer.get(TimeUnit.MILLISECONDS) >= dwellMs;
-    }
-
-    private void followThen(Path path, State next) {
-        follower.follow(path);
-        setPathState(next);
-    }
-
-    private long stateMs() {
-        return (long) stateTimer.get(TimeUnit.MILLISECONDS);
-    }
-
-    private long fixedWaitsLeftMs(int shots) { // launch sequence and intake dwells still to come; none of it can be shortened
-        long launchMs = (long) (Tunables.launchIntakeStopTime + Tunables.launchTransferOpeningTime + Tunables.launchShootingTime);
-        return shots * launchMs + intakesLeft * Tunables.intakeTimeMs;
-    }
-
-    // budget left for this shot's flywheel spin-up once every later wait is reserved at its fixed length
-    private long spinUpCapMs() {
-        return Math.max(0, Tunables.autoWaitBudgetMs - waitedMs - fixedWaitsLeftMs(shotsLeft));
-    }
-
-    // budget left after the shot in progress finishes and every later wait is reserved
-    private long tipPoolMs() {
-        return Tunables.autoWaitBudgetMs - waitedMs - stateMs() - fixedWaitsLeftMs(shotsLeft - 1);
-    }
-
-    // the hive tipped if Vision confirmed a different state than before the preload shot; no baseline counts as not tipped
-    private boolean hiveTipped() {
-        Vision.HiveState now = vision.getLastHiveState();
-        return hiveBefore != Vision.HiveState.UNKNOWN && now != Vision.HiveState.UNKNOWN && now != hiveBefore;
-    }
-
-    private boolean shot() {
-        if (!launched && (flywheelReady() || stateMs() >= spinUpCapMs())) {
-            robot.startLaunch();
-            launched = true;
-        }
-        return launched && !robot.isLaunching();
-    }
-
-    private boolean flywheelReady() {
-        return Math.abs(Math.abs(robot.flywheel.getRPM()) - Tunables.autoShootRpm) <= Tunables.shooterToleranceRpm;
-    }
-
-    private void autoPathUpdate() {
+    private void autoUpdate() {
         switch (state) {
-            case SHOOT_PRELOAD:
-                if (shot()) {
-                    if (!hiveTipped() && tipPoolMs() >= Tunables.tipSpinMs) {
-                        setPathState(State.TIP_SPIN);
-                    } else {
-                        followThen(pathToGarden, State.DRIVING_TO_GARDEN);
-                    }
+            case TRAVEL_TO_FIRST_SHOOT:
+                if (!follower.isBusy()) {
+                    setState(State.SPIN_UP_FIRST_SHOOT);
                 }
                 break;
-            case TIP_SPIN: // the preload shot did not tip the hive: spin in place to shake it over
-                Pose here = follower.pose();
-                follower.hold(here.withHeading(here.heading() + Math.PI / 2));
-                for (int i = 0; i < 20; i++) telemetryM.addLine("f*ck");
-                requestOpModeStop();
-                break;
-            case DRIVING_TO_GARDEN: // intake is running, so balls swept into the corner are picked up on the way
-                if (arrived()) setPathState(State.GARDEN_PICKUP);
-                break;
-            case GARDEN_PICKUP: // wait while the intake collects
-                if (dwelled(Tunables.intakeTimeMs)) {
-                    if (config.closeFlowerPose != null) robot.flower.goDown(); // arms drop on the way to the garden shot so they are well down before the close flowers
-                    followThen(pathToShootGarden, State.DRIVING_TO_SHOOT_GARDEN_BALLS);
+            case SPIN_UP_FIRST_SHOOT:
+                if (isFlywheelWithinMargin()) { // don't feed balls until we're actually at speed
+                    startShooting();
+                    setState(State.FEED_FIRST_SHOOT);
                 }
                 break;
-            case DRIVING_TO_SHOOT_GARDEN_BALLS:
-                if (arrived()) setPathState(State.SHOOT_GARDEN_BALLS);
-                break;
-            case SHOOT_GARDEN_BALLS:
-                if (shot()) {
-                    if (config.closeFlowerPose == null) {
-                        robot.intake.off();
-                        followThen(pathPark, State.DRIVING_TO_PARK);
-                    } else {
-                        followThen(pathToCloseFlower, State.DRIVING_TO_CLOSE_FLOWER);
-                    }
+            case FEED_FIRST_SHOOT:
+                // FEEDING IS HERE
+                // the if statement below represents AFTER we've fed the balls
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
+                    robot.transfer.close();
+                    robot.intake.forward(); // intake on while driving so we're collecting as we arrive
+                    follower.follow(shootToIntermediatePath);
+                    setState(State.TRAVEL_TO_INTERMEDIATE);
                 }
                 break;
-            case DRIVING_TO_CLOSE_FLOWER:
-                if (arrived()) setPathState(State.CLOSE_FLOWER_PICKUP);
-                break;
-            case CLOSE_FLOWER_PICKUP: // wait while the intake collects
-                if (dwelled(Tunables.intakeTimeMs)) followThen(pathToSecondShot, State.DRIVING_TO_SHOOT_CLOSE_FLOWER_BALLS);
-                break;
-            case DRIVING_TO_SHOOT_CLOSE_FLOWER_BALLS:
-                if (arrived()) setPathState(State.SHOOT_CLOSE_FLOWER_BALLS);
-                break;
-            case SHOOT_CLOSE_FLOWER_BALLS:
-                if (shot()) followThen(pathToFarFlower, State.DRIVING_TO_FAR_FLOWER);
-                break;
-            case DRIVING_TO_FAR_FLOWER:
-                if (arrived()) setPathState(State.FAR_FLOWER_PICKUP);
-                break;
-            case FAR_FLOWER_PICKUP: // wait while the intake collects
-                if (dwelled(Tunables.intakeTimeMs)) followThen(pathToLastShot, State.DRIVING_TO_SHOOT_FAR_FLOWER_BALLS);
-                break;
-            case DRIVING_TO_SHOOT_FAR_FLOWER_BALLS:
-                if (arrived()) setPathState(State.SHOOT_FAR_FLOWER_BALLS);
-                break;
-            case SHOOT_FAR_FLOWER_BALLS:
-                if (shot()) {
-                    robot.intake.off();
-                    if (config.closeFlowerPose != null) robot.flower.goUp();
-                    followThen(pathPark, State.DRIVING_TO_PARK);
+            case TRAVEL_TO_INTERMEDIATE:
+                if (!follower.isBusy()) {
+                    follower.follow(intermediateToRefuelPath);
+                    setState(State.TRAVEL_TO_REFUEL);
                 }
                 break;
-            case DRIVING_TO_PARK:
-                if (arrived()) {
-                    setPathState(State.DONE);
-                    requestOpModeStop();
+            case TRAVEL_TO_REFUEL:
+                if (!follower.isBusy()
+                        // make sure it times out after getting stuck on a ball
+                        || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime) {
+                    setState(State.REFUEL);
+                }
+                break;
+            case REFUEL:
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
+                    robot.intake.forward();
+                    follower.follow(refuelToShootPath);
+                    setState(State.TRAVEL_TO_SHOOT);
+                }
+                break;
+            case TRAVEL_TO_SHOOT:
+                if (!follower.isBusy()) {
+                    setState(State.SPIN_UP_SECOND_SHOOT);
+                }
+                break;
+            case SPIN_UP_SECOND_SHOOT:
+                if (isFlywheelWithinMargin()) {
+                    startShooting();
+                    setState(State.FEED_SECOND_SHOOT);
+                }
+                break;
+            case FEED_SECOND_SHOOT:
+                // FEEDING IS HERE
+                // the if statement below represents AFTER we've fed the balls
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.feedDurationMillis) {
+                    shutOff();
+                    follower.follow(shootToParkPath);
+                    setState(State.TRAVEL_TO_PARK);
+                }
+                break;
+            case TRAVEL_TO_PARK:
+                if (!follower.isBusy()) {
+                    setState(State.DONE);
                 }
                 break;
             case DONE:
+                requestOpModeStop();
                 break;
         }
     }
 
-    private void setPathState(State newState) {
-        switch (state) { // waits spent in the state we are leaving come out of the shared budget
-            case SHOOT_PRELOAD:
-            case SHOOT_GARDEN_BALLS:
-            case SHOOT_CLOSE_FLOWER_BALLS:
-            case SHOOT_FAR_FLOWER_BALLS:
-                waitedMs += stateMs();
-                shotsLeft--;
-                break;
-            case GARDEN_PICKUP:
-            case CLOSE_FLOWER_PICKUP:
-            case FAR_FLOWER_PICKUP:
-                waitedMs += stateMs();
-                intakesLeft--;
-                break;
-            case TIP_SPIN:
-                waitedMs += stateMs();
-                break;
-            default:
-                break;
-        }
-        if (newState == State.SHOOT_PRELOAD) hiveBefore = vision.getLastHiveState();
+    private void startShooting() {
+        robot.transfer.open();
+        robot.intake.forward();
+    }
+
+    private void shutOff() {
+        robot.transfer.close();
+        robot.intake.off();
+        targetRPM = 0;
+    }
+
+    private void setState(State newState) {
         state = newState;
-        launched = false;
         stateTimer.reset();
     }
 
@@ -257,12 +177,8 @@ public abstract class BozoAuto extends OpMode {
     public void loop() {
         loopTimer.reset();
         follower.update();
-        vision.update();
-        updateHandoff();
-        // flywheel stays spun up
-        robot.flywheel.update(state == State.DRIVING_TO_PARK || state == State.DONE ? 0 : Tunables.autoShootRpm);
-        robot.updateLaunch(); // ends a volley
-        autoPathUpdate();
+        robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
+        autoUpdate();
         if (Tunables.isDebugging) {
             sendTelemetry(false);
         }
@@ -275,20 +191,16 @@ public abstract class BozoAuto extends OpMode {
         config = buildConfig();
         loopTimer = new Timer();
         stateTimer = new Timer();
+        telemetryTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = new Robot(hardwareMap);
-        vision = new Vision(hardwareMap, config.isBlue);
-        shotsLeft = config.closeFlowerPose == null ? 2 : 4;
-        intakesLeft = config.closeFlowerPose == null ? 1 : 3;
-        telemetryM.debug("Creating follower");
+        telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
         follower = Constants.create(hardwareMap);
         startPose = config.startPose;
-        telemetryM.debug("Building paths");
-        telemetryM.update(telemetry);
-        buildPaths();
+        shootPose = config.shootPose;
         follower.setPose(startPose);
-        initMs = loopTimer.get(TimeUnit.MILLISECONDS);
+        buildPaths();
         sendTelemetry(true);
         telemetryM.update(telemetry);
     }
@@ -299,29 +211,43 @@ public abstract class BozoAuto extends OpMode {
         telemetryM.update(telemetry);
     }
 
+    @Override
+    public void start() {
+        targetRPM = Tunables.shootRPM; // begin spinning up immediately
+        telemetryTimer.reset();
+        loopTimer.reset(); // so the first loop() doesn't report init time as loop time
+        follower.follow(startToShootPath);
+        setState(State.TRAVEL_TO_FIRST_SHOOT);
+    }
 
     @Override
     public void stop() {
-        robot.flywheel.update(0);
-        robot.intake.off();
+        if (robot != null) {
+            shutOff();
+            robot.flywheel.update(0, robot.getExpansionHubVoltage());
+        }
         updateHandoff();
     }
-
     public void updateHandoff() {
-        HandoffState.pose = follower.pose();
-        HandoffState.fromAuto = true;
+        if (follower != null) {
+            HandoffState.pose = follower.pose();
+        }
     }
 
     public void sendTelemetry(boolean sendInitTime) {
         if (sendInitTime) {
-            telemetryM.addLine("INIT COMPLETE");
-            telemetryM.debug("Init " + initMs);
+            telemetryM.addLine("INIT COMPLETE: READY TO START");
+            telemetryM.debug("Init time (millis): " + loopTimer.get(TimeUnit.SECONDS));
+        } else {
+            if (targetRPM > 0 && !isFlywheelWithinMargin()) telemetryM.debug("WARNING: FLYWHEEL OUT OF MARGIN");
         }
+        Pose pose = follower.pose(); // read once; each call may allocate
         telemetryM.debug("State: " + state);
-        telemetryM.addData("x: ", follower.pose().x());
-        telemetryM.addData("y: ", follower.pose().y());
-        telemetryM.addData("Heading: ", follower.pose().heading());
-        telemetryM.addData("Flywheel RPM: ", robot.flywheel.getRPM());
-        telemetryM.debug("Time: " + getRuntime());
+        telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
+        telemetryM.addData("flywheel target RPM", targetRPM);
+        telemetryM.addData("x", pose.x());
+        telemetryM.addData("y", pose.y());
+        telemetryM.addData("Heading", pose.heading());
+        telemetryM.debug("OpMode time (seconds): " + getRuntime());
     }
 }

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
@@ -17,20 +18,21 @@ public class Flywheel {
 
     /** stuff that changes **/
     private PIDF pidf;
+    private double lastSetRPM = 0;
 
     public Flywheel(HardwareMap hw) {
         // launch motors (all are DcMotorEx for current monitoring)
         launchMotor = hw.get(DcMotorEx.class, "launchMotor");
 
         // set up hardware
-        launchMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        launchMotor.setDirection(DcMotorEx.Direction.REVERSE);
         launchMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
 
         // set up PIDF
         pidf = new PIDF(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF); // create our PIDF controller for our launch motors
     }
 
-    public void update(double RPM) {
+    public void update(double RPM, double voltage) {
         pidf.updateTerms(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF);
         double currentTPS = getTPS();
         double setpointTPS = RPMToTPS(RPM);
@@ -38,14 +40,7 @@ public class Flywheel {
 
         if (setpointTPS == 0) {
             newPower = 0.0;
-        } else if (setpointTPS - currentTPS < Tunables.flywheelQuickStartThreshold) {
-            // small difference -> use PIDF
-            newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
-        } else {
-            // big difference -> full power
-            newPower = 1.0;
-            pidf.reset(); // keep the lastTime from growing too large and causing integral accumulation
-        }
+        } else newPower = pidf.calc(setpointTPS, currentTPS) * getVoltageCompensation(voltage); // calc new motor power
 
         double clippedPower = Range.clip(newPower, -Tunables.maxFlywheelBraking, 1.0);
 
@@ -58,8 +53,6 @@ public class Flywheel {
         launchMotor.setPower(clippedPower);
     }
 
-    /** internal methods **/
-
     public double getTPS() {
         // get TPS of flywheel in the fastest way while also being able to fall back between encoders
         return Math.abs(launchMotor.getVelocity());
@@ -71,9 +64,11 @@ public class Flywheel {
         return TPSToRPM(launchMotor.getVelocity());
     }
 
+    public double getLastSetRPM() { return lastSetRPM; }
+
     // these should only be used for tuning
     public double getPower() {
-        return launchMotor.getPower(); // doesn't mater which one we query for power - we're both setting them the same
+        return launchMotor.getPower();
     }
 
     public double getCurrent() { // return sum current in amps
@@ -82,6 +77,13 @@ public class Flywheel {
 
     private static double getMotorTicksPerOutputRev() {
         return MOTOR_TICKS_PER_MOTOR_REV / LAUNCH_RATIO;
+    }
+
+    // return how much to multiply power by to compensate for voltage fall
+    private double getVoltageCompensation(double voltage) {
+        return Range.scale(voltage,
+                Tunables.flywheelVoltageStart, Tunables.flywheelVoltageEnd,
+                Tunables.flywheelCompensationMax, 1.0);  // reverse to scale inversely
     }
 
     public double TPSToRPM(double TPS) {

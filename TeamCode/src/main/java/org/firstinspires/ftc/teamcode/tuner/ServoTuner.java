@@ -22,6 +22,8 @@ public class ServoTuner extends OpMode {
     }
 
     private TuneMode mode = TuneMode.UNSELECTED;
+    private boolean isLocked = false;
+    private double rightStickAmount, leftStickAmount;
 
     private Transfer transfer;
     private Flower flower;
@@ -66,11 +68,17 @@ public class ServoTuner extends OpMode {
 
     @Override
     public void loop() {
-        double rightStickAmount = (gamepad1.right_stick_y + 1) / 2; // map from (-1)<->(1) to (0)<->(1)
-        double leftStickAmount = (gamepad1.left_stick_y+ 1) / 2; // map from (-1)<->(1) to (0)<->(1)
+        if (gamepad1.rightBumperWasPressed()) isLocked = !isLocked;
+
+        if (!isLocked) {
+            rightStickAmount = (gamepad1.right_stick_y + 1) / 2; // map from (-1)<->(1) to (0)<->(1)
+            leftStickAmount = (gamepad1.left_stick_y + 1) / 2; // map from (-1)<->(1) to (0)<->(1)
+        }
 
         telemetryM.addLine("current tuning mode is: " + mode);
         telemetryM.addLine("you may change the tuning mode by restarting this OpMode");
+        telemetryM.addData("isLocked", isLocked);
+        telemetryM.addLine("toggle isLocked with right bumper");
 
         switch (mode) {
             case TRANSFER:
