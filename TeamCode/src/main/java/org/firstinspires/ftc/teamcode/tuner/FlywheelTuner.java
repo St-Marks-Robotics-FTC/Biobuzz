@@ -1,5 +1,3 @@
-/** the purpose of OpMode is to test flywheel max speed and tune flywheel PIDF **/
-
 package org.firstinspires.ftc.teamcode.tuner;
 
 import com.bylazar.telemetry.PanelsTelemetry;

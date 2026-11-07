@@ -12,7 +12,6 @@ public class BlueFarAuto extends BozoAuto {
     public static Pose SHOOT_GARDEN_POSE = new Pose(82.2785, 132, Math.toRadians(270));
     public static Pose PARK_POSE = new Pose(130.3962, 34.4623, Math.toRadians(180));
 
-    // bezier control points (ai did it bruv I don't know how controls work)
     public static Pose SHOOT_PRELOAD_CONTROL_1 = new Pose(73.4354, 14.3792);
     public static Pose SHOOT_PRELOAD_CONTROL_2 = new Pose(84.8638, 70.5169);
     public static Pose SHOOT_PRELOAD_CONTROL_3 = new Pose(83.1292, 24.8292);

@@ -1,7 +1,3 @@
-/** class that holds all of our constants that we want to be able to tune quickly
- * all values in are milliseconds unless otherwise stated
- */
-
 package org.firstinspires.ftc.teamcode;
 
 import com.bylazar.configurables.annotations.Configurable;
@@ -9,7 +5,6 @@ import com.pedropathing.math.Pose;
 
 @Configurable
 public class Tunables {
-    // all members must be initialized with the keywords `public static`... in order to be usable
 
     public static boolean isDebugging = false; // whether to print additional debug info (slow)
     public static double turnRateMultiplier = 0.75; // reduce turn speed in TeleOp to 75%
@@ -33,7 +28,7 @@ public class Tunables {
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
-    public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
+    public static double maxFlywheelBraking = 1.0;
     public static double flywheelVoltageStart = 12.0; // start voltage of compensation scale
     public static double flywheelVoltageEnd = 13.5;   // end voltage of compensation scale
     public static double flywheelCompensationMax = 1.2; // max amount to scale voltage
@@ -43,8 +38,8 @@ public class Tunables {
     public static boolean intakeUsePowerSave = true;
     public static int intakePowerSaveWaitInterval = 30; // how often to check for a stalled intake while running
     public static int intakePowerSaveCheckInterval = 30; // how often to update intake power/velocity check in millis
-    public static double intakePowerSaveTriggerAmps = 6; // if we are drawing more amps than this, trigger power save
-    public static double intakePowerSaveTriggerVelocity = 0; // if we have a tps less than this, trigger power save
+    public static double intakePowerSaveTriggerAmps = 6;
+    public static double intakePowerSaveTriggerVelocity = 0;
     public static double intakeHoldPower = 0.0; // minimum power for balls to not fall out of intake
 
     /** transfer tunables (used in Transfer.java) **/
@@ -69,7 +64,7 @@ public class Tunables {
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
     public static long flowerRefuelDurationMillis = 400; // how long to intake while driving through the refuel line
     public static long refuelDurationMillis = 200; // how long to intake while driving through the refuel line
-    public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
+    public static double maxTravelToRefuelTime = 1500;
 
     /** vision tunables (used in subsys/Vision.java) **/
 
@@ -79,8 +74,6 @@ public class Tunables {
     public static double visionZOffset = 0; // in, subtracted from raw z
     public static double visionZPerDist = 0; // in/in of avg tag distance, subtracted from raw z
 
-    // limelight - pedro = R(heading) * (forward, left) + bias; Vision subtracts it
-    // fit on better_z_vision.csv (11-07), non-flip frames
     public static double visionCameraErrorForward = 0.356; // in, robot frame
     public static double visionCameraErrorLeft = -3.763;  // in, robot frame
     public static double visionBlueBiasX = -3.426; // in, field frame
@@ -88,13 +81,11 @@ public class Tunables {
     public static double visionRedBiasX = -1.477;
     public static double visionRedBiasY = 0.130;
 
-    // reject vision poses farther than visionMaxSpeed * (time since last accepted) + visionJumpMargin
     public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
     public static double visionJumpMargin = 4; // in, allowed frame noise
-    public static double visionPoseGain = 0.1; // teleop: fraction of vision - odometry x/y applied per new frame (0 = off)
+    public static double visionPoseGain = 0.1;
     public static double visionPoseMaxSpeed = 10; // in/s, teleop relocalizes only below this
 
-    // VisionTuner: tape-measured pose of the current calibration spot (A button applies it)
     public static double visionTunerSpotX = 72;
     public static double visionTunerSpotY = 72;
 
@@ -104,8 +95,6 @@ public class Tunables {
     public static double autoRPMMultiplier = 1; // multiply auto RPM output by this
     public static double autoRPMAddition = 0; // add this many RPMs to auto RPM output
 
-    // goal poses
-    // headings should be to score a ball, not the direction that the goal faces
     public static Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
     public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
     public static Pose redAudienceGoalPose = new Pose(59, 58, Math.toRadians(90));
@@ -119,5 +108,5 @@ public class Tunables {
     public static long autoTargetLoopLength = 25; // autos generally have longer loops
 
     public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
-    public static boolean softScheduling = false; // if true (or isDebugging is true): update device once max staleness has been exceeded
+    public static boolean softScheduling = false;
 }

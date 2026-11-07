@@ -82,12 +82,11 @@ public abstract class BozoTeleOp extends OpMode {
 
         follower.update();
 
-        robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
+        robot.scheduler.update(loopTimer.nanoseconds());
 
         updateTelemetry();
     }
 
-    // nudge odometry x/y toward each new vision frame; skipped while turning or moving fast (camera latency)
     private void relocalize() {
         Pose visionPose = vision.takeNewBotPose();
         if (visionPose == null || isTurning) return;
@@ -136,14 +135,12 @@ public abstract class BozoTeleOp extends OpMode {
     // hand drive motors from follower back to Drive
     private void endTurn() {
         follower.stop(); // follower goes idle so it stops computing hold powers
-        follower.drivetrain.stop(); // zero the motors now so pedro's cache, ours (zeroed in startTurn) and the hardware all match
+        follower.drivetrain.stop();
         isTurning = false;
     }
 
     // hand motors from Drive to follower
     private void startTurn(Pose target) {
-        // zero the motors now so pedro's cache, ours and the hardware all match
-        // skip if the follower already has the motors, otherwise we'd write over its hold powers
         if (!isTurning) drive.stopNow();
         lastTurnPose = target;
         follower.hold(lastTurnPose);
@@ -190,7 +187,6 @@ public abstract class BozoTeleOp extends OpMode {
         robot.update();
 
         if (gamepad1.leftBumperWasPressed()) {
-            // they got rid of follower.turnTo() so we have to make it ourselves
             startTurn(new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.angle()));
         }
     }
@@ -201,7 +197,6 @@ public abstract class BozoTeleOp extends OpMode {
         } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
             lastScoringData = field.getScoringData(false, follower.pose());
         } else {
-            // we don't have data from Vision so we fall back to odometry
             if (follower.pose().y() <= 72) {
                 lastScoringData = field.getScoringData(true, follower.pose());
             } else {
@@ -217,7 +212,6 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.addData("desired RPM", robot.flywheel.getLastSetRPM());
         telemetryM.addData("loop time (before telemetry)", loopTime);
 
-        // only output debug values if we're debugging - these kill our loop times
         if (Tunables.isDebugging) {
             // intake
             telemetryM.addData("power save", robot.intake.getPowerSaveTrigger());

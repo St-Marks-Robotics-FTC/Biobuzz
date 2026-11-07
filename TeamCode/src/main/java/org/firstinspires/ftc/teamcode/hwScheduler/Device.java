@@ -6,20 +6,18 @@ package org.firstinspires.ftc.teamcode.hwScheduler;
 import com.pedropathing.utils.Timer;
 
 public abstract class Device {
-    private static final double UPDATE_LENGTH_SMOOTHING = 0.2; // how much each new measurement moves our update length estimate (0-1)
-                                                               // higher values smooth more
+    private static final double UPDATE_LENGTH_SMOOTHING = 0.2;
 
     protected final double priorityMultiplier;
     protected final String name;
     protected long estimatedUpdateLength;
     protected long maxStaleness = 100 * 1000000;
-    protected long totalUpdateTime = 0; // total amount of time that we have spent updating this device
+    protected long totalUpdateTime = 0;
     boolean isUpdated = false;
-    private boolean hasWritten = false; // we have to write at least once so the hardware matches what we think it is
-    private Timer stalenessTimer; // measures time since this device has been waiting for a write (staleness)
+    private boolean hasWritten = false;
+    private Timer stalenessTimer;
     private Timer writeTimer; // measures how long a write takes
 
-    // snapshot taken once per scheduler loop so the sort sees values that don't change while sorting
     private double priority = 0;
     private long staleness = 0;
     double score = 0;
@@ -40,7 +38,6 @@ public abstract class Device {
         if (priority == 0) { stalenessTimer.reset(); } // prevent staleness increasing while there is nothing to write
         staleness = stalenessTimer.nanoseconds();
 
-        // staleness boosts priority over time so low priority devices can't be starved forever
         score = priority * (1 + staleness / stalenessReduction);
     }
 
@@ -64,7 +61,6 @@ public abstract class Device {
         return totalUpdateTime;
     }
 
-    /** write right now, skipping the scheduler. only use this outside of the main loop (like in init) **/
     public void forceUpdate() {
         update();
     }
@@ -77,7 +73,6 @@ public abstract class Device {
         long updateLength = writeTimer.nanoseconds();
 
         if (updateLength > 2 * 1000000) { // reject impossible update times
-            // smooth our estimate so one slow write doesn't lock this device out of the schedule
             estimatedUpdateLength = (long) (estimatedUpdateLength + (updateLength - estimatedUpdateLength) * UPDATE_LENGTH_SMOOTHING);
         }
         totalUpdateTime += updateLength;
@@ -86,7 +81,6 @@ public abstract class Device {
         stalenessTimer.reset(); // so we know how long since our last update
     }
 
-    /** how far the hardware is from what we want it to be (0 means nothing to write) **/
     protected abstract double getChange(); // this must be normalized to 0-1
 
     protected abstract void write();

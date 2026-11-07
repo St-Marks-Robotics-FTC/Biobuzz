@@ -42,11 +42,10 @@ public class HWScheduler {
         deviceList.add(device);
     }
 
-    public double update(long elapsedTime) { // take in time we have already spent and return time our scheduler took
+    public double update(long elapsedTime) {
         // elapsedTime is in nanoseconds
         updateTimer.reset();
 
-        // snapshot priority, staleness and score for every device (also resets isUpdated)
         for (Device device : deviceList) {
             device.refresh(Tunables.stalenessReduction);
         }
@@ -55,8 +54,6 @@ public class HWScheduler {
         deviceList.sort((d1, d2) -> Double.compare(d2.score, d1.score));
 
         if (Tunables.softScheduling || isAuto) { // force soft scheduling in auto to increase consistency
-            // first update any devices that are past their max stale time
-            // this ignores our time budget - otherwise a slow loop would let devices go stale forever
             for (Device device : deviceList) {
                 if (device.getPriority() > 0 && device.getStaleness() >= device.getMaxStaleness()) {
                     device.update();

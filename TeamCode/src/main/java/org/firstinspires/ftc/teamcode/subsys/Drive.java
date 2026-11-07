@@ -1,5 +1,3 @@
-/** mecanum drivetrain with every drive motor written through the hardware scheduler **/
-
 package org.firstinspires.ftc.teamcode.subsys;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -36,7 +34,6 @@ public class Drive {
         }
     }
 
-    /** robot-centric drive. speedMultiplier scales every input (1 = full speed, use less for slow mode) **/
     public void drive(double forward, double strafe, double turn, double speedMultiplier) {
         forward *= speedMultiplier;
         strafe *= speedMultiplier;

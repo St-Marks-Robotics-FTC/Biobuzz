@@ -1,5 +1,3 @@
-/** this is our mega-class that holds all robot functions that are shared between auto and teleop **/
-
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.utils.Timer;
@@ -79,7 +77,6 @@ public class Robot {
                 break;
             case STOPPING_INTAKE:
                 if (launchTimer.milliseconds() >= Tunables.launchIntakeStopTime) {
-                    // we've waited for intake to slow down so we can now open transfer without killing the servo
                     transfer.open();
                     launchState = LaunchState.OPENING_TRANSFER;
                     launchTimer.reset();
@@ -87,7 +84,6 @@ public class Robot {
                 break;
             case OPENING_TRANSFER:
                 if (launchTimer.milliseconds() >= Tunables.launchTransferOpeningTime) {
-                    // we've waited for transfer to open so we can now start our intake at launching power
                     intake.forward();
                     launchState = LaunchState.SHOOTING;
                     launchTimer.reset();

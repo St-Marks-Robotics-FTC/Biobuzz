@@ -23,7 +23,7 @@ public class Transfer {
         scheduler.addDevice(servo);
 
         servo.setPosition(Tunables.transferClosed); // start closed
-        servo.forceUpdate(); // write now so the servo moves during init instead of waiting for the first loop
+        servo.forceUpdate();
     }
 
     public void toggle() {

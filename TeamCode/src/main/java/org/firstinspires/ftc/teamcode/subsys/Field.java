@@ -40,7 +40,6 @@ public class Field {
         return new ScoringData(canScore, dToGoal, angleToGoal, idealRPM);
     }
 
-    // true if the audience goal is closer to the robot than the scoring goal; used when the camera hasn't seen the hive yet
     public boolean nearestGoalIsAudience(Pose robotPose) {
         Pose audience = getGoalPose(true);
         Pose scoring = getGoalPose(false);

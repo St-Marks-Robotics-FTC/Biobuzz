@@ -16,7 +16,7 @@ public class Intake {
         OFF, // intake completely unpowered
         FORWARD, // intake full power
         POWER_SAVE, // saving intake power
-        HOLD, // intake partially powered, just enough to keep balls in but save power
+        HOLD,
         REVERSE, // intake full power reverse
     }
 
@@ -41,7 +41,7 @@ public class Intake {
         // one-time config, so it doesn't need to be scheduled
         motor.m.setDirection(DcMotorEx.Direction.FORWARD);
         motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
-        motor.m.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); // we're just running our intake at 100% speed all the time, so we don't need the encoder
+        motor.m.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
         powerSaveWaitTimer = new Timer();
         powerSaveCheckTimer = new Timer();
@@ -55,8 +55,6 @@ public class Intake {
                 forward();
                 if (Tunables.intakeUsePowerSave && !overridePowerSave) {
                     if (powerSaveCheckTimer.milliseconds() >= Tunables.intakePowerSaveCheckInterval) {
-                        // now we check which of our power save triggers hit
-                        // we should ideally do this in order of what reads are the quickest / most accurate
                         if (isCurrentTrigger()) {
                             powerSaveTrigger = PowerSaveTrigger.CURRENT;
                             enablePowerSave();
@@ -75,7 +73,6 @@ public class Intake {
                 }
                 break;
             case POWER_SAVE:
-                // waiting with intake off and then after a while going back to on
                 if (powerSaveWaitTimer.milliseconds() >= Tunables.intakePowerSaveWaitInterval || overridePowerSave) {
                     // we've waiting long enough, turn intake back on
                     forward();

@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
 public class Flywheel {
     public static final int MOTOR_TICKS_PER_MOTOR_REV = 28; // encoder ticks per motor revolution
     public static final double LAUNCH_RATIO = 1; // motor->flywheel ratio (output rotations / motor rotations)
-    private static final double priorityMultiplier = 1; // PIDF makes small power changes, so boost them to keep up with bigger changes
+    private static final double priorityMultiplier = 1;
 
     /** hardware **/
     private SMotor launchMotor; // writes go through the scheduler, reads go straight to launchMotor.m
@@ -26,7 +26,6 @@ public class Flywheel {
         launchMotor = new SMotor("launchMotor", priorityMultiplier, scheduler.hw());
         scheduler.addDevice(launchMotor);
 
-        // set up hardware (one-time config, so it doesn't need to be scheduled)
         launchMotor.m.setDirection(DcMotorEx.Direction.REVERSE);
         launchMotor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
 
@@ -56,7 +55,6 @@ public class Flywheel {
     }
 
     public double getTPS() {
-        // get TPS of flywheel in the fastest way while also being able to fall back between encoders
         return Math.abs(launchMotor.m.getVelocity());
     }
 
@@ -81,7 +79,6 @@ public class Flywheel {
         return MOTOR_TICKS_PER_MOTOR_REV / LAUNCH_RATIO;
     }
 
-    // return how much to multiply power by to compensate for voltage fall
     private double getVoltageCompensation(double voltage) {
         return Range.scale(voltage,
                 Tunables.flywheelVoltageStart, Tunables.flywheelVoltageEnd,

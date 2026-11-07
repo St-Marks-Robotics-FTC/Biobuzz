@@ -80,8 +80,6 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addData("odo pos", follower.pose().toString());
             telemetryM.addData("pipeline", vision.getPipeline());
 
-            // log for limelight/fit_hive.py: spot, true_y, raw_y, raw_z, avg_dist (inches, pedro frame, uncorrected)
-            // setPose to the tape-measured pose at each spot and hold still
             if (isCalibrating) {
                 LLResult result = vision.getLatestResult();
                 if (vision.isReasonable(result)) {

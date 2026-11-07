@@ -27,7 +27,6 @@ public class SMotor extends Device {
     }
 
     protected double getChange() {
-        // motors map from -1<->1 so we halve them to align with servos 0-1
         return Math.abs(lastPower - setPower) / 2;
     }
 

@@ -1,5 +1,3 @@
-/** this OpMode provides several modes to test and tune servos **/
-
 package org.firstinspires.ftc.teamcode.tuner;
 
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -55,15 +53,9 @@ public class ServoTuner extends OpMode {
         // display servo test modes in order of TestMode enum
         telemetryM.addLine("(A): " + mode0);
         telemetryM.addLine("(B): " + mode1);
-        /*telemetryM.addLine("(X): " + mode2);
-        telemetryM.addLine("(Y): " + mode3);
-        telemetryM.addLine("(start): " + mode4); */
 
         if (gamepad1.aWasReleased()) { mode = mode0; }
         if (gamepad1.bWasReleased()) { mode = mode1; }
-        /*if (gamepad1.xWasReleased()) { mode = mode2; }
-        if (gamepad1.yWasReleased()) { mode = mode3; }
-        if (gamepad1.startWasReleased()) { mode = mode4; } */
 
         telemetryM.addLine("current testing mode is: " + mode);
 

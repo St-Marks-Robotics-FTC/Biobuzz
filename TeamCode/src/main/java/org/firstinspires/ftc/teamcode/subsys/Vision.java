@@ -1,13 +1,3 @@
-/**
- * RESOURCES
- * red tag IDs are 30-37
- * blue tag IDs are 38-45
- * https://docs.photonvision.org/en/latest/docs/apriltag-pipelines/coordinate-systems.html
- * https://docs.limelightvision.io/docs/docs-limelight/apis/ftc-programming
- *
- *
- */
-
 package org.firstinspires.ftc.teamcode.subsys;
 
 import com.pedropathing.math.Pose;
@@ -34,7 +24,7 @@ public class Vision {
 
     public static Limelight3A limelight;
 
-    public enum Pipeline { // expression of our limelight pipelines; order and elements must match exactly with pipeline indices on camera
+    public enum Pipeline {
         BLUE, // pipeline index: 0
         RED   // pipeline index: 1
     }
@@ -78,16 +68,6 @@ public class Vision {
 
     // heading: follower.pose().heading(), radians
     public void update(double heading) {
-        /**
-         *         pivot ●
-         *               |\
-         *               | \
-         *             h |  \  dToHive  (distance from pivot to robot)
-         *               |   \
-         *               |    \
-         *         floor ●-----● robot
-         *               horizontal
-         */
         LLResult result = limelight.getLatestResult();
 
         if (isReasonable(result) && result.getControlHubTimeStamp() != lastFrameTime) {
@@ -139,7 +119,6 @@ public class Vision {
             double newX = x - errorX;
             double newY = realY - errorY;
 
-            // reject jumps farther than the robot could drive at top speed since the last accepted pose (to prevent the teleportation)
             if (hasBotPose) {
                 double seconds = staleTimer.get(TimeUnit.MILLISECONDS) / 1000.0;
                 double maxTravel = Tunables.visionMaxSpeed * seconds + Tunables.visionJumpMargin;

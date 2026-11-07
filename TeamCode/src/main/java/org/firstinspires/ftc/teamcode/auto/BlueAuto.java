@@ -4,7 +4,6 @@ import com.pedropathing.math.Pose;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-/** Blue-alliance poses. See {@link AutoConfig} for what each pose means and the route that uses it. **/
 @Configurable
 @Autonomous(name = "BlueCloseAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
 public class BlueAuto extends BozoAuto {
