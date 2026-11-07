@@ -7,6 +7,7 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
@@ -16,13 +17,13 @@ import org.firstinspires.ftc.teamcode.subsys.Transfer;
 public class Robot {
     public LynxModule controlHub;
     public LynxModule expansionHub;
+    public HWScheduler scheduler;
     public Flywheel flywheel;
     public Intake intake;
     public Transfer transfer;
 
     public Flower flower;
 
-    private boolean isLaunching = false;
     private Timer launchTimer;
 
     private enum LaunchState {
@@ -44,10 +45,12 @@ public class Robot {
         controlHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         expansionHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
 
-        flywheel = new Flywheel(hw);
-        intake = new Intake(hw);
-        transfer = new Transfer(hw);
-        flower = new Flower(hw);
+        scheduler = new HWScheduler(hw); // subsystems register their devices with this
+
+        flywheel = new Flywheel(scheduler);
+        intake = new Intake(scheduler);
+        transfer = new Transfer(scheduler);
+        flower = new Flower(scheduler);
 
         launchTimer = new Timer();
     }
@@ -90,7 +93,6 @@ public class Robot {
                 }
                 break;
             case SHOOTING:
-                // TODO: add a staggered shooting system where we go from full to zero power for each ball to fix inconsistency of forwardLaunchingPower
                 if (launchTimer.milliseconds() >= Tunables.launchShootingTime) {
                     // we've waited for all the balls to come through
                     intake.forward(); // go forward full power
@@ -100,7 +102,7 @@ public class Robot {
                 break;
         }
 
-        intake.update(isLaunching);
+        intake.update(isLaunching());
     }
 
     public boolean isLaunching() {

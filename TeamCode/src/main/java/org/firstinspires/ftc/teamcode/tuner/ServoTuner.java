@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
 
 @TeleOp(name="ServoTuner", group="Tuner")
@@ -23,17 +24,20 @@ public class ServoTuner extends OpMode {
 
     private TuneMode mode = TuneMode.UNSELECTED;
     private boolean isLocked = false;
-    private double rightStickAmount, leftStickAmount;
+    private double rightStickAmount;
 
     private Transfer transfer;
     private Flower flower;
+    private HWScheduler scheduler;
 
     private TelemetryManager telemetryM;
+    private double JOG_AMOUNT = 0.05;
 
     @Override
     public void init() {
-        transfer = new Transfer(hardwareMap);
-        flower = new Flower(hardwareMap);
+        scheduler = new HWScheduler(hardwareMap);
+        transfer = new Transfer(scheduler);
+        flower = new Flower(scheduler);
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
@@ -72,7 +76,14 @@ public class ServoTuner extends OpMode {
 
         if (!isLocked) {
             rightStickAmount = (gamepad1.right_stick_y + 1) / 2; // map from (-1)<->(1) to (0)<->(1)
-            leftStickAmount = (gamepad1.left_stick_y + 1) / 2; // map from (-1)<->(1) to (0)<->(1)
+        } else {
+            // jog using d-pad
+            if (gamepad1.dpadUpWasPressed()) rightStickAmount += JOG_AMOUNT;
+            if (gamepad1.dpadDownWasPressed()) rightStickAmount -= JOG_AMOUNT;
+            if (gamepad1.dpadLeftWasPressed()) rightStickAmount -= (JOG_AMOUNT / 2.0);
+            if (gamepad1.dpadRightWasPressed()) rightStickAmount += (JOG_AMOUNT / 2.0);
+
+            rightStickAmount = Range.clip(rightStickAmount, 0, 1); // make sure that it stays within acceptable range
         }
 
         telemetryM.addLine("current tuning mode is: " + mode);
@@ -80,20 +91,23 @@ public class ServoTuner extends OpMode {
         telemetryM.addData("isLocked", isLocked);
         telemetryM.addLine("toggle isLocked with right bumper");
 
+        telemetryM.addLine("use the right stick to tune servo position");
+        telemetryM.addLine("use the d-pad to jog the position");
+
         switch (mode) {
             case TRANSFER:
-                telemetryM.addLine("use the right stick to tune transfer positions");
                 transfer.setServoRaw(rightStickAmount);
                 telemetryM.addData("transfer pos", rightStickAmount);
                 break;
             case FLOWER:
-                telemetryM.addLine("use the right stick to tune flower positions");
                 flower.setServoRaw(rightStickAmount);
                 telemetryM.addData("flower pos", rightStickAmount);
                 break;
             case UNSELECTED:
                 throw new RuntimeException("make sure to select a tuning mode before starting!");
         }
+
+        scheduler.update(0); // write servo position
 
         telemetryM.update(telemetry);
     }
