@@ -69,8 +69,9 @@ public class Field {
     public double calcIdealRPM(double dist) {
         // from Desmos https://www.desmos.com/calculator/vzl5asi9fo
         // 10-31-2026
-        double calcRPM = (0.182518 * dist * dist) - (7.65866 * dist) + 3191.20234;
-        return Range.clip(calcRPM, 2500, 6000); // keep RPM from going too low
+        double mathRPM = (0.182518 * dist * dist) - (7.65866 * dist) + 3191.20234;
+        double autoRPM = mathRPM * Tunables.autoRPMMultiplier + Tunables.autoRPMAddition;
+        return Range.clip(autoRPM, 2500, 4000); // keep RPM from going too low or high
     }
 
     public class ScoringData {

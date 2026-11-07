@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 
 @Configurable
@@ -24,7 +25,8 @@ public class AdjustableHood extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        Flywheel flywheel = new Flywheel(hardwareMap);
+        HWScheduler scheduler = new HWScheduler(hardwareMap);
+        Flywheel flywheel = new Flywheel(scheduler);
         VoltageSensor batteryVoltage = hardwareMap.voltageSensor.iterator().next();
         Servo hood = hardwareMap.get(Servo.class, "hoodServo");
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
@@ -40,6 +42,7 @@ public class AdjustableHood extends LinearOpMode {
             double targetRpm = ball == Ball.FLOWER ? flowerRpm : pollenRpm;
             hood.setPosition(ball == Ball.FLOWER ? Tunables.flowerPos : Tunables.pollenPos);
             flywheel.update(targetRpm, batteryVoltage.getVoltage());
+            scheduler.update(0); // write flywheel power
 
             telemetryM.addLine("left bumper: FLOWER, right bumper: POLLEN");
             telemetryM.addData("mode", ball);
@@ -52,5 +55,6 @@ public class AdjustableHood extends LinearOpMode {
         }
 
         flywheel.update(0, batteryVoltage.getVoltage());
+        scheduler.update(0);
     }
 }
