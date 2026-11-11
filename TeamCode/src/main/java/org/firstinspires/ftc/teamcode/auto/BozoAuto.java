@@ -328,7 +328,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_TRAVEL_TO_SCORING_FLOWER:
                 if (finishedCreepingIntoFlower()) {
-                    robot.flower.goCollect();
+                    robot.flower.startShake();
                     setState(State.CASE1_COLLECT_SCORING_FLOWER);
                 }
                 break;
@@ -366,7 +366,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_TRAVEL_TO_AUDIENCE_FLOWER:
                 if (finishedCreepingIntoFlower()) {
-                    robot.flower.goCollect();
+                    robot.flower.startShake();
                     setState(State.CASE1_COLLECT_AUDIENCE_FLOWER);
                 }
                 break;
@@ -443,7 +443,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2_TRAVEL_TO_AUDIENCE_FLOWER:
                 if (finishedCreepingIntoFlower()) {
-                    robot.flower.goCollect();
+                    robot.flower.startShake();
                     setState(State.CASE2_COLLECT_AUDIENCE_FLOWER);
                 }
                 break;
@@ -487,7 +487,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2A_TRAVEL_TO_SCORING_FLOWER:
                 if (finishedCreepingIntoFlower()) {
-                    robot.flower.goCollect();
+                    robot.flower.startShake();
                     setState(State.CASE2A_COLLECT_SCORING_FLOWER);
                 }
                 break;
@@ -540,7 +540,7 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2B_TRAVEL_TO_SCORING_FLOWER:
                 if (finishedCreepingIntoFlower()) {
-                    robot.flower.goCollect();
+                    robot.flower.startShake();
                     setState(State.CASE2B_COLLECT_SCORING_FLOWER);
                 }
                 break;
