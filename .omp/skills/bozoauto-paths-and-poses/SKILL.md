@@ -3,7 +3,7 @@ name: bozoauto-paths-and-poses
 description: "Adding a new pose, bezier control point, or path/state branch to BozoAuto (AutoConfig, BlueAuto, RedAuto); mirror rule, tipped-hive branch, compile check."
 ---
 
-Files: `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/auto/` — `AutoConfig.java`, `BlueAuto.java`, `RedAuto.java`, `BozoAuto.java`. `BlueAuto`/`RedAuto` are the concrete `@Autonomous` OpModes (the old `*CloseAuto` subclasses were removed in b1a8a43); they MUST NOT be `abstract`. A Sinister/Panels `NullPointerException: lockOpModesWhile(...) must not be null` on init means the selected OpMode class could not be instantiated (e.g. `@Autonomous` on an `abstract` class).
+Files: `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/auto/` — `AutoConfig.java`, `BlueAuto.java`, `RedAuto.java`, `BozoAuto.java`. `BlueCloseAuto`/`RedCloseAuto` are empty subclasses, no change needed.
 
 ## Procedure for each new pose
 
