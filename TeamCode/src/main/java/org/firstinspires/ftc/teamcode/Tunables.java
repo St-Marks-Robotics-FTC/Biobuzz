@@ -55,9 +55,9 @@ public class Tunables {
     public static double transferOpen = 0.41;
     public static double transferClosed = 0.108;
 
-    public static double flowerDown = 0.85;
-    public static double flowerUp = 0.31;
-    public static double flowerCollect = 0.63;
+    public static double flowerDown = 0.7872;
+    public static double flowerUp = 0.2461;
+    public static double flowerCollect = 0.7372;
 
     /** robot tunables (used in Robot.java) **/
 
@@ -111,6 +111,31 @@ public class Tunables {
     public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
     public static Pose redAudienceGoalPose = new Pose(59, 58, Math.toRadians(90));
     public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
+    /*
+
+        blueAudienceRight (dx > 0): (94.7, 57.55)
+
+        redAudienceLeft (dx < 0): (49.0, 57.55)
+
+
+        blueAudienceLeft (dx < 0): (75, 57.55)
+
+        redAudienceRight (dx > 0): (69, 57.55)
+
+        blueGoalRight (dx > 0): (94.7, 88)
+
+        blueGoalLeft (dx < 0): (75, 88)
+
+        redGoalRight (dx > 0): (69, 88)
+
+        redGoalLeft (dx < 0): (49.0, 88)
+
+         */
+
+    //dy + dx multipliers
+    public static double dyMultiplier = 0.1;
+    public static double dxMultiplier = 0.1;
+
 
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
 
