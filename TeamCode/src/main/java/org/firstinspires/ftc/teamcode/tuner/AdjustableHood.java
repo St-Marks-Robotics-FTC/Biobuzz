@@ -15,8 +15,8 @@ import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 @Configurable
 @TeleOp(name="AdjustableHood", group="Tuner")
 public class AdjustableHood extends LinearOpMode {
-    public static double flowerRpm = 3700;
-    public static double pollenRpm = 3100;
+    public static double flowerRpm = Tunables.flowerRpm;
+    public static double pollenRpm = Tunables.pollenRpm;
 
     private enum Ball {
         FLOWER,
@@ -40,7 +40,7 @@ public class AdjustableHood extends LinearOpMode {
             if (gamepad1.rightBumperWasPressed()) ball = Ball.POLLEN;
 
             double targetRpm = ball == Ball.FLOWER ? flowerRpm : pollenRpm;
-            hood.setPosition(ball == Ball.FLOWER ? Tunables.flowerPos : Tunables.pollenPos);
+            hood.setPosition(ball == Ball.FLOWER ? Tunables.nectarPos : Tunables.pollenPos);
             flywheel.update(targetRpm, batteryVoltage.getVoltage());
             scheduler.update(0); // write flywheel power
 

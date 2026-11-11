@@ -23,8 +23,11 @@ public class Tunables {
 
     /** Adjustable Hood tunables (will be used in Hood.java) **/
 
-    public static double flowerPos = 0.4;
-    public static double pollenPos = 0.6;
+    public static double nectarPos = 0.15;
+    public static double pollenPos = 0.7;
+
+    public static double flowerRpm = 3700;
+    public static double pollenRpm = 3100;
 
     /** flywheel tunables (used in Flywheel.java) **/
 
