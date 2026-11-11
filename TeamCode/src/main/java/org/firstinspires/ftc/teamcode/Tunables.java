@@ -71,7 +71,7 @@ public class Tunables {
     public static double tagThreshold = 2; // amount of tags we need at least
     public static double shootRPM = 2975; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
-    public static long flowerRefuelDurationMillis = 400; // how long to intake while driving through the refuel line
+    public static long flowerRefuelDurationMillis = 550; // how long to intake while driving through the refuel line
     public static long refuelDurationMillis = 200; // how long to intake while driving through the refuel line
     public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
 
