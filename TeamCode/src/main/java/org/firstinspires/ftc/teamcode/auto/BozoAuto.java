@@ -584,6 +584,7 @@ public abstract class BozoAuto extends OpMode {
         vision.update(follower.pose().heading());
         follower.update();
         robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
+        robot.flower.update();
         robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
         robot.scheduler.update(loopTimer.nanoseconds()); // write hardware first: skipping this budget starves every device

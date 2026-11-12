@@ -54,7 +54,7 @@ public class Flower {
 
     public void update() { // shake n bake
         if (state == State.SHAKE_HIGH && shakeTimer.milliseconds() > Tunables.flowerShake) {
-            flowerServo.setPosition(Tunables.flowerDown + Tunables.flowerShake);
+            flowerServo.setPosition(Tunables.flowerDown + (0.5 * Tunables.flowerShake));
             state = State.SHAKE_LOW;
 
             shakeTimer.reset();
