@@ -43,10 +43,6 @@ public class Flower {
         }
     }
 
-    /**
-     * Starts oscillating the flower around {@link Tunables#flowerDown}; {@link #update()} must be called every loop
-     * to keep it going. No-op if already shaking. Call {@link #goDown()} or {@link #goUp()} to stop.
-     */
     public void startShake() {
         if (state != State.SHAKE_HIGH && state != State.SHAKE_LOW) {
             flowerServo.setPosition(shakeHighPosition());
@@ -56,11 +52,6 @@ public class Flower {
         }
     }
 
-    /**
-     * Advances the shake: flips between the high and low shake position once {@link Tunables#shakeMillis} has passed
-     * since the last flip. No-op unless shaking. A flip happens at most once per call, so the real half-period is
-     * {@code shakeMillis} rounded up to the next loop.
-     */
     public void update() { // shake n bake
         if (state == State.SHAKE_HIGH && shakeTimer.milliseconds() > Tunables.shakeMillis) {
             flowerServo.setPosition(shakeLowPosition());
