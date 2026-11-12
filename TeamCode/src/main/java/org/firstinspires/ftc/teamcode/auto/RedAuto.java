@@ -21,12 +21,12 @@ public class RedAuto extends BozoAuto {
 
     // ---------------------------------------------------------------- SCORING SIDE: the scoring flower
     public static Pose scoringFlowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
-    public static Pose scoringFlowerPose = new Pose(48, 132, Math.toRadians(90));
+    public static Pose scoringFlowerPose = new Pose(48, 131.4, Math.toRadians(90));
 
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
-    public static Pose audienceFlowerPose = new Pose(12, 48, Math.toRadians(180));
+    public static Pose audienceFlowerPose = new Pose(12.6, 48, Math.toRadians(180));
     public static Pose audienceCheckpointPose = new Pose(46, 36, Math.toRadians(75));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(12, 18, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(12, 70, Math.toRadians(90));

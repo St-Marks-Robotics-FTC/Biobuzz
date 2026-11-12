@@ -55,7 +55,7 @@ public class Tunables {
     public static double transferOpen = 0.41;
     public static double transferClosed = 0.108;
 
-    public static int    shakeMillis = 20; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
+    public static int    shakeMillis = 60; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
     public static double flowerDown = 0.7872;
     public static double flowerUp = 0.2461;
     public static double flowerShake = 0.05; // flower shake: servo position amplitude (NOT a time) around flowerDown
