@@ -46,11 +46,11 @@ public class Field {
         double goalX = 0;
         double goalY = 0;
 
-        if (robotX > target.getCenterPose().x() && robotX - target.getCenterPose().x() >= 13.5) {
+        if (robotX > target.getCenterPose().x() && robotX - target.getCenterPose().x() >= Tunables.centerThreshold) {
             goalX = target.getLeftPose().x();
             goalY = target.getLeftPose().y();
         }
-        else if (robotX < target.getCenterPose().x() && target.getCenterPose().x() - robotX >= 13.5) {
+        else if (robotX < target.getCenterPose().x() && target.getCenterPose().x() - robotX >= Tunables.centerThreshold) {
             goalX = target.getRightPose().x();
             goalY = target.getRightPose().y();
         }
