@@ -4,6 +4,8 @@ import com.pedropathing.math.Pose;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
+import org.firstinspires.ftc.teamcode.Tunables;
+
 /** Red-alliance poses. See {@link AutoConfig} for what each pose means and the route that uses it. **/
 @Configurable
 @Autonomous(name = "RedAuto", group = "Red", preselectTeleOp = "RedTeleOp")
@@ -21,12 +23,12 @@ public class RedAuto extends BozoAuto {
 
     // ---------------------------------------------------------------- SCORING SIDE: the scoring flower
     public static Pose scoringFlowerIntermediatePose = new Pose(48, 120, Math.toRadians(90));
-    public static Pose scoringFlowerPose = new Pose(48, 131.125, Math.toRadians(90));
+    public static Pose scoringFlowerPose = new Pose(48, 144 - Tunables.flowerDistance, Math.toRadians(90));
 
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
-    public static Pose audienceFlowerPose = new Pose(12.875, 48, Math.toRadians(180));
+    public static Pose audienceFlowerPose = new Pose(Tunables.flowerDistance, 48, Math.toRadians(180));
     public static Pose audienceCheckpointPose = new Pose(46, 36, Math.toRadians(75));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(12, 18, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(12, 70, Math.toRadians(90));
