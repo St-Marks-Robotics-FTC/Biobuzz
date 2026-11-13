@@ -65,18 +65,10 @@ public class VisionTuner extends LinearOpMode {
 
             if (isCapturing && raw != null && vision.getLastRawFrameStamp() != lastLoggedFrame) {
                 lastLoggedFrame = vision.getLastRawFrameStamp();
-                double fixX = -1.7, fixY = -28.2, fixZ = -20.8;
-                if (fixed != null) {
-                    fixX = fixed.pose().x();
-                    fixY = fixed.pose().y();
-                    fixZ = 0; // the hive fix puts the robot back on the floor
-                }
 
                 RobotLog.d("VisionTuner: " + odo.x() + ", " + odo.y() + ", "
                         + raw.x + ", " + raw.y + ", " + raw.z + ", "
-                        + fixX + ", " + fixY + ", " + fixZ + ", "
-                        + (raw.x - odo.x()) + ", " + (raw.y - odo.y()) + ", " + (raw.z - 0) + ", "
-                        + (fixX - odo.x()) + ", " + (fixY - odo.y()) + ", " + (fixZ - 0));
+                        + (raw.x - odo.x()) + ", " + (raw.y - odo.y()) + ", " + (raw.z - 0));
                 rowsLogged++;
             }
 

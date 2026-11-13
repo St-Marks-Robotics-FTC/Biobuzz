@@ -109,6 +109,9 @@ public class Tunables {
     public static int cameraHeight = 9;
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
 
+    public static double yfix = -28;
+    public static double zfix = -20;
+
     /** fusion tunables (used in Fusion.java) **/
 
     // all distances in inches; "std" = standard deviation = typical size of the error

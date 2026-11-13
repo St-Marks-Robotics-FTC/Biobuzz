@@ -21,12 +21,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.Tunables;
-
-import java.nio.channels.Pipe;
-import java.util.List;
-
 public class Vision {
     private double HIVE_PIVOT_HEIGHT = 43.95; // hive pivot height in inches
     private double HIVE_PIVOT_Y = 72; // y-coordinate of hive pivot
@@ -176,12 +171,15 @@ public class Vision {
 
             if (trueRelativeY == 0) return; // directly under the pivot; the std dev math below would divide by zero
 
-            double realY = HIVE_PIVOT_Y + trueRelativeY;
+            double realY = HIVE_PIVOT_Y + trueRelativeY + Tunables.yfix;
 
+            double lastY = lastBotPose.y();
             lastBotPose = new Pose(x, realY);
-
+            double newY = lastBotPose.y();
+            double diff = Math.abs(lastY - newY);
             // time the image was taken = time the Control Hub received it - camera capture latency - processing latency
             lastCaptureTimeMs = Math.round(result.getControlHubTimeStamp() - result.getCaptureLatency() - result.getTargetingLatency());
+            if (diff/lastCaptureTimeMs > 0.056){ return; } //If teleported then it is stupid
 
             double avgTagDistance = result.getBotposeAvgDist() * 39.3701; // meters -> inches
 
