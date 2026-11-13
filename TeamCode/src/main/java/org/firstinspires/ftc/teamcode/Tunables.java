@@ -84,22 +84,60 @@ public class Tunables {
     public static double visionZOffset = 0; // in, subtracted from raw z
     public static double visionZPerDist = 0; // in/in of avg tag distance, subtracted from raw z
 
-    // limelight - pedro = R(heading) * (forward, left) + bias; Vision subtracts it
-    // fit on better_z_vision.csv (11-07), non-flip frames
-    public static double visionCameraErrorForward = 0.356; // in, robot frame
-    public static double visionCameraErrorLeft = -3.763;  // in, robot frame
-    public static double visionBlueBiasX = -3.426; // in, field frame
-    public static double visionBlueBiasY = -0.260;
-    public static double visionRedBiasX = -1.477;
-    public static double visionRedBiasY = 0.130;
+    // camera offset
+    public static double visionCameraErrorForward = 0.446;
+    public static double visionCameraErrorLeft = -4.165;
+    public static double visionBlueBiasX = -4.001;
+    public static double visionBlueBiasY = -0.267;
+    public static double visionRedBiasX = -1.392;
+    public static double visionRedBiasY = 0.006;
 
-    // reject vision poses farther than visionMaxSpeed * (time since last accepted) + visionJumpMargin
+    public static double visionMinGoalDist = 35; // in, ignore vision closer than this to the hive
+    public static double visionMaxZSensitivity = 1.4; // reject if hive math amplifies z error this much
+    public static double visionSensitivityRef = 1.2; // sensitivity above this inflates std dev
+    public static double visionJumpMax = 8; // in, reject frames this far from the 9-frame median
+
     public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
     public static double visionJumpMargin = 4; // in, allowed frame noise
+    public static double visionPoseGain = 0.1;
+    public static double visionPoseMaxSpeed = 10; // in/s, teleop relocalizes only below this
 
-    // VisionTuner: tape-measured pose of the current calibration spot (A button applies it)
     public static double visionTunerSpotX = 72;
     public static double visionTunerSpotY = 72;
+
+    public static double visionTunerSpeed = 0.3;
+    public static double visionTunerRobotLength = 20;
+    public static double visionTunerRobotWidth = 18;
+    public static double visionTunerWallMargin = 3;
+    public static double visionTunerObstacleAMinX = 0, visionTunerObstacleAMinY = 48, visionTunerObstacleAMaxX = 43, visionTunerObstacleAMaxY = 96;
+    public static double visionTunerObstacleBMinX = 96, visionTunerObstacleBMinY = 48, visionTunerObstacleBMaxX = 144, visionTunerObstacleBMaxY = 96;
+    public static double visionTunerGridSpacing = 8;
+    public static double visionTunerGoalHeadingLimitDegrees = 100; // sweep +-this around goal
+    public static double visionTunerSpinDegPerSec = 45;
+    public static double visionTunerSpinEnterRadius = 4; // in, start spin this close to spot
+    public static double visionTunerNoRecordMinY = 48; // full-width no-record band
+    public static double visionTunerNoRecordMaxY = 96;
+    public static double visionTunerLatencyOffsetMillis = 0; // extra camera delay
+    public static int visionTunerMinTags = 2;
+    public static double visionTunerTrueZ = 0;
+    public static double visionTunerMoveTimeoutMillis = 6000; // stall timeout
+
+    public static int cameraHeight = 9;
+    public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
+
+    /** fusion tunables (used in Fusion.java) **/
+
+    // all distances in inches; "std" = standard deviation = typical size of the error
+    public static double fusionStartStd = 2; // how unsure we are about our starting pose after auto
+    public static double fusionOdoVariancePerInch = 0.02; // how much odometry uncertainty grows per inch driven (in^2 per in)
+    public static double fusionVisionBaseStd = 0.187; // vision error with ONE tag at fusionVisionRefDistance
+    public static double fusionVisionRefDistance = 59; // distance (in) that fusionVisionBaseStd was measured at
+    public static double fusionTimingErrorMs = 10; // how far off our vision timing might be; turns driving speed into error
+    public static double fusionTurnStd = 1.0; // extra vision error per rad/s of turning (motion blur)
+    public static double fusionMinVisionStd = 0.5; // never trust a vision frame more than this, even if everything says it's perfect
+    public static double fusionGateSigmas = 3; // reject vision frames more than this many std devs from our estimate
+    public static int fusionRejectsBeforeDoubt = 10; // rejected frames in a row before we start doubting odometry instead
+    public static double fusionExtraLatencyMs = 0; // extra delay on top of what the Limelight reports; tune if fused pose wobbles when driving
 
     /** field tunables (used in Field.java) **/
 
@@ -107,8 +145,6 @@ public class Tunables {
     public static double autoRPMMultiplier = 1; // multiply auto RPM output by this
     public static double autoRPMAddition = 0; // add this many RPMs to auto RPM output
 
-    // goal poses
-    // headings should be to score a ball, not the direction that the goal faces
     public static Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
     public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
     public static Pose redAudienceGoalPose = new Pose(59, 58, Math.toRadians(90));
