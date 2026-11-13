@@ -1,0 +1,1795 @@
+Compiled from "Foresight.java"
+public class com.pedropathing.algorithm.Foresight implements com.pedropathing.algorithm.Algorithm {
+  public final com.pedropathing.algorithm.ForesightConfig config;
+
+  public final com.pedropathing.algorithm.ForesightPowerAllocator allocator;
+
+  private double closestT;
+
+  private double curvature;
+
+  private double projectedClosestT;
+
+  private double coastClosestT;
+
+  private double curveCompletion;
+
+  private double remainingDistance;
+
+  private double tangentialSpeed;
+
+  private com.pedropathing.math.Pose closestPose;
+
+  private com.pedropathing.math.Vector2D closestTangent;
+
+  private com.pedropathing.math.Vector2D closestNormal;
+
+  private final com.pedropathing.utils.Timer timer;
+
+  private boolean resetTimer;
+
+  private double headingError;
+
+  private double translationalError;
+
+  private double targetVelocity;
+
+  private boolean busy;
+
+  private boolean isBraking;
+
+  private final com.pedropathing.math.Vector2D naturalDeceleration;
+
+  private com.pedropathing.paths.PathTracker tracker;
+
+  private com.pedropathing.localization.MotionState currentState;
+
+  private java.util.Map<java.lang.String, java.lang.Object> debug;
+
+  public com.pedropathing.algorithm.Foresight(com.pedropathing.algorithm.ForesightConfig);
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+       4: aload_0
+       5: new           #7                  // class com/pedropathing/utils/Timer
+       8: dup
+       9: invokespecial #9                  // Method com/pedropathing/utils/Timer."<init>":()V
+      12: putfield      #10                 // Field timer:Lcom/pedropathing/utils/Timer;
+      15: aload_0
+      16: iconst_1
+      17: putfield      #16                 // Field resetTimer:Z
+      20: aload_0
+      21: iconst_0
+      22: putfield      #20                 // Field busy:Z
+      25: aload_0
+      26: iconst_0
+      27: putfield      #23                 // Field isBraking:Z
+      30: aload_0
+      31: new           #26                 // class java/util/HashMap
+      34: dup
+      35: invokespecial #28                 // Method java/util/HashMap."<init>":()V
+      38: putfield      #29                 // Field debug:Ljava/util/Map;
+      41: aload_0
+      42: aload_1
+      43: putfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      46: aload_0
+      47: new           #37                 // class com/pedropathing/algorithm/ForesightPowerAllocator
+      50: dup
+      51: aload_1
+      52: invokespecial #39                 // Method com/pedropathing/algorithm/ForesightPowerAllocator."<init>":(Lcom/pedropathing/algorithm/ForesightConfig;)V
+      55: putfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+      58: aload_0
+      59: aload_1
+      60: getfield      #46                 // Field com/pedropathing/algorithm/ForesightConfig.naturalForwardDeceleration:Lcom/pedropathing/config/ConfigVar;
+      63: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      66: checkcast     #58                 // class java/lang/Double
+      69: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      72: aload_1
+      73: getfield      #64                 // Field com/pedropathing/algorithm/ForesightConfig.naturalStrafeDeceleration:Lcom/pedropathing/config/ConfigVar;
+      76: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      79: checkcast     #58                 // class java/lang/Double
+      82: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      85: invokestatic  #67                 // Method com/pedropathing/math/Vector2D.cartesian:(DD)Lcom/pedropathing/math/Vector2D;
+      88: putfield      #73                 // Field naturalDeceleration:Lcom/pedropathing/math/Vector2D;
+      91: return
+
+  public com.pedropathing.drivetrain.DrivePowers calculatePath(com.pedropathing.drivetrain.Drivetrain, com.pedropathing.paths.PathTracker, com.pedropathing.localization.MotionState, double);
+    Code:
+       0: aload_0
+       1: aload_2
+       2: putfield      #77                 // Field tracker:Lcom/pedropathing/paths/PathTracker;
+       5: aload_0
+       6: aload_3
+       7: putfield      #81                 // Field currentState:Lcom/pedropathing/localization/MotionState;
+      10: aload_0
+      11: aload_2
+      12: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+      15: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+      18: aload_3
+      19: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+      22: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+      25: aload_0
+      26: getfield      #109                // Field closestT:D
+      29: invokeinterface #113,  4          // InterfaceMethod com/pedropathing/paths/curves/Curve.closestParameter:(Lcom/pedropathing/math/Vector2D;D)D
+      34: putfield      #109                // Field closestT:D
+      37: aload_0
+      38: invokevirtual #119                // Method parametricCondition:()Z
+      41: ifeq          125
+      44: aload_0
+      45: dconst_1
+      46: putfield      #109                // Field closestT:D
+      49: aload_2
+      50: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+      53: aload_0
+      54: getfield      #109                // Field closestT:D
+      57: invokevirtual #123                // Method com/pedropathing/paths/PathSegment.heading:(D)D
+      60: dstore        6
+      62: aload_0
+      63: aload_2
+      64: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+      67: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+      70: aload_0
+      71: getfield      #109                // Field closestT:D
+      74: invokeinterface #127,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.get:(D)Lcom/pedropathing/math/Vector2D;
+      79: dload         6
+      81: invokevirtual #130                // Method com/pedropathing/math/Vector2D.toPose:(D)Lcom/pedropathing/math/Pose;
+      84: putfield      #134                // Field closestPose:Lcom/pedropathing/math/Pose;
+      87: aload_2
+      88: invokevirtual #138                // Method com/pedropathing/paths/PathTracker.remainingPaths:()I
+      91: iconst_1
+      92: if_icmple     113
+      95: aload_2
+      96: invokevirtual #142                // Method com/pedropathing/paths/PathTracker.advance:()V
+      99: aload_0
+     100: invokevirtual #145                // Method reset:()V
+     103: aload_0
+     104: aload_1
+     105: aload_2
+     106: aload_3
+     107: dload         4
+     109: invokevirtual #148                // Method calculatePath:(Lcom/pedropathing/drivetrain/Drivetrain;Lcom/pedropathing/paths/PathTracker;Lcom/pedropathing/localization/MotionState;D)Lcom/pedropathing/drivetrain/DrivePowers;
+     112: areturn
+     113: aload_2
+     114: invokevirtual #142                // Method com/pedropathing/paths/PathTracker.advance:()V
+     117: aload_0
+     118: invokevirtual #145                // Method reset:()V
+     121: invokestatic  #152                // Method com/pedropathing/drivetrain/DrivePowers.zero:()Lcom/pedropathing/drivetrain/DrivePowers;
+     124: areturn
+     125: aload_2
+     126: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     129: aload_0
+     130: getfield      #109                // Field closestT:D
+     133: invokevirtual #123                // Method com/pedropathing/paths/PathSegment.heading:(D)D
+     136: dstore        6
+     138: aload_0
+     139: aload_2
+     140: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     143: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+     146: aload_0
+     147: getfield      #109                // Field closestT:D
+     150: invokeinterface #127,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.get:(D)Lcom/pedropathing/math/Vector2D;
+     155: dload         6
+     157: invokevirtual #130                // Method com/pedropathing/math/Vector2D.toPose:(D)Lcom/pedropathing/math/Pose;
+     160: putfield      #134                // Field closestPose:Lcom/pedropathing/math/Pose;
+     163: aload_0
+     164: aload_2
+     165: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     168: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+     171: aload_0
+     172: getfield      #109                // Field closestT:D
+     175: invokeinterface #158,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.curvature:(D)D
+     180: putfield      #161                // Field curvature:D
+     183: aload_0
+     184: aload_2
+     185: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     188: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+     191: aload_0
+     192: getfield      #109                // Field closestT:D
+     195: invokeinterface #163,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.remainingDistance:(D)D
+     200: putfield      #166                // Field remainingDistance:D
+     203: aload_0
+     204: dconst_1
+     205: aload_0
+     206: getfield      #166                // Field remainingDistance:D
+     209: aload_2
+     210: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     213: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+     216: invokeinterface #168,  1          // InterfaceMethod com/pedropathing/paths/curves/Curve.length:()D
+     221: ddiv
+     222: dsub
+     223: putfield      #171                // Field curveCompletion:D
+     226: aload_0
+     227: aload_2
+     228: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     231: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+     234: aload_0
+     235: getfield      #109                // Field closestT:D
+     238: invokeinterface #174,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.tangent:(D)Lcom/pedropathing/math/Vector2D;
+     243: putfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     246: aload_0
+     247: aload_2
+     248: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     251: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+     254: aload_0
+     255: getfield      #109                // Field closestT:D
+     258: invokeinterface #180,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.leftNormal:(D)Lcom/pedropathing/math/Vector2D;
+     263: putfield      #183                // Field closestNormal:Lcom/pedropathing/math/Vector2D;
+     266: aload_0
+     267: aload_3
+     268: invokevirtual #186                // Method com/pedropathing/localization/MotionState.velocity:()Lcom/pedropathing/math/Velocity;
+     271: invokevirtual #190                // Method com/pedropathing/math/Velocity.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     274: aload_0
+     275: getfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     278: invokevirtual #193                // Method com/pedropathing/math/Vector2D.dot:(Lcom/pedropathing/math/Vector2D;)D
+     281: putfield      #197                // Field tangentialSpeed:D
+     284: aload_0
+     285: aload_3
+     286: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     289: aload_0
+     290: getfield      #134                // Field closestPose:Lcom/pedropathing/math/Pose;
+     293: invokevirtual #200                // Method com/pedropathing/math/Pose.distance:(Lcom/pedropathing/math/Pose;)D
+     296: putfield      #204                // Field translationalError:D
+     299: aload_0
+     300: dload         6
+     302: aload_3
+     303: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     306: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     309: dsub
+     310: invokestatic  #209                // Method com/pedropathing/utils/Angle.normalizeSigned:(D)D
+     313: putfield      #214                // Field headingError:D
+     316: aload_2
+     317: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     320: getfield      #91                 // Field com/pedropathing/paths/PathSegment.curve:Lcom/pedropathing/paths/curves/Curve;
+     323: astore        6
+     325: aload_3
+     326: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     329: aload_0
+     330: aload_3
+     331: invokevirtual #217                // Method com/pedropathing/localization/MotionState.twist:()Lcom/pedropathing/math/Twist;
+     334: aload_3
+     335: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     338: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     341: invokevirtual #221                // Method getBrakeDisplacement:(Lcom/pedropathing/math/Twist;D)Lcom/pedropathing/math/Pose;
+     344: invokevirtual #225                // Method com/pedropathing/math/Pose.plus:(Lcom/pedropathing/math/Pose;)Lcom/pedropathing/math/Pose;
+     347: astore        7
+     349: aload_0
+     350: aload         6
+     352: aload         7
+     354: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     357: aload_0
+     358: getfield      #229                // Field projectedClosestT:D
+     361: invokeinterface #113,  4          // InterfaceMethod com/pedropathing/paths/curves/Curve.closestParameter:(Lcom/pedropathing/math/Vector2D;D)D
+     366: putfield      #229                // Field projectedClosestT:D
+     369: aload_0
+     370: getfield      #134                // Field closestPose:Lcom/pedropathing/math/Pose;
+     373: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     376: dstore        8
+     378: aload_2
+     379: invokevirtual #85                 // Method com/pedropathing/paths/PathTracker.current:()Lcom/pedropathing/paths/PathSegment;
+     382: aload_0
+     383: getfield      #229                // Field projectedClosestT:D
+     386: invokevirtual #123                // Method com/pedropathing/paths/PathSegment.heading:(D)D
+     389: dstore        10
+     391: aload         6
+     393: aload_0
+     394: getfield      #229                // Field projectedClosestT:D
+     397: invokeinterface #174,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.tangent:(D)Lcom/pedropathing/math/Vector2D;
+     402: astore        12
+     404: aload         6
+     406: aload_0
+     407: getfield      #229                // Field projectedClosestT:D
+     410: invokeinterface #127,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.get:(D)Lcom/pedropathing/math/Vector2D;
+     415: astore        13
+     417: aload         6
+     419: aload_0
+     420: getfield      #229                // Field projectedClosestT:D
+     423: invokeinterface #180,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.leftNormal:(D)Lcom/pedropathing/math/Vector2D;
+     428: astore        14
+     430: aload         6
+     432: aload_0
+     433: getfield      #229                // Field projectedClosestT:D
+     436: invokeinterface #163,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.remainingDistance:(D)D
+     441: dstore        15
+     443: dload         15
+     445: ldc2_w        #232                // double 0.01d
+     448: dcmpg
+     449: ifgt          469
+     452: aload         12
+     454: aload         13
+     456: aload         7
+     458: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     461: invokevirtual #234                // Method com/pedropathing/math/Vector2D.minus:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+     464: invokevirtual #193                // Method com/pedropathing/math/Vector2D.dot:(Lcom/pedropathing/math/Vector2D;)D
+     467: dstore        15
+     469: aload         12
+     471: invokevirtual #238                // Method com/pedropathing/math/Vector2D.theta:()D
+     474: aload         7
+     476: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     479: dsub
+     480: dstore        17
+     482: aload_0
+     483: dload         15
+     485: aload         12
+     487: aload         7
+     489: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     492: invokevirtual #241                // Method getVelocityToBrakeInTime:(DLcom/pedropathing/math/Vector2D;D)D
+     495: dstore        19
+     497: aload_0
+     498: dload         19
+     500: dconst_0
+     501: dcmpg
+     502: ifle          512
+     505: dload         15
+     507: dconst_0
+     508: dcmpg
+     509: ifgt          516
+     512: iconst_1
+     513: goto          517
+     516: iconst_0
+     517: putfield      #23                 // Field isBraking:Z
+     520: aload_0
+     521: getfield      #23                 // Field isBraking:Z
+     524: ifeq          572
+     527: aload_2
+     528: invokevirtual #138                // Method com/pedropathing/paths/PathTracker.remainingPaths:()I
+     531: iconst_1
+     532: if_icmple     572
+     535: aload_0
+     536: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     539: getfield      #245                // Field com/pedropathing/algorithm/ForesightConfig.pathSkip:Lcom/pedropathing/config/ConfigVar;
+     542: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     545: checkcast     #248                // class java/lang/Boolean
+     548: invokevirtual #250                // Method java/lang/Boolean.booleanValue:()Z
+     551: ifeq          572
+     554: aload_2
+     555: invokevirtual #142                // Method com/pedropathing/paths/PathTracker.advance:()V
+     558: aload_0
+     559: invokevirtual #145                // Method reset:()V
+     562: aload_0
+     563: aload_1
+     564: aload_2
+     565: aload_3
+     566: dload         4
+     568: invokevirtual #148                // Method calculatePath:(Lcom/pedropathing/drivetrain/Drivetrain;Lcom/pedropathing/paths/PathTracker;Lcom/pedropathing/localization/MotionState;D)Lcom/pedropathing/drivetrain/DrivePowers;
+     571: areturn
+     572: dload         10
+     574: aload         7
+     576: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     579: dsub
+     580: invokestatic  #209                // Method com/pedropathing/utils/Angle.normalizeSigned:(D)D
+     583: dstore        21
+     585: dload         8
+     587: aload_3
+     588: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     591: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     594: dsub
+     595: invokestatic  #209                // Method com/pedropathing/utils/Angle.normalizeSigned:(D)D
+     598: dstore        23
+     600: aload_0
+     601: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     604: getfield      #253                // Field com/pedropathing/algorithm/ForesightConfig.headingFeedback:Lcom/pedropathing/config/ConfigVar;
+     607: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     610: checkcast     #256                // class com/pedropathing/controllers/Controller
+     613: dconst_0
+     614: dload         21
+     616: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+     621: dstore        25
+     623: aload_0
+     624: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     627: getfield      #253                // Field com/pedropathing/algorithm/ForesightConfig.headingFeedback:Lcom/pedropathing/config/ConfigVar;
+     630: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     633: checkcast     #256                // class com/pedropathing/controllers/Controller
+     636: dconst_0
+     637: dload         23
+     639: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+     644: dstore        27
+     646: dload         25
+     648: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+     651: ldc2_w        #267                // double 0.001d
+     654: dcmpg
+     655: ifgt          667
+     658: dconst_0
+     659: dstore        27
+     661: dconst_0
+     662: dstore        29
+     664: goto          718
+     667: dload         25
+     669: dload         27
+     671: dmul
+     672: dconst_0
+     673: dcmpg
+     674: ifge          687
+     677: dload         25
+     679: dstore        29
+     681: dconst_0
+     682: dstore        27
+     684: goto          718
+     687: dload         27
+     689: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+     692: dload         25
+     694: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+     697: dcmpl
+     698: iflt          711
+     701: dconst_0
+     702: dstore        29
+     704: dload         25
+     706: dstore        27
+     708: goto          718
+     711: dload         25
+     713: dload         27
+     715: dsub
+     716: dstore        29
+     718: dload         29
+     720: aload_0
+     721: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     724: getfield      #269                // Field com/pedropathing/algorithm/ForesightConfig.headingStaticFF:Lcom/pedropathing/config/ConfigVar;
+     727: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     730: checkcast     #256                // class com/pedropathing/controllers/Controller
+     733: dconst_0
+     734: dload         21
+     736: invokestatic  #272                // Method com/pedropathing/utils/Angle.turnDirection:(D)D
+     739: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+     744: dadd
+     745: dstore        29
+     747: aload         12
+     749: aload_0
+     750: aload_0
+     751: getfield      #23                 // Field isBraking:Z
+     754: ifeq          780
+     757: aload_0
+     758: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     761: getfield      #275                // Field com/pedropathing/algorithm/ForesightConfig.brakeAtEnd:Lcom/pedropathing/config/ConfigVar;
+     764: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     767: checkcast     #248                // class java/lang/Boolean
+     770: invokevirtual #250                // Method java/lang/Boolean.booleanValue:()Z
+     773: ifeq          780
+     776: iconst_1
+     777: goto          781
+     780: iconst_0
+     781: dload         19
+     783: dload         4
+     785: dload         17
+     787: aload_0
+     788: getfield      #197                // Field tangentialSpeed:D
+     791: aload_3
+     792: aload         6
+     794: aload_1
+     795: invokevirtual #278                // Method drive:(ZDDDDLcom/pedropathing/localization/MotionState;Lcom/pedropathing/paths/curves/Curve;Lcom/pedropathing/drivetrain/Drivetrain;)D
+     798: invokevirtual #282                // Method com/pedropathing/math/Vector2D.times:(D)Lcom/pedropathing/math/Vector2D;
+     801: astore        31
+     803: aload_0
+     804: aload         7
+     806: aload         13
+     808: aload         14
+     810: invokespecial #285                // Method translationalCorrection:(Lcom/pedropathing/math/Pose;Lcom/pedropathing/math/Vector2D;Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/utils/Pair;
+     813: astore        32
+     815: aload         32
+     817: invokevirtual #289                // Method com/pedropathing/utils/Pair.second:()Ljava/lang/Object;
+     820: checkcast     #68                 // class com/pedropathing/math/Vector2D
+     823: astore        33
+     825: aload         32
+     827: invokevirtual #294                // Method com/pedropathing/utils/Pair.first:()Ljava/lang/Object;
+     830: checkcast     #58                 // class java/lang/Double
+     833: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     836: dstore        34
+     838: aload_0
+     839: getfield      #229                // Field projectedClosestT:D
+     842: aload_0
+     843: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     846: getfield      #297                // Field com/pedropathing/algorithm/ForesightConfig.parametricTConstraint:Lcom/pedropathing/config/ConfigVar;
+     849: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     852: checkcast     #58                 // class java/lang/Double
+     855: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     858: dcmpg
+     859: ifgt          866
+     862: iconst_1
+     863: goto          867
+     866: iconst_0
+     867: istore        36
+     869: iload         36
+     871: ifeq          1050
+     874: aload         6
+     876: invokeinterface #300,  1          // InterfaceMethod com/pedropathing/paths/curves/Curve.startPoint:()Lcom/pedropathing/math/Vector2D;
+     881: aload         7
+     883: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     886: invokevirtual #234                // Method com/pedropathing/math/Vector2D.minus:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+     889: astore        37
+     891: aload         37
+     893: aload_0
+     894: getfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     897: invokevirtual #193                // Method com/pedropathing/math/Vector2D.dot:(Lcom/pedropathing/math/Vector2D;)D
+     900: dstore        38
+     902: dload         38
+     904: dconst_1
+     905: dcmpl
+     906: ifle          935
+     909: dload         34
+     911: aload_0
+     912: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     915: getfield      #303                // Field com/pedropathing/algorithm/ForesightConfig.translationalDeviationTolerance:Lcom/pedropathing/config/ConfigVar;
+     918: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     921: checkcast     #58                 // class java/lang/Double
+     924: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     927: dcmpl
+     928: ifle          935
+     931: iconst_1
+     932: goto          936
+     935: iconst_0
+     936: istore        40
+     938: dload         21
+     940: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+     943: aload_0
+     944: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     947: getfield      #306                // Field com/pedropathing/algorithm/ForesightConfig.headingDeviationTolerance:Lcom/pedropathing/config/ConfigVar;
+     950: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     953: checkcast     #58                 // class java/lang/Double
+     956: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     959: dcmpl
+     960: ifle          967
+     963: iconst_1
+     964: goto          968
+     967: iconst_0
+     968: istore        41
+     970: iload         40
+     972: ifeq          1006
+     975: aload_0
+     976: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     979: getfield      #309                // Field com/pedropathing/algorithm/ForesightConfig.cosineScale:Lcom/pedropathing/config/ConfigVar;
+     982: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     985: checkcast     #248                // class java/lang/Boolean
+     988: invokevirtual #250                // Method java/lang/Boolean.booleanValue:()Z
+     991: ifeq          1006
+     994: aload         31
+     996: dload         38
+     998: dload         34
+    1000: ddiv
+    1001: invokevirtual #282                // Method com/pedropathing/math/Vector2D.times:(D)Lcom/pedropathing/math/Vector2D;
+    1004: astore        31
+    1006: iload         41
+    1008: ifeq          1047
+    1011: aload_0
+    1012: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+    1015: getfield      #309                // Field com/pedropathing/algorithm/ForesightConfig.cosineScale:Lcom/pedropathing/config/ConfigVar;
+    1018: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+    1021: checkcast     #248                // class java/lang/Boolean
+    1024: invokevirtual #250                // Method java/lang/Boolean.booleanValue:()Z
+    1027: ifeq          1047
+    1030: aload         31
+    1032: aload_0
+    1033: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+    1036: dconst_0
+    1037: dload         21
+    1039: invokevirtual #312                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getDriveScalar:(DD)D
+    1042: invokevirtual #282                // Method com/pedropathing/math/Vector2D.times:(D)Lcom/pedropathing/math/Vector2D;
+    1045: astore        31
+    1047: goto          1145
+    1050: dload         21
+    1052: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+    1055: ldc2_w        #315                // double 2.0d
+    1058: aload_0
+    1059: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+    1062: getfield      #306                // Field com/pedropathing/algorithm/ForesightConfig.headingDeviationTolerance:Lcom/pedropathing/config/ConfigVar;
+    1065: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+    1068: checkcast     #58                 // class java/lang/Double
+    1071: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+    1074: dmul
+    1075: dcmpl
+    1076: ifgt          1108
+    1079: dload         34
+    1081: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+    1084: ldc2_w        #315                // double 2.0d
+    1087: aload_0
+    1088: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+    1091: getfield      #303                // Field com/pedropathing/algorithm/ForesightConfig.translationalDeviationTolerance:Lcom/pedropathing/config/ConfigVar;
+    1094: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+    1097: checkcast     #58                 // class java/lang/Double
+    1100: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+    1103: dmul
+    1104: dcmpl
+    1105: ifle          1145
+    1108: aload_0
+    1109: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+    1112: getfield      #309                // Field com/pedropathing/algorithm/ForesightConfig.cosineScale:Lcom/pedropathing/config/ConfigVar;
+    1115: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+    1118: checkcast     #248                // class java/lang/Boolean
+    1121: invokevirtual #250                // Method java/lang/Boolean.booleanValue:()Z
+    1124: ifeq          1145
+    1127: aload         31
+    1129: aload_0
+    1130: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+    1133: dload         34
+    1135: dload         21
+    1137: invokevirtual #312                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getDriveScalar:(DD)D
+    1140: invokevirtual #282                // Method com/pedropathing/math/Vector2D.times:(D)Lcom/pedropathing/math/Vector2D;
+    1143: astore        31
+    1145: aload_0
+    1146: aload_0
+    1147: getfield      #23                 // Field isBraking:Z
+    1150: ifeq          1176
+    1153: aload_0
+    1154: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+    1157: getfield      #275                // Field com/pedropathing/algorithm/ForesightConfig.brakeAtEnd:Lcom/pedropathing/config/ConfigVar;
+    1160: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+    1163: checkcast     #248                // class java/lang/Boolean
+    1166: invokevirtual #250                // Method java/lang/Boolean.booleanValue:()Z
+    1169: ifeq          1176
+    1172: iconst_1
+    1173: goto          1177
+    1176: iconst_0
+    1177: putfield      #23                 // Field isBraking:Z
+    1180: aload_0
+    1181: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+    1184: aload_1
+    1185: aload_3
+    1186: invokestatic  #317                // Method com/pedropathing/math/Vector2D.zero:()Lcom/pedropathing/math/Vector2D;
+    1189: dload         29
+    1191: aload         33
+    1193: aload         31
+    1195: dload         27
+    1197: dload         34
+    1199: dload         21
+    1201: invokevirtual #319                // Method com/pedropathing/algorithm/ForesightPowerAllocator.allocatePowers:(Lcom/pedropathing/drivetrain/Drivetrain;Lcom/pedropathing/localization/MotionState;Lcom/pedropathing/math/Vector2D;DLcom/pedropathing/math/Vector2D;Lcom/pedropathing/math/Vector2D;DDD)Lcom/pedropathing/drivetrain/DrivePowers;
+    1204: astore        37
+    1206: aload_0
+    1207: aload_0
+    1208: invokevirtual #323                // Method debugData:()Ljava/util/Map;
+    1211: putfield      #29                 // Field debug:Ljava/util/Map;
+    1214: aload         37
+    1216: areturn
+
+  public com.pedropathing.drivetrain.DrivePowers calculateHold(com.pedropathing.drivetrain.Drivetrain, com.pedropathing.math.Pose, com.pedropathing.localization.MotionState, boolean, double);
+    Code:
+       0: aload_0
+       1: aconst_null
+       2: putfield      #77                 // Field tracker:Lcom/pedropathing/paths/PathTracker;
+       5: aload_0
+       6: aload_3
+       7: putfield      #81                 // Field currentState:Lcom/pedropathing/localization/MotionState;
+      10: aload_0
+      11: dconst_1
+      12: putfield      #109                // Field closestT:D
+      15: aload_0
+      16: iconst_0
+      17: putfield      #23                 // Field isBraking:Z
+      20: aload_0
+      21: getfield      #16                 // Field resetTimer:Z
+      24: ifeq          39
+      27: aload_0
+      28: getfield      #10                 // Field timer:Lcom/pedropathing/utils/Timer;
+      31: invokevirtual #327                // Method com/pedropathing/utils/Timer.reset:()V
+      34: aload_0
+      35: iconst_0
+      36: putfield      #16                 // Field resetTimer:Z
+      39: aload_0
+      40: aload_2
+      41: putfield      #134                // Field closestPose:Lcom/pedropathing/math/Pose;
+      44: aload_3
+      45: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+      48: aload_0
+      49: aload_3
+      50: invokevirtual #217                // Method com/pedropathing/localization/MotionState.twist:()Lcom/pedropathing/math/Twist;
+      53: aload_3
+      54: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+      57: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+      60: invokevirtual #221                // Method getBrakeDisplacement:(Lcom/pedropathing/math/Twist;D)Lcom/pedropathing/math/Pose;
+      63: invokevirtual #225                // Method com/pedropathing/math/Pose.plus:(Lcom/pedropathing/math/Pose;)Lcom/pedropathing/math/Pose;
+      66: astore        7
+      68: aload_0
+      69: aload         7
+      71: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+      74: aload_2
+      75: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+      78: invokespecial #328                // Method headingFeedback:(DD)Lcom/pedropathing/utils/Pair;
+      81: invokevirtual #289                // Method com/pedropathing/utils/Pair.second:()Ljava/lang/Object;
+      84: checkcast     #58                 // class java/lang/Double
+      87: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      90: dstore        8
+      92: aload_0
+      93: aload_2
+      94: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+      97: aload_3
+      98: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     101: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     104: dsub
+     105: invokestatic  #209                // Method com/pedropathing/utils/Angle.normalizeSigned:(D)D
+     108: putfield      #214                // Field headingError:D
+     111: aload_2
+     112: aload         7
+     114: invokevirtual #331                // Method com/pedropathing/math/Pose.minus:(Lcom/pedropathing/math/Pose;)Lcom/pedropathing/math/Pose;
+     117: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     120: astore        10
+     122: aload         10
+     124: invokevirtual #333                // Method com/pedropathing/math/Vector2D.magnitude:()D
+     127: dstore        11
+     129: aload_0
+     130: aload_2
+     131: aload_3
+     132: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     135: invokevirtual #200                // Method com/pedropathing/math/Pose.distance:(Lcom/pedropathing/math/Pose;)D
+     138: putfield      #204                // Field translationalError:D
+     141: invokestatic  #317                // Method com/pedropathing/math/Vector2D.zero:()Lcom/pedropathing/math/Vector2D;
+     144: astore        13
+     146: dload         11
+     148: ldc2_w        #267                // double 0.001d
+     151: dcmpg
+     152: ifge          178
+     155: aload_0
+     156: dconst_0
+     157: putfield      #197                // Field tangentialSpeed:D
+     160: aload_0
+     161: invokestatic  #317                // Method com/pedropathing/math/Vector2D.zero:()Lcom/pedropathing/math/Vector2D;
+     164: putfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     167: aload_0
+     168: aload_0
+     169: getfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     172: putfield      #183                // Field closestNormal:Lcom/pedropathing/math/Vector2D;
+     175: goto          241
+     178: aload_0
+     179: aload         10
+     181: dload         11
+     183: invokevirtual #336                // Method com/pedropathing/math/Vector2D.div:(D)Lcom/pedropathing/math/Vector2D;
+     186: putfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     189: aload_0
+     190: aload_0
+     191: getfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     194: aload_3
+     195: invokevirtual #186                // Method com/pedropathing/localization/MotionState.velocity:()Lcom/pedropathing/math/Velocity;
+     198: invokevirtual #190                // Method com/pedropathing/math/Velocity.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     201: invokevirtual #193                // Method com/pedropathing/math/Vector2D.dot:(Lcom/pedropathing/math/Vector2D;)D
+     204: putfield      #197                // Field tangentialSpeed:D
+     207: aload_0
+     208: aload         7
+     210: aload_2
+     211: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     214: aload_0
+     215: getfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     218: invokespecial #285                // Method translationalCorrection:(Lcom/pedropathing/math/Pose;Lcom/pedropathing/math/Vector2D;Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/utils/Pair;
+     221: astore        14
+     223: aload         14
+     225: invokevirtual #289                // Method com/pedropathing/utils/Pair.second:()Ljava/lang/Object;
+     228: checkcast     #68                 // class com/pedropathing/math/Vector2D
+     231: astore        13
+     233: aload_0
+     234: aload_0
+     235: getfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+     238: putfield      #183                // Field closestNormal:Lcom/pedropathing/math/Vector2D;
+     241: aload_0
+     242: getfield      #20                 // Field busy:Z
+     245: ifeq          255
+     248: aload_0
+     249: invokevirtual #339                // Method timeoutCondition:()Z
+     252: ifne          276
+     255: aload_0
+     256: invokevirtual #342                // Method headingCondition:()Z
+     259: ifeq          281
+     262: aload_0
+     263: invokevirtual #345                // Method translationalCondition:()Z
+     266: ifeq          281
+     269: aload_0
+     270: invokevirtual #348                // Method velocityCondition:()Z
+     273: ifeq          281
+     276: aload_0
+     277: iconst_0
+     278: putfield      #20                 // Field busy:Z
+     281: iload         4
+     283: ifeq          338
+     286: aload_0
+     287: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     290: getfield      #351                // Field com/pedropathing/algorithm/ForesightConfig.holdPointTranslationalScaling:Lcom/pedropathing/config/ConfigVar;
+     293: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     296: checkcast     #58                 // class java/lang/Double
+     299: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     302: dstore        14
+     304: aload_0
+     305: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     308: getfield      #354                // Field com/pedropathing/algorithm/ForesightConfig.holdPointHeadingScaling:Lcom/pedropathing/config/ConfigVar;
+     311: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     314: checkcast     #58                 // class java/lang/Double
+     317: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     320: dstore        16
+     322: aload         13
+     324: dload         14
+     326: invokevirtual #282                // Method com/pedropathing/math/Vector2D.times:(D)Lcom/pedropathing/math/Vector2D;
+     329: astore        13
+     331: dload         8
+     333: dload         16
+     335: dmul
+     336: dstore        8
+     338: aload_0
+     339: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+     342: aload         13
+     344: aload_3
+     345: dload         8
+     347: invokevirtual #357                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getDrivePowers:(Lcom/pedropathing/math/Vector2D;Lcom/pedropathing/localization/MotionState;D)Lcom/pedropathing/drivetrain/DrivePowers;
+     350: astore        14
+     352: aload_0
+     353: aload_0
+     354: invokevirtual #323                // Method debugData:()Ljava/util/Map;
+     357: putfield      #29                 // Field debug:Ljava/util/Map;
+     360: aload         14
+     362: areturn
+
+  public com.pedropathing.math.Pose getBrakeDisplacement(com.pedropathing.math.Twist, double);
+    Code:
+       0: aload_1
+       1: invokevirtual #361                // Method com/pedropathing/math/Twist.toVector2D:()Lcom/pedropathing/math/Vector2D;
+       4: astore        4
+       6: aload         4
+       8: aload         4
+      10: invokevirtual #364                // Method com/pedropathing/math/Vector2D.abs:()Lcom/pedropathing/math/Vector2D;
+      13: invokevirtual #366                // Method com/pedropathing/math/Vector2D.hadamardProduct:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+      16: aload_0
+      17: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      20: getfield      #369                // Field com/pedropathing/algorithm/ForesightConfig.quadraticBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      23: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      26: checkcast     #372                // class com/pedropathing/math/Matrix
+      29: invokevirtual #374                // Method com/pedropathing/math/Vector2D.transform:(Lcom/pedropathing/math/Matrix;)Lcom/pedropathing/math/Vector2D;
+      32: astore        5
+      34: aload         4
+      36: aload_0
+      37: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      40: getfield      #378                // Field com/pedropathing/algorithm/ForesightConfig.linearBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      43: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      46: checkcast     #372                // class com/pedropathing/math/Matrix
+      49: invokevirtual #374                // Method com/pedropathing/math/Vector2D.transform:(Lcom/pedropathing/math/Matrix;)Lcom/pedropathing/math/Vector2D;
+      52: astore        6
+      54: aload_1
+      55: getfield      #381                // Field com/pedropathing/math/Twist.omega:D
+      58: aload_1
+      59: getfield      #381                // Field com/pedropathing/math/Twist.omega:D
+      62: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+      65: dmul
+      66: aload_0
+      67: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      70: getfield      #384                // Field com/pedropathing/algorithm/ForesightConfig.headingBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      73: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      76: checkcast     #68                 // class com/pedropathing/math/Vector2D
+      79: invokevirtual #387                // Method com/pedropathing/math/Vector2D.y:()D
+      82: dmul
+      83: aload_1
+      84: getfield      #381                // Field com/pedropathing/math/Twist.omega:D
+      87: aload_0
+      88: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      91: getfield      #384                // Field com/pedropathing/algorithm/ForesightConfig.headingBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      94: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      97: checkcast     #68                 // class com/pedropathing/math/Vector2D
+     100: invokevirtual #390                // Method com/pedropathing/math/Vector2D.x:()D
+     103: dmul
+     104: dadd
+     105: dstore        7
+     107: aload         5
+     109: aload         6
+     111: invokevirtual #393                // Method com/pedropathing/math/Vector2D.plus:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+     114: astore        9
+     116: new           #104                // class com/pedropathing/math/Pose
+     119: dup
+     120: dconst_0
+     121: dconst_0
+     122: dload_2
+     123: invokespecial #395                // Method com/pedropathing/math/Pose."<init>":(DDD)V
+     126: new           #362                // class com/pedropathing/math/Twist
+     129: dup
+     130: aload         9
+     132: invokevirtual #390                // Method com/pedropathing/math/Vector2D.x:()D
+     135: aload         9
+     137: invokevirtual #387                // Method com/pedropathing/math/Vector2D.y:()D
+     140: dload         7
+     142: invokespecial #398                // Method com/pedropathing/math/Twist."<init>":(DDD)V
+     145: invokevirtual #399                // Method com/pedropathing/math/Pose.exp:(Lcom/pedropathing/math/Twist;)Lcom/pedropathing/math/Pose;
+     148: astore        10
+     150: new           #104                // class com/pedropathing/math/Pose
+     153: dup
+     154: aload         10
+     156: invokevirtual #403                // Method com/pedropathing/math/Pose.x:()D
+     159: aload         10
+     161: invokevirtual #404                // Method com/pedropathing/math/Pose.y:()D
+     164: dload         7
+     166: invokespecial #395                // Method com/pedropathing/math/Pose."<init>":(DDD)V
+     169: areturn
+
+  public com.pedropathing.math.Pose getCoastDisplacement(com.pedropathing.math.Twist, double);
+    Code:
+       0: aload_1
+       1: invokevirtual #361                // Method com/pedropathing/math/Twist.toVector2D:()Lcom/pedropathing/math/Vector2D;
+       4: astore        4
+       6: aload         4
+       8: aload         4
+      10: invokevirtual #364                // Method com/pedropathing/math/Vector2D.abs:()Lcom/pedropathing/math/Vector2D;
+      13: invokevirtual #366                // Method com/pedropathing/math/Vector2D.hadamardProduct:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+      16: ldc2_w        #405                // double 0.5d
+      19: invokevirtual #282                // Method com/pedropathing/math/Vector2D.times:(D)Lcom/pedropathing/math/Vector2D;
+      22: aload_0
+      23: getfield      #73                 // Field naturalDeceleration:Lcom/pedropathing/math/Vector2D;
+      26: invokevirtual #407                // Method com/pedropathing/math/Vector2D.elementDivision:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+      29: astore        5
+      31: aload_1
+      32: getfield      #381                // Field com/pedropathing/math/Twist.omega:D
+      35: aload_1
+      36: getfield      #381                // Field com/pedropathing/math/Twist.omega:D
+      39: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+      42: dmul
+      43: aload_0
+      44: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      47: getfield      #384                // Field com/pedropathing/algorithm/ForesightConfig.headingBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      50: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      53: checkcast     #68                 // class com/pedropathing/math/Vector2D
+      56: invokevirtual #387                // Method com/pedropathing/math/Vector2D.y:()D
+      59: dmul
+      60: aload_1
+      61: getfield      #381                // Field com/pedropathing/math/Twist.omega:D
+      64: aload_0
+      65: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      68: getfield      #384                // Field com/pedropathing/algorithm/ForesightConfig.headingBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      71: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      74: checkcast     #68                 // class com/pedropathing/math/Vector2D
+      77: invokevirtual #390                // Method com/pedropathing/math/Vector2D.x:()D
+      80: dmul
+      81: dadd
+      82: dstore        6
+      84: new           #104                // class com/pedropathing/math/Pose
+      87: dup
+      88: dconst_0
+      89: dconst_0
+      90: dload_2
+      91: invokespecial #395                // Method com/pedropathing/math/Pose."<init>":(DDD)V
+      94: new           #362                // class com/pedropathing/math/Twist
+      97: dup
+      98: aload         5
+     100: invokevirtual #390                // Method com/pedropathing/math/Vector2D.x:()D
+     103: aload         5
+     105: invokevirtual #387                // Method com/pedropathing/math/Vector2D.y:()D
+     108: dload         6
+     110: invokespecial #398                // Method com/pedropathing/math/Twist."<init>":(DDD)V
+     113: invokevirtual #399                // Method com/pedropathing/math/Pose.exp:(Lcom/pedropathing/math/Twist;)Lcom/pedropathing/math/Pose;
+     116: astore        8
+     118: new           #104                // class com/pedropathing/math/Pose
+     121: dup
+     122: aload         8
+     124: invokevirtual #403                // Method com/pedropathing/math/Pose.x:()D
+     127: aload         8
+     129: invokevirtual #404                // Method com/pedropathing/math/Pose.y:()D
+     132: dload         6
+     134: invokespecial #395                // Method com/pedropathing/math/Pose."<init>":(DDD)V
+     137: areturn
+
+  public double getVelocityToBrakeInTime(double, com.pedropathing.math.Vector2D, double);
+    Code:
+       0: aload_3
+       1: dload         4
+       3: invokevirtual #410                // Method com/pedropathing/math/Vector2D.toBodyFrame:(D)Lcom/pedropathing/math/Vector2D;
+       6: invokevirtual #364                // Method com/pedropathing/math/Vector2D.abs:()Lcom/pedropathing/math/Vector2D;
+       9: astore        6
+      11: aload         6
+      13: aload         6
+      15: invokevirtual #366                // Method com/pedropathing/math/Vector2D.hadamardProduct:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+      18: astore        7
+      20: aload         7
+      22: aload         6
+      24: invokevirtual #366                // Method com/pedropathing/math/Vector2D.hadamardProduct:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+      27: astore        8
+      29: aload_0
+      30: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      33: getfield      #369                // Field com/pedropathing/algorithm/ForesightConfig.quadraticBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      36: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      39: checkcast     #372                // class com/pedropathing/math/Matrix
+      42: iconst_0
+      43: iconst_0
+      44: invokevirtual #413                // Method com/pedropathing/math/Matrix.get:(II)D
+      47: aload         8
+      49: invokevirtual #390                // Method com/pedropathing/math/Vector2D.x:()D
+      52: dmul
+      53: aload_0
+      54: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      57: getfield      #369                // Field com/pedropathing/algorithm/ForesightConfig.quadraticBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      60: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      63: checkcast     #372                // class com/pedropathing/math/Matrix
+      66: iconst_1
+      67: iconst_1
+      68: invokevirtual #413                // Method com/pedropathing/math/Matrix.get:(II)D
+      71: aload         8
+      73: invokevirtual #387                // Method com/pedropathing/math/Vector2D.y:()D
+      76: dmul
+      77: dadd
+      78: dstore        9
+      80: aload_0
+      81: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      84: getfield      #378                // Field com/pedropathing/algorithm/ForesightConfig.linearBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+      87: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      90: checkcast     #372                // class com/pedropathing/math/Matrix
+      93: iconst_0
+      94: iconst_0
+      95: invokevirtual #413                // Method com/pedropathing/math/Matrix.get:(II)D
+      98: aload         7
+     100: invokevirtual #390                // Method com/pedropathing/math/Vector2D.x:()D
+     103: dmul
+     104: aload_0
+     105: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     108: getfield      #378                // Field com/pedropathing/algorithm/ForesightConfig.linearBrakeCoefficients:Lcom/pedropathing/config/ConfigVar;
+     111: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     114: checkcast     #372                // class com/pedropathing/math/Matrix
+     117: iconst_1
+     118: iconst_1
+     119: invokevirtual #413                // Method com/pedropathing/math/Matrix.get:(II)D
+     122: aload         7
+     124: invokevirtual #387                // Method com/pedropathing/math/Vector2D.y:()D
+     127: dmul
+     128: dadd
+     129: dstore        11
+     131: dload         9
+     133: dload         11
+     135: dload_1
+     136: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+     139: dneg
+     140: aload_0
+     141: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     144: getfield      #416                // Field com/pedropathing/algorithm/ForesightConfig.brakeAggression:Lcom/pedropathing/config/ConfigVar;
+     147: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     150: checkcast     #58                 // class java/lang/Double
+     153: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     156: ddiv
+     157: invokestatic  #419                // Method com/pedropathing/utils/Utils.solveQuadratic:(DDD)Lcom/pedropathing/utils/Pair;
+     160: astore        13
+     162: aload         13
+     164: invokevirtual #294                // Method com/pedropathing/utils/Pair.first:()Ljava/lang/Object;
+     167: checkcast     #58                 // class java/lang/Double
+     170: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     173: aload         13
+     175: invokevirtual #289                // Method com/pedropathing/utils/Pair.second:()Ljava/lang/Object;
+     178: checkcast     #58                 // class java/lang/Double
+     181: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     184: invokestatic  #425                // Method java/lang/Math.max:(DD)D
+     187: dload_1
+     188: invokestatic  #428                // Method java/lang/Math.signum:(D)D
+     191: dmul
+     192: dreturn
+
+  private com.pedropathing.utils.Pair<java.lang.Double, java.lang.Double> headingFeedback(double, double);
+    Code:
+       0: dload_3
+       1: dload_1
+       2: dsub
+       3: invokestatic  #209                // Method com/pedropathing/utils/Angle.normalizeSigned:(D)D
+       6: dstore        5
+       8: dload         5
+      10: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+      13: aload_0
+      14: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      17: getfield      #253                // Field com/pedropathing/algorithm/ForesightConfig.headingFeedback:Lcom/pedropathing/config/ConfigVar;
+      20: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      23: checkcast     #256                // class com/pedropathing/controllers/Controller
+      26: dconst_0
+      27: dload         5
+      29: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+      34: aload_0
+      35: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      38: getfield      #269                // Field com/pedropathing/algorithm/ForesightConfig.headingStaticFF:Lcom/pedropathing/config/ConfigVar;
+      41: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      44: checkcast     #256                // class com/pedropathing/controllers/Controller
+      47: dconst_0
+      48: dload         5
+      50: invokestatic  #272                // Method com/pedropathing/utils/Angle.turnDirection:(D)D
+      53: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+      58: dadd
+      59: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+      62: invokestatic  #435                // Method com/pedropathing/utils/Pair.of:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/pedropathing/utils/Pair;
+      65: areturn
+
+  public double drive(boolean, double, double, double, double, com.pedropathing.localization.MotionState, com.pedropathing.paths.curves.Curve, com.pedropathing.drivetrain.Drivetrain);
+    Code:
+       0: aload         12
+       2: aload_0
+       3: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+       6: getfield      #439                // Field com/pedropathing/algorithm/ForesightConfig.maxAchievableForwardVelocity:Lcom/pedropathing/config/ConfigVar;
+       9: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      12: checkcast     #58                 // class java/lang/Double
+      15: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      18: aload_0
+      19: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      22: getfield      #442                // Field com/pedropathing/algorithm/ForesightConfig.maxAchievableStrafeVelocity:Lcom/pedropathing/config/ConfigVar;
+      25: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      28: checkcast     #58                 // class java/lang/Double
+      31: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      34: dload         6
+      36: invokeinterface #445,  7          // InterfaceMethod com/pedropathing/drivetrain/Drivetrain.interpolateVelocity:(DDD)D
+      41: dstore        13
+      43: aload_0
+      44: dload_2
+      45: dload         13
+      47: invokestatic  #451                // Method java/lang/Math.min:(DD)D
+      50: putfield      #454                // Field targetVelocity:D
+      53: iload_1
+      54: ifne          76
+      57: aload_0
+      58: dload         8
+      60: dload         4
+      62: dload         13
+      64: aload         10
+      66: aload         11
+      68: dload         6
+      70: aload         12
+      72: invokevirtual #457                // Method coast:(DDDLcom/pedropathing/localization/MotionState;Lcom/pedropathing/paths/curves/Curve;DLcom/pedropathing/drivetrain/Drivetrain;)D
+      75: dreturn
+      76: aload_0
+      77: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      80: getfield      #461                // Field com/pedropathing/algorithm/ForesightConfig.brake:Lcom/pedropathing/config/ConfigVar;
+      83: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      86: checkcast     #256                // class com/pedropathing/controllers/Controller
+      89: aload_0
+      90: getfield      #454                // Field targetVelocity:D
+      93: dconst_0
+      94: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+      99: dreturn
+
+  public double coast(double, double, double, com.pedropathing.localization.MotionState, com.pedropathing.paths.curves.Curve, double, com.pedropathing.drivetrain.Drivetrain);
+    Code:
+       0: aload_0
+       1: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+       4: getfield      #464                // Field com/pedropathing/algorithm/ForesightConfig.maxAccelerationConstraint:Lcom/pedropathing/config/ConfigVar;
+       7: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      10: checkcast     #58                 // class java/lang/Double
+      13: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      16: dstore        12
+      18: aload_0
+      19: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      22: getfield      #467                // Field com/pedropathing/algorithm/ForesightConfig.maxVelocityConstraint:Lcom/pedropathing/config/ConfigVar;
+      25: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      28: checkcast     #58                 // class java/lang/Double
+      31: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      34: dstore        14
+      36: aload_0
+      37: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      40: getfield      #470                // Field com/pedropathing/algorithm/ForesightConfig.maxDecelerationConstraint:Lcom/pedropathing/config/ConfigVar;
+      43: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      46: checkcast     #58                 // class java/lang/Double
+      49: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      52: dstore        16
+      54: aload_0
+      55: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      58: getfield      #473                // Field com/pedropathing/algorithm/ForesightConfig.coastDownToVelocity:Lcom/pedropathing/config/ConfigVar;
+      61: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      64: checkcast     #58                 // class java/lang/Double
+      67: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      70: dstore        18
+      72: aload_0
+      73: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      76: getfield      #476                // Field com/pedropathing/algorithm/ForesightConfig.maxPathSpeed:Lcom/pedropathing/config/ConfigVar;
+      79: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      82: checkcast     #58                 // class java/lang/Double
+      85: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      88: dstore        20
+      90: aload_0
+      91: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      94: getfield      #479                // Field com/pedropathing/algorithm/ForesightConfig.maxDecelerationScale:Lcom/pedropathing/config/ConfigVar;
+      97: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     100: checkcast     #58                 // class java/lang/Double
+     103: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     106: dstore        22
+     108: dload         22
+     110: getstatic     #482                // Field com/pedropathing/algorithm/ForesightConfig$Constraint.NONE:D
+     113: dcmpl
+     114: ifeq          172
+     117: aload         11
+     119: aload_0
+     120: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     123: getfield      #46                 // Field com/pedropathing/algorithm/ForesightConfig.naturalForwardDeceleration:Lcom/pedropathing/config/ConfigVar;
+     126: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     129: checkcast     #58                 // class java/lang/Double
+     132: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     135: aload_0
+     136: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     139: getfield      #64                 // Field com/pedropathing/algorithm/ForesightConfig.naturalStrafeDeceleration:Lcom/pedropathing/config/ConfigVar;
+     142: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     145: checkcast     #58                 // class java/lang/Double
+     148: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+     151: dload         9
+     153: invokeinterface #487,  7          // InterfaceMethod com/pedropathing/drivetrain/Drivetrain.interpolateAcceleration:(DDD)D
+     158: dstore        24
+     160: dload         22
+     162: dload         24
+     164: dmul
+     165: dload         16
+     167: invokestatic  #451                // Method java/lang/Math.min:(DD)D
+     170: dstore        16
+     172: dload         5
+     174: dstore        24
+     176: dload         20
+     178: getstatic     #482                // Field com/pedropathing/algorithm/ForesightConfig$Constraint.NONE:D
+     181: dcmpl
+     182: ifeq          197
+     185: dload         24
+     187: dload         20
+     189: dload         5
+     191: dmul
+     192: invokestatic  #451                // Method java/lang/Math.min:(DD)D
+     195: dstore        24
+     197: dload         14
+     199: getstatic     #482                // Field com/pedropathing/algorithm/ForesightConfig$Constraint.NONE:D
+     202: dcmpl
+     203: ifeq          215
+     206: dload         24
+     208: dload         14
+     210: invokestatic  #451                // Method java/lang/Math.min:(DD)D
+     213: dstore        24
+     215: dload         12
+     217: getstatic     #482                // Field com/pedropathing/algorithm/ForesightConfig$Constraint.NONE:D
+     220: dcmpl
+     221: ifeq          237
+     224: dload         24
+     226: dload_1
+     227: dload         12
+     229: dload_3
+     230: dmul
+     231: dadd
+     232: invokestatic  #451                // Method java/lang/Math.min:(DD)D
+     235: dstore        24
+     237: dload         24
+     239: dstore        26
+     241: dload         16
+     243: getstatic     #482                // Field com/pedropathing/algorithm/ForesightConfig$Constraint.NONE:D
+     246: dcmpl
+     247: ifeq          424
+     250: aload         7
+     252: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     255: aload_0
+     256: aload         7
+     258: invokevirtual #217                // Method com/pedropathing/localization/MotionState.twist:()Lcom/pedropathing/math/Twist;
+     261: aload         7
+     263: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+     266: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     269: invokevirtual #490                // Method getCoastDisplacement:(Lcom/pedropathing/math/Twist;D)Lcom/pedropathing/math/Pose;
+     272: invokevirtual #225                // Method com/pedropathing/math/Pose.plus:(Lcom/pedropathing/math/Pose;)Lcom/pedropathing/math/Pose;
+     275: astore        28
+     277: aload         8
+     279: aload         28
+     281: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     284: aload_0
+     285: getfield      #493                // Field coastClosestT:D
+     288: invokeinterface #113,  4          // InterfaceMethod com/pedropathing/paths/curves/Curve.closestParameter:(Lcom/pedropathing/math/Vector2D;D)D
+     293: dstore        29
+     295: aload         8
+     297: dload         29
+     299: invokeinterface #174,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.tangent:(D)Lcom/pedropathing/math/Vector2D;
+     304: astore        31
+     306: aload         8
+     308: dload         29
+     310: invokeinterface #163,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.remainingDistance:(D)D
+     315: dstore        32
+     317: dload         32
+     319: ldc2_w        #232                // double 0.01d
+     322: dcmpg
+     323: ifgt          350
+     326: aload         31
+     328: aload         8
+     330: dload         29
+     332: invokeinterface #127,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.get:(D)Lcom/pedropathing/math/Vector2D;
+     337: aload         28
+     339: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+     342: invokevirtual #234                // Method com/pedropathing/math/Vector2D.minus:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+     345: invokevirtual #193                // Method com/pedropathing/math/Vector2D.dot:(Lcom/pedropathing/math/Vector2D;)D
+     348: dstore        32
+     350: dload         18
+     352: dload         18
+     354: dmul
+     355: ldc2_w        #315                // double 2.0d
+     358: dload         16
+     360: dmul
+     361: dload         32
+     363: dmul
+     364: dadd
+     365: dstore        34
+     367: aload_0
+     368: dload         32
+     370: dload         9
+     372: aload         11
+     374: invokespecial #496                // Method excessVelAfterCoast:(DDLcom/pedropathing/drivetrain/Drivetrain;)D
+     377: dstore        36
+     379: dconst_0
+     380: dload         18
+     382: dload         36
+     384: dsub
+     385: invokestatic  #425                // Method java/lang/Math.max:(DD)D
+     388: dstore        38
+     390: dload         34
+     392: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+     395: invokestatic  #500                // Method java/lang/Math.sqrt:(D)D
+     398: dload         34
+     400: invokestatic  #428                // Method java/lang/Math.signum:(D)D
+     403: dmul
+     404: dstore        40
+     406: dload         24
+     408: dload         40
+     410: invokestatic  #451                // Method java/lang/Math.min:(DD)D
+     413: dstore        24
+     415: dload         26
+     417: dload         38
+     419: invokestatic  #451                // Method java/lang/Math.min:(DD)D
+     422: dstore        26
+     424: dload         24
+     426: dload         5
+     428: dcmpl
+     429: iflt          440
+     432: aload_0
+     433: dload         5
+     435: putfield      #454                // Field targetVelocity:D
+     438: dconst_1
+     439: dreturn
+     440: dconst_0
+     441: dload         24
+     443: invokestatic  #425                // Method java/lang/Math.max:(DD)D
+     446: dstore        28
+     448: aload_0
+     449: dload         24
+     451: putfield      #454                // Field targetVelocity:D
+     454: aload_0
+     455: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     458: getfield      #503                // Field com/pedropathing/algorithm/ForesightConfig.coast:Lcom/pedropathing/config/ConfigVar;
+     461: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     464: checkcast     #256                // class com/pedropathing/controllers/Controller
+     467: dload         26
+     469: dload         28
+     471: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+     476: dconst_0
+     477: invokestatic  #425                // Method java/lang/Math.max:(DD)D
+     480: dreturn
+
+  private com.pedropathing.utils.Pair<java.lang.Double, com.pedropathing.math.Vector2D> translationalCorrection(com.pedropathing.math.Pose, com.pedropathing.math.Vector2D, com.pedropathing.math.Vector2D);
+    Code:
+       0: aload_2
+       1: aload_1
+       2: invokevirtual #103                // Method com/pedropathing/math/Pose.toVector2D:()Lcom/pedropathing/math/Vector2D;
+       5: invokevirtual #234                // Method com/pedropathing/math/Vector2D.minus:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+       8: aload_3
+       9: invokevirtual #505                // Method com/pedropathing/math/Vector2D.projectOnto:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+      12: astore        4
+      14: aload         4
+      16: invokevirtual #333                // Method com/pedropathing/math/Vector2D.magnitude:()D
+      19: dstore        5
+      21: dload         5
+      23: aload_0
+      24: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      27: getfield      #508                // Field com/pedropathing/algorithm/ForesightConfig.minCorrectionDistance:Lcom/pedropathing/config/ConfigVar;
+      30: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      33: checkcast     #58                 // class java/lang/Double
+      36: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      39: dcmpg
+      40: ifge          54
+      43: dconst_0
+      44: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+      47: invokestatic  #317                // Method com/pedropathing/math/Vector2D.zero:()Lcom/pedropathing/math/Vector2D;
+      50: invokestatic  #435                // Method com/pedropathing/utils/Pair.of:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/pedropathing/utils/Pair;
+      53: areturn
+      54: aload         4
+      56: aload_1
+      57: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+      60: invokevirtual #410                // Method com/pedropathing/math/Vector2D.toBodyFrame:(D)Lcom/pedropathing/math/Vector2D;
+      63: astore        7
+      65: dload         5
+      67: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+      70: aload_0
+      71: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      74: getfield      #511                // Field com/pedropathing/algorithm/ForesightConfig.forwardTranslational:Lcom/pedropathing/config/ConfigVar;
+      77: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      80: checkcast     #256                // class com/pedropathing/controllers/Controller
+      83: dconst_0
+      84: aload         7
+      86: invokevirtual #390                // Method com/pedropathing/math/Vector2D.x:()D
+      89: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+      94: aload_0
+      95: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      98: getfield      #514                // Field com/pedropathing/algorithm/ForesightConfig.strafeTranslational:Lcom/pedropathing/config/ConfigVar;
+     101: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     104: checkcast     #256                // class com/pedropathing/controllers/Controller
+     107: dconst_0
+     108: aload         7
+     110: invokevirtual #387                // Method com/pedropathing/math/Vector2D.y:()D
+     113: invokeinterface #258,  5          // InterfaceMethod com/pedropathing/controllers/Controller.calculate:(DD)D
+     118: invokestatic  #67                 // Method com/pedropathing/math/Vector2D.cartesian:(DD)Lcom/pedropathing/math/Vector2D;
+     121: aload         7
+     123: invokevirtual #505                // Method com/pedropathing/math/Vector2D.projectOnto:(Lcom/pedropathing/math/Vector2D;)Lcom/pedropathing/math/Vector2D;
+     126: aload_1
+     127: invokevirtual #207                // Method com/pedropathing/math/Pose.heading:()D
+     130: invokevirtual #517                // Method com/pedropathing/math/Vector2D.toWorldFrame:(D)Lcom/pedropathing/math/Vector2D;
+     133: invokestatic  #435                // Method com/pedropathing/utils/Pair.of:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/pedropathing/utils/Pair;
+     136: areturn
+
+  private double excessVelAfterCoast(double, double, com.pedropathing.drivetrain.Drivetrain);
+    Code:
+       0: aload         5
+       2: aload_0
+       3: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+       6: getfield      #46                 // Field com/pedropathing/algorithm/ForesightConfig.naturalForwardDeceleration:Lcom/pedropathing/config/ConfigVar;
+       9: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      12: checkcast     #58                 // class java/lang/Double
+      15: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      18: aload_0
+      19: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      22: getfield      #64                 // Field com/pedropathing/algorithm/ForesightConfig.naturalStrafeDeceleration:Lcom/pedropathing/config/ConfigVar;
+      25: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      28: checkcast     #58                 // class java/lang/Double
+      31: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      34: dload_3
+      35: invokeinterface #487,  7          // InterfaceMethod com/pedropathing/drivetrain/Drivetrain.interpolateAcceleration:(DDD)D
+      40: dstore        6
+      42: ldc2_w        #520                // double -2.0d
+      45: dload         6
+      47: dmul
+      48: dload_1
+      49: dmul
+      50: dstore        8
+      52: dload         8
+      54: invokestatic  #428                // Method java/lang/Math.signum:(D)D
+      57: dload         8
+      59: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+      62: invokestatic  #500                // Method java/lang/Math.sqrt:(D)D
+      65: dmul
+      66: dreturn
+
+  public double headingError();
+    Code:
+       0: aload_0
+       1: getfield      #214                // Field headingError:D
+       4: dreturn
+
+  public double translationalError();
+    Code:
+       0: aload_0
+       1: getfield      #204                // Field translationalError:D
+       4: dreturn
+
+  public boolean velocityCondition();
+    Code:
+       0: aload_0
+       1: getfield      #197                // Field tangentialSpeed:D
+       4: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+       7: aload_0
+       8: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      11: getfield      #522                // Field com/pedropathing/algorithm/ForesightConfig.velocityConstraint:Lcom/pedropathing/config/ConfigVar;
+      14: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      17: checkcast     #58                 // class java/lang/Double
+      20: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      23: dcmpg
+      24: ifge          31
+      27: iconst_1
+      28: goto          32
+      31: iconst_0
+      32: ireturn
+
+  public boolean translationalCondition();
+    Code:
+       0: aload_0
+       1: getfield      #204                // Field translationalError:D
+       4: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+       7: aload_0
+       8: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      11: getfield      #525                // Field com/pedropathing/algorithm/ForesightConfig.translationalConstraint:Lcom/pedropathing/config/ConfigVar;
+      14: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      17: checkcast     #58                 // class java/lang/Double
+      20: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      23: dcmpg
+      24: ifge          31
+      27: iconst_1
+      28: goto          32
+      31: iconst_0
+      32: ireturn
+
+  public boolean headingCondition();
+    Code:
+       0: aload_0
+       1: getfield      #214                // Field headingError:D
+       4: invokestatic  #262                // Method java/lang/Math.abs:(D)D
+       7: aload_0
+       8: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      11: getfield      #528                // Field com/pedropathing/algorithm/ForesightConfig.headingConstraint:Lcom/pedropathing/config/ConfigVar;
+      14: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      17: checkcast     #58                 // class java/lang/Double
+      20: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      23: dcmpg
+      24: ifge          31
+      27: iconst_1
+      28: goto          32
+      31: iconst_0
+      32: ireturn
+
+  public boolean parametricCondition();
+    Code:
+       0: aload_0
+       1: getfield      #109                // Field closestT:D
+       4: dconst_1
+       5: aload_0
+       6: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+       9: getfield      #297                // Field com/pedropathing/algorithm/ForesightConfig.parametricTConstraint:Lcom/pedropathing/config/ConfigVar;
+      12: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      15: checkcast     #58                 // class java/lang/Double
+      18: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      21: dsub
+      22: dcmpl
+      23: iflt          30
+      26: iconst_1
+      27: goto          31
+      30: iconst_0
+      31: ireturn
+
+  public boolean timeoutCondition();
+    Code:
+       0: aload_0
+       1: getfield      #16                 // Field resetTimer:Z
+       4: ifne          41
+       7: aload_0
+       8: getfield      #10                 // Field timer:Lcom/pedropathing/utils/Timer;
+      11: getstatic     #531                // Field java/util/concurrent/TimeUnit.MILLISECONDS:Ljava/util/concurrent/TimeUnit;
+      14: invokevirtual #537                // Method com/pedropathing/utils/Timer.get:(Ljava/util/concurrent/TimeUnit;)D
+      17: aload_0
+      18: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      21: getfield      #540                // Field com/pedropathing/algorithm/ForesightConfig.timeoutConstraint:Lcom/pedropathing/config/ConfigVar;
+      24: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      27: checkcast     #58                 // class java/lang/Double
+      30: invokevirtual #60                 // Method java/lang/Double.doubleValue:()D
+      33: dcmpl
+      34: ifle          41
+      37: iconst_1
+      38: goto          42
+      41: iconst_0
+      42: ireturn
+
+  public double targetVelocity();
+    Code:
+       0: aload_0
+       1: getfield      #454                // Field targetVelocity:D
+       4: dreturn
+
+  public double completion();
+    Code:
+       0: aload_0
+       1: getfield      #77                 // Field tracker:Lcom/pedropathing/paths/PathTracker;
+       4: ifnonnull     9
+       7: dconst_1
+       8: dreturn
+       9: aload_0
+      10: getfield      #77                 // Field tracker:Lcom/pedropathing/paths/PathTracker;
+      13: invokevirtual #543                // Method com/pedropathing/paths/PathTracker.path:()Lcom/pedropathing/paths/Path;
+      16: getfield      #547                // Field com/pedropathing/paths/Path.curve:Lcom/pedropathing/paths/curves/Curve;
+      19: aload_0
+      20: getfield      #109                // Field closestT:D
+      23: invokeinterface #550,  3          // InterfaceMethod com/pedropathing/paths/curves/Curve.pathCompletion:(D)D
+      28: dreturn
+
+  public com.pedropathing.math.Pose closestPose();
+    Code:
+       0: aload_0
+       1: getfield      #134                // Field closestPose:Lcom/pedropathing/math/Pose;
+       4: areturn
+
+  public com.pedropathing.math.Vector2D closestTangent();
+    Code:
+       0: aload_0
+       1: getfield      #177                // Field closestTangent:Lcom/pedropathing/math/Vector2D;
+       4: areturn
+
+  public com.pedropathing.math.Vector2D closestNormal();
+    Code:
+       0: aload_0
+       1: getfield      #183                // Field closestNormal:Lcom/pedropathing/math/Vector2D;
+       4: areturn
+
+  public double curvature();
+    Code:
+       0: aload_0
+       1: getfield      #161                // Field curvature:D
+       4: dreturn
+
+  public double remainingDistance();
+    Code:
+       0: aload_0
+       1: getfield      #166                // Field remainingDistance:D
+       4: dreturn
+
+  public double parametricCompletion();
+    Code:
+       0: aload_0
+       1: getfield      #109                // Field closestT:D
+       4: dreturn
+
+  public boolean atParametricEnd();
+    Code:
+       0: aload_0
+       1: invokevirtual #119                // Method parametricCondition:()Z
+       4: ireturn
+
+  public void reset();
+    Code:
+       0: aload_0
+       1: getfield      #10                 // Field timer:Lcom/pedropathing/utils/Timer;
+       4: invokevirtual #327                // Method com/pedropathing/utils/Timer.reset:()V
+       7: aload_0
+       8: iconst_1
+       9: putfield      #16                 // Field resetTimer:Z
+      12: aload_0
+      13: iconst_1
+      14: putfield      #20                 // Field busy:Z
+      17: aload_0
+      18: dconst_0
+      19: putfield      #109                // Field closestT:D
+      22: aload_0
+      23: dconst_0
+      24: putfield      #229                // Field projectedClosestT:D
+      27: aload_0
+      28: dconst_0
+      29: putfield      #493                // Field coastClosestT:D
+      32: aload_0
+      33: aconst_null
+      34: putfield      #77                 // Field tracker:Lcom/pedropathing/paths/PathTracker;
+      37: aload_0
+      38: iconst_0
+      39: putfield      #23                 // Field isBraking:Z
+      42: aload_0
+      43: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      46: getfield      #511                // Field com/pedropathing/algorithm/ForesightConfig.forwardTranslational:Lcom/pedropathing/config/ConfigVar;
+      49: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      52: checkcast     #256                // class com/pedropathing/controllers/Controller
+      55: invokeinterface #553,  1          // InterfaceMethod com/pedropathing/controllers/Controller.reset:()V
+      60: aload_0
+      61: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      64: getfield      #514                // Field com/pedropathing/algorithm/ForesightConfig.strafeTranslational:Lcom/pedropathing/config/ConfigVar;
+      67: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      70: checkcast     #256                // class com/pedropathing/controllers/Controller
+      73: invokeinterface #553,  1          // InterfaceMethod com/pedropathing/controllers/Controller.reset:()V
+      78: aload_0
+      79: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+      82: getfield      #253                // Field com/pedropathing/algorithm/ForesightConfig.headingFeedback:Lcom/pedropathing/config/ConfigVar;
+      85: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+      88: checkcast     #256                // class com/pedropathing/controllers/Controller
+      91: invokeinterface #553,  1          // InterfaceMethod com/pedropathing/controllers/Controller.reset:()V
+      96: aload_0
+      97: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     100: getfield      #269                // Field com/pedropathing/algorithm/ForesightConfig.headingStaticFF:Lcom/pedropathing/config/ConfigVar;
+     103: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     106: checkcast     #256                // class com/pedropathing/controllers/Controller
+     109: invokeinterface #553,  1          // InterfaceMethod com/pedropathing/controllers/Controller.reset:()V
+     114: aload_0
+     115: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     118: getfield      #461                // Field com/pedropathing/algorithm/ForesightConfig.brake:Lcom/pedropathing/config/ConfigVar;
+     121: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     124: checkcast     #256                // class com/pedropathing/controllers/Controller
+     127: invokeinterface #553,  1          // InterfaceMethod com/pedropathing/controllers/Controller.reset:()V
+     132: aload_0
+     133: getfield      #33                 // Field config:Lcom/pedropathing/algorithm/ForesightConfig;
+     136: getfield      #503                // Field com/pedropathing/algorithm/ForesightConfig.coast:Lcom/pedropathing/config/ConfigVar;
+     139: invokevirtual #52                 // Method com/pedropathing/config/ConfigVar.get:()Ljava/lang/Object;
+     142: checkcast     #256                // class com/pedropathing/controllers/Controller
+     145: invokeinterface #553,  1          // InterfaceMethod com/pedropathing/controllers/Controller.reset:()V
+     150: return
+
+  public boolean isBusy();
+    Code:
+       0: aload_0
+       1: getfield      #20                 // Field busy:Z
+       4: ireturn
+
+  public java.util.Map<java.lang.String, java.lang.Object> debugData();
+    Code:
+       0: new           #26                 // class java/util/HashMap
+       3: dup
+       4: invokespecial #28                 // Method java/util/HashMap."<init>":()V
+       7: astore_1
+       8: aload_1
+       9: ldc_w         #554                // String pose
+      12: aload_0
+      13: getfield      #81                 // Field currentState:Lcom/pedropathing/localization/MotionState;
+      16: invokevirtual #97                 // Method com/pedropathing/localization/MotionState.pose:()Lcom/pedropathing/math/Pose;
+      19: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+      24: pop
+      25: aload_1
+      26: ldc_w         #561                // String velocity
+      29: aload_0
+      30: getfield      #81                 // Field currentState:Lcom/pedropathing/localization/MotionState;
+      33: invokevirtual #186                // Method com/pedropathing/localization/MotionState.velocity:()Lcom/pedropathing/math/Velocity;
+      36: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+      41: pop
+      42: aload_1
+      43: ldc_w         #562                // String twist
+      46: aload_0
+      47: getfield      #81                 // Field currentState:Lcom/pedropathing/localization/MotionState;
+      50: invokevirtual #217                // Method com/pedropathing/localization/MotionState.twist:()Lcom/pedropathing/math/Twist;
+      53: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+      58: pop
+      59: aload_1
+      60: ldc_w         #563                // String translationalError
+      63: aload_0
+      64: getfield      #204                // Field translationalError:D
+      67: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+      70: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+      75: pop
+      76: aload_1
+      77: ldc_w         #564                // String headingError
+      80: aload_0
+      81: getfield      #214                // Field headingError:D
+      84: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+      87: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+      92: pop
+      93: aload_1
+      94: ldc_w         #565                // String tangentialSpeed
+      97: aload_0
+      98: getfield      #197                // Field tangentialSpeed:D
+     101: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     104: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     109: pop
+     110: aload_1
+     111: ldc_w         #566                // String closestT
+     114: aload_0
+     115: getfield      #109                // Field closestT:D
+     118: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     121: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     126: pop
+     127: aload_1
+     128: ldc_w         #567                // String projectedClosestT
+     131: aload_0
+     132: getfield      #229                // Field projectedClosestT:D
+     135: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     138: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     143: pop
+     144: aload_1
+     145: ldc_w         #568                // String remainingDistance
+     148: aload_0
+     149: getfield      #166                // Field remainingDistance:D
+     152: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     155: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     160: pop
+     161: aload_1
+     162: ldc_w         #569                // String curveCompletion
+     165: aload_0
+     166: getfield      #171                // Field curveCompletion:D
+     169: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     172: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     177: pop
+     178: aload_1
+     179: ldc_w         #570                // String normalFeedforward
+     182: aload_0
+     183: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+     186: invokevirtual #572                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getNormalFeedforwardVector:()Lcom/pedropathing/math/Vector2D;
+     189: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     194: pop
+     195: aload_1
+     196: ldc_w         #575                // String headingFeedforward
+     199: aload_0
+     200: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+     203: invokevirtual #577                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getHeadingFeedforward:()D
+     206: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     209: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     214: pop
+     215: aload_1
+     216: ldc_w         #580                // String translationalVector
+     219: aload_0
+     220: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+     223: invokevirtual #582                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getTranslationalVector:()Lcom/pedropathing/math/Vector2D;
+     226: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     231: pop
+     232: aload_1
+     233: ldc_w         #585                // String driveVector
+     236: aload_0
+     237: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+     240: invokevirtual #587                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getDriveVector:()Lcom/pedropathing/math/Vector2D;
+     243: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     248: pop
+     249: aload_1
+     250: ldc_w         #590                // String headingPower
+     253: aload_0
+     254: getfield      #42                 // Field allocator:Lcom/pedropathing/algorithm/ForesightPowerAllocator;
+     257: invokevirtual #592                // Method com/pedropathing/algorithm/ForesightPowerAllocator.getHeadingPower:()D
+     260: invokestatic  #431                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     263: invokeinterface #555,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     268: pop
+     269: aload_1
+     270: areturn
+
+  public boolean isBraking();
+    Code:
+       0: aload_0
+       1: getfield      #23                 // Field isBraking:Z
+       4: ireturn
+
+  public java.util.Map<java.lang.String, java.lang.Object> debug();
+    Code:
+       0: aload_0
+       1: getfield      #29                 // Field debug:Ljava/util/Map;
+       4: areturn
+}

@@ -5,6 +5,7 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
+import com.pedropathing.paths.Path;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -18,7 +19,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -131,44 +131,49 @@ public class VisionTuner extends LinearOpMode {
         private static final double SEGMENT_STEP = 0.5;
         private static final double EPSILON = 1e-6;
         private static final double MIN_LEG_LENGTH = 0.5;
+        private static final double STALL_SPEED = 1.5; // in/s
+        private static final int POSE_BUFFER_SIZE = 256;
+        private static final long FLUSH_INTERVAL_NANOS = 1_000_000_000L;
 
-        // flow: TRAVEL (drive to spot) -> TURN -> SETTLE (stand still) -> SAMPLE (log) -> next heading/spot
+        // TRAVEL to spot, SPIN there, repeat without stopping
         private enum State {
             IDLE,
             TRAVEL,
-            TURN,
-            SETTLE,
-            SAMPLE,
+            SPIN,
             DONE
         }
 
         private final Follower follower;
         private final Vision vision;
-        private final Timer stateTimer = new Timer();
         private final Timer legTimer = new Timer();
+        private final Timer spinTimer = new Timer();
 
         private State state = State.IDLE;
         private String status = "idle";
 
         private double clearance;
         private double[] xs, ys;
-        private boolean[][] valid;
+        private boolean[][] navigable; // robot may drive here
+        private boolean[][] isSpot; // navigable and outside no-record band
         private List<int[]> targets;
         private int targetIdx;
         private int[] curNode;
-        private ArrayDeque<int[]> path;
-        private boolean legActive;
-        private int[] legNode;
 
-        private int headingCount;
-        private List<Double> headings = new ArrayList<>();
-        private int headingIdx;
-        private boolean holdStarted;
+        // current spot and heading sweep (radians, unwrapped)
+        private double spinX, spinY, spinFrom, spinTo;
 
-        private int samplesThisHeading;
+        // odometry history for matching camera frames
+        private final long[] poseNanos = new long[POSE_BUFFER_SIZE];
+        private final double[] poseX = new double[POSE_BUFFER_SIZE];
+        private final double[] poseY = new double[POSE_BUFFER_SIZE];
+        private final double[] poseHeading = new double[POSE_BUFFER_SIZE];
+        private final double[] poseOut = new double[3];
+        private int poseNext, poseCount;
+
         private double lastFrameTime = Double.NaN;
+        private long lastFlushNanos;
 
-        private int rows, dropped, skippedSpots, skippedHeadings, validFrames, lastTags;
+        private int rows, dropped, inBand, noPose, skippedSpots, validFrames, lastTags;
         private BufferedWriter writer;
         private String filePath = "";
 
@@ -178,19 +183,20 @@ public class VisionTuner extends LinearOpMode {
         }
 
         public boolean isRunning() {
-            return state != State.IDLE && state != State.DONE;
+            return state == State.TRAVEL || state == State.SPIN;
         }
 
         public String status() {
             if (!isRunning() && state != State.DONE) return status;
-            return status + " | spot " + Math.min(targetIdx + 1, targets.size()) + "/" + targets.size()
-                    + ", heading " + Math.min(headingIdx + 1, headingCount) + "/" + headingCount
-                    + ", rows " + rows + ", dropped " + dropped + ", validFrames " + validFrames + ", lastTags " + lastTags
-                    + ", skippedSpots " + skippedSpots + ", skippedHeadings " + skippedHeadings
+            return status + (isRunning() && inNoRecordBand(follower.pose().y()) ? " [no-record band]" : "")
+                    + " | spot " + Math.min(targetIdx + 1, targets.size()) + "/" + targets.size()
+                    + ", rows " + rows + ", dropped " + dropped + ", inBand " + inBand + ", noPose " + noPose
+                    + ", validFrames " + validFrames + ", lastTags " + lastTags
+                    + ", skippedSpots " + skippedSpots
                     + ", file " + filePath;
         }
 
-        // checks the start is safe, builds the grid and route, opens the csv, starts driving
+        // safety checks, grid, csv, then first leg
         public void start() {
             clearance = Math.hypot(Tunables.visionTunerRobotLength, Tunables.visionTunerRobotWidth) / 2
                     + Tunables.visionTunerWallMargin;
@@ -213,23 +219,18 @@ public class VisionTuner extends LinearOpMode {
                 return;
             }
 
-            for (int k = 0; k < targets.size(); k++) {
-                if (targets.get(k)[0] == nearest[0] && targets.get(k)[1] == nearest[1]) {
-                    Collections.rotate(targets, -k);
-                    break;
-                }
-            }
-
-            headingCount = (int) Math.ceil(360.0 / Tunables.visionTunerHeadingStepDegrees);
             rows = 0;
             dropped = 0;
+            inBand = 0;
+            noPose = 0;
             skippedSpots = 0;
-            skippedHeadings = 0;
             targetIdx = 0;
-            headingIdx = 0;
             lastFrameTime = Double.NaN;
             validFrames = 0;
             lastTags = 0;
+            poseNext = 0;
+            poseCount = 0;
+            lastFlushNanos = System.nanoTime();
 
             try {
                 File dir = new File(AppUtil.FIRST_FOLDER, "vision_data");
@@ -250,10 +251,9 @@ public class VisionTuner extends LinearOpMode {
             curNode = nearest;
             status = "running";
             advanceTarget();
-            if (isRunning()) path.addFirst(nearest);
         }
 
-        // user hit START again (or opmode ended): stop motors and close the file
+        // stop motors, close file
         public void stop() {
             boolean wasRunning = isRunning();
             follower.stop();
@@ -265,29 +265,21 @@ public class VisionTuner extends LinearOpMode {
             }
         }
 
-        // called every loop. runs whichever step we're in: travel, turn, settle, sample
+        // every loop: pose history, step, log frame
         public void update() {
             if (!isRunning()) return;
+            recordPose();
             switch (state) {
                 case TRAVEL:
                     updateTravel();
                     break;
-                case TURN:
-                    updateTurn();
-                    break;
-                case SETTLE:
-                    if (stateTimer.milliseconds() >= Tunables.visionTunerSettleMillis) {
-                        samplesThisHeading = 0;
-                        state = State.SAMPLE;
-                        stateTimer.reset();
-                    }
-                    break;
-                case SAMPLE:
-                    updateSample();
+                case SPIN:
+                    updateSpin();
                     break;
                 default:
                     break;
             }
+            if (isRunning()) logFrame();
         }
 
         private void refuse() {
@@ -319,99 +311,45 @@ public class VisionTuner extends LinearOpMode {
             writer = null;
         }
 
-        private void beginTravel() {
-            state = State.TRAVEL;
-            legActive = false;
-            legTimer.reset();
+        // full-width band: no rows, no spots
+        private static boolean inNoRecordBand(double y) {
+            return y >= Tunables.visionTunerNoRecordMinY - EPSILON && y <= Tunables.visionTunerNoRecordMaxY + EPSILON;
         }
 
-        // drives node to node along the route. at the end of the route it starts the headings
-        private void updateTravel() {
-            if (legActive) {
-                if (!follower.isBusy()) {
-                    curNode = legNode;
-                    legActive = false;
-                } else if (legTimer.milliseconds() >= Tunables.visionTunerMoveTimeoutMillis) {
-                    abort("travel timeout");
-                    return;
-                }
-            }
-            if (legActive) return;
-
-            if (path.isEmpty()) {
-                headingIdx = 0;
-                if (!buildHeadings(xs[curNode[0]], ys[curNode[1]])) {
-                    targetIdx++;
-                    advanceTarget();
-                    return;
-                }
-                beginHeading();
-                return;
-            }
-
-            legNode = path.poll();
-            Pose from = follower.pose();
-            Pose to = new Pose(xs[legNode[0]], ys[legNode[1]], from.heading());
-            if (Math.hypot(to.x() - from.x(), to.y() - from.y()) < MIN_LEG_LENGTH) {
-                curNode = legNode;
-                return;
-            }
-            follower.follow(line(from, to).linear(from, to)
-                    .with(Constants.foresightConfig.maxPathSpeed.at(Tunables.visionTunerSpeed)));
-            legActive = true;
-            legTimer.reset();
-        }
-
-        // starts turning in place at the spot
-        private void beginHeading() {
-            state = State.TURN;
-            holdStarted = false;
-            stateTimer.reset();
-        }
-
-        private double targetHeading() {
-            return headings.get(headingIdx);
-        }
-
-        // picks the headings at this spot that face roughly toward the nearest goal
-        private boolean buildHeadings(double sx, double sy) {
-            Pose[] goals = {FieldGoals.redGoalNorth, FieldGoals.redGoalSouth, FieldGoals.blueGoalNorth, FieldGoals.blueGoalSouth};
-            Pose goal = goals[0];
-            for (Pose g : goals) {
-                if (Math.hypot(g.x() - sx, g.y() - sy) < Math.hypot(goal.x() - sx, goal.y() - sy)) goal = g;
-            }
-            double toGoal = Math.atan2(goal.y() - sy, goal.x() - sx);
-            double limit = Math.toRadians(Tunables.visionTunerGoalHeadingLimitDegrees);
-            headings = new ArrayList<>();
-            for (int k = 0; k < headingCount; k++) {
-                double h = AngleUnit.normalizeRadians(Math.toRadians(k * Tunables.visionTunerHeadingStepDegrees));
-                if (Math.abs(AngleUnit.normalizeRadians(h - toGoal)) <= limit + EPSILON) headings.add(h);
-            }
-            return !headings.isEmpty();
-        }
-
-        // spin to the wanted heading while holding position, then go to SETTLE
-        private void updateTurn() {
-            double sx = xs[curNode[0]];
-            double sy = ys[curNode[1]];
-            double heading = targetHeading();
-            if (!holdStarted) {
-                follower.hold(new Pose(sx, sy, heading));
-                holdStarted = true;
-                stateTimer.reset();
-            }
+        // store pose with timestamp
+        private void recordPose() {
             Pose pose = follower.pose();
-            double headingError = Math.abs(AngleUnit.normalizeRadians(pose.heading() - heading));
-            boolean converged = headingError < Math.toRadians(Tunables.visionTunerHeadingToleranceDegrees)
-                    && Math.hypot(pose.x() - sx, pose.y() - sy) < Tunables.visionTunerPositionTolerance
-                    && follower.velocity().linSpeed() < 3;
-            if (converged) {
-                state = State.SETTLE;
-                stateTimer.reset();
-            } else if (stateTimer.milliseconds() >= Tunables.visionTunerTurnTimeoutMillis) {
-                skippedHeadings++;
-                nextHeading();
+            poseNanos[poseNext] = System.nanoTime();
+            poseX[poseNext] = pose.x();
+            poseY[poseNext] = pose.y();
+            poseHeading[poseNext] = pose.heading();
+            poseNext = (poseNext + 1) % POSE_BUFFER_SIZE;
+            if (poseCount < POSE_BUFFER_SIZE) poseCount++;
+        }
+
+        // interpolated pose at nanoTime; false if too old
+        private boolean poseAt(long nanos, double[] out) {
+            if (poseCount == 0) return false;
+            int newer = Math.floorMod(poseNext - 1, POSE_BUFFER_SIZE);
+            if (nanos >= poseNanos[newer]) {
+                out[0] = poseX[newer];
+                out[1] = poseY[newer];
+                out[2] = poseHeading[newer];
+                return true;
             }
+            for (int ago = 1; ago < poseCount; ago++) {
+                int older = Math.floorMod(poseNext - 1 - ago, POSE_BUFFER_SIZE);
+                if (nanos >= poseNanos[older]) {
+                    double f = (double) (nanos - poseNanos[older]) / (poseNanos[newer] - poseNanos[older]);
+                    out[0] = poseX[older] + (poseX[newer] - poseX[older]) * f;
+                    out[1] = poseY[older] + (poseY[newer] - poseY[older]) * f;
+                    out[2] = AngleUnit.normalizeRadians(poseHeading[older]
+                            + AngleUnit.normalizeRadians(poseHeading[newer] - poseHeading[older]) * f);
+                    return true;
+                }
+                newer = older;
+            }
+            return false;
         }
 
         private static double frameTime(LLResult result) {
@@ -419,69 +357,61 @@ public class VisionTuner extends LinearOpMode {
             return timestamp != 0 ? timestamp : result.getControlHubTimeStamp();
         }
 
-        // waits for fresh frames, drops the ones with too few tags, logs the rest
-        private void updateSample() {
+        // log new frames, skipping the band
+        private void logFrame() {
             LLResult result = vision.getLatestResult();
-            if (vision.isReasonable(result) && frameTime(result) != lastFrameTime) {
-                lastFrameTime = frameTime(result);
-                validFrames++;
-                lastTags = result.getBotposeTagCount();
-                if (lastTags < Tunables.visionTunerMinTags) {
-                    dropped++;
-                } else {
-                    try {
-                        writeRow(result);
-                    } catch (IOException e) {
-                        abort("CSV write failed");
-                        return;
-                    }
-                    samplesThisHeading++;
-                }
+            if (!vision.isReasonable(result) || frameTime(result) == lastFrameTime) return;
+            lastFrameTime = frameTime(result);
+            validFrames++;
+            lastTags = result.getBotposeTagCount();
+            if (lastTags < Tunables.visionTunerMinTags) {
+                dropped++;
+                return;
             }
-            if (samplesThisHeading >= Tunables.visionTunerSamplesPerHeading
-                    || stateTimer.milliseconds() >= Tunables.visionTunerSampleTimeoutMillis) {
-                try {
+
+            // pose at capture time, not now
+            double ageMillis = Math.max(0, result.getStaleness() + result.getCaptureLatency()
+                    + result.getTargetingLatency() + Tunables.visionTunerLatencyOffsetMillis);
+            if (!poseAt(System.nanoTime() - (long) (ageMillis * 1e6), poseOut)) {
+                noPose++;
+                return;
+            }
+            if (inNoRecordBand(poseOut[1])) {
+                inBand++;
+                return;
+            }
+
+            try {
+                writeRow(result, poseOut[0], poseOut[1], poseOut[2]);
+                long now = System.nanoTime();
+                if (now - lastFlushNanos >= FLUSH_INTERVAL_NANOS) {
                     writer.flush();
-                } catch (IOException e) {
-                    abort("CSV write failed");
-                    return;
+                    lastFlushNanos = now;
                 }
-                nextHeading();
+            } catch (IOException e) {
+                abort("CSV write failed");
             }
         }
 
-        // one csv line: odometry pose + raw limelight pose + tag count
-        private void writeRow(LLResult result) throws IOException {
-            Pose pose = follower.pose();
+        // one csv line: odometry pose + limelight pose + tags
+        private void writeRow(LLResult result, double x, double y, double heading) throws IOException {
             Position botpose = result.getBotpose().getPosition().toUnit(DistanceUnit.INCH);
             double yaw = result.getBotpose().getOrientation().getYaw(AngleUnit.RADIANS);
             writer.write(String.format(Locale.US, "%.4f,%.4f,%.5f,%.4f,%.4f,%.4f,%.4f,%.5f,%d",
-                    pose.x(), pose.y(), AngleUnit.normalizeRadians(pose.heading()), Tunables.visionTunerTrueZ,
+                    x, y, AngleUnit.normalizeRadians(heading), Tunables.visionTunerTrueZ,
                     botpose.y + 72, 72 - botpose.x, botpose.z, AngleUnit.normalizeRadians(yaw - Math.PI / 2),
                     result.getBotposeTagCount()));
             writer.newLine();
             rows++;
         }
 
-        // next heading at this spot, or on to the next spot when done
-        private void nextHeading() {
-            headingIdx++;
-            if (headingIdx < headings.size()) {
-                beginHeading();
-                return;
-            }
-            targetIdx++;
-            advanceTarget();
-        }
-
-        // goes to the next spot on the list, or finishes if we're out of spots
+        // next reachable spot, or finish
         private void advanceTarget() {
-            headingIdx = 0;
             while (targetIdx < targets.size()) {
-                ArrayDeque<int[]> route = bfs(curNode, targets.get(targetIdx));
+                int[] spot = targets.get(targetIdx);
+                ArrayDeque<int[]> route = bfs(curNode, spot);
                 if (route != null) {
-                    path = route;
-                    beginTravel();
+                    beginTravel(route, spot);
                     return;
                 }
                 skippedSpots++;
@@ -490,14 +420,127 @@ public class VisionTuner extends LinearOpMode {
             finish();
         }
 
-        // runs once at start: makes the grid and marks which spots are valid
+        // one continuous path; heading eases toward sweep start
+        private void beginTravel(ArrayDeque<int[]> route, int[] spot) {
+            Pose pose = follower.pose();
+            spinX = xs[spot[0]];
+            spinY = ys[spot[1]];
+            planSweep(spinX, spinY, pose.heading());
+            List<double[]> corners = pull(pose, route);
+            curNode = spot;
+            legTimer.reset();
+            if (corners.size() < 2) {
+                beginSpin();
+                return;
+            }
+
+            // heading spread by distance along path
+            double[] along = new double[corners.size()];
+            for (int k = 1; k < along.length; k++) {
+                along[k] = along[k - 1] + Math.hypot(corners.get(k)[0] - corners.get(k - 1)[0],
+                        corners.get(k)[1] - corners.get(k - 1)[1]);
+            }
+            double delta = AngleUnit.normalizeRadians(spinFrom - pose.heading());
+            Pose[] waypoints = new Pose[corners.size()];
+            for (int k = 0; k < waypoints.length; k++) {
+                waypoints[k] = new Pose(corners.get(k)[0], corners.get(k)[1],
+                        pose.heading() + delta * along[k] / along[along.length - 1]);
+            }
+            Path[] legs = new Path[waypoints.length - 1];
+            for (int k = 0; k < legs.length; k++) {
+                legs[k] = line(waypoints[k], waypoints[k + 1]).linear(waypoints[k], waypoints[k + 1])
+                        .with(Constants.foresightConfig.maxPathSpeed.at(Tunables.visionTunerSpeed));
+            }
+            follower.follow(path(legs));
+            state = State.TRAVEL;
+            status = "running: travel";
+        }
+
+        // fewest safe straight legs, from the real pose
+        private List<double[]> pull(Pose pose, ArrayDeque<int[]> route) {
+            List<double[]> points = new ArrayList<>();
+            points.add(new double[]{pose.x(), pose.y()});
+            points.add(new double[]{xs[curNode[0]], ys[curNode[1]]});
+            for (int[] node : route) points.add(new double[]{xs[node[0]], ys[node[1]]});
+
+            List<double[]> corners = new ArrayList<>();
+            corners.add(points.get(0));
+            int a = 0;
+            while (a < points.size() - 1) {
+                int b = points.size() - 1;
+                while (b > a + 1 && !isSegmentSafe(points.get(a)[0], points.get(a)[1], points.get(b)[0], points.get(b)[1])) b--;
+                double[] last = corners.get(corners.size() - 1);
+                double[] next = points.get(b);
+                if (Math.hypot(next[0] - last[0], next[1] - last[1]) >= MIN_LEG_LENGTH) corners.add(next);
+                a = b;
+            }
+            return corners;
+        }
+
+        // sweep +-limit around nearest goal direction
+        private void planSweep(double sx, double sy, double heading) {
+            Pose[] goals = {FieldGoals.redGoalNorth, FieldGoals.redGoalSouth, FieldGoals.blueGoalNorth, FieldGoals.blueGoalSouth};
+            Pose goal = goals[0];
+            for (Pose g : goals) {
+                if (Math.hypot(g.x() - sx, g.y() - sy) < Math.hypot(goal.x() - sx, goal.y() - sy)) goal = g;
+            }
+            double toGoal = Math.atan2(goal.y() - sy, goal.x() - sx);
+            double limit = Math.toRadians(Math.min(Math.max(Tunables.visionTunerGoalHeadingLimitDegrees, 0), 180));
+            double low = toGoal - limit;
+            double high = toGoal + limit;
+            // start at the end nearer the current heading
+            boolean startLow = Math.abs(AngleUnit.normalizeRadians(low - heading))
+                    <= Math.abs(AngleUnit.normalizeRadians(high - heading));
+            spinFrom = startLow ? low : high;
+            spinTo = startLow ? high : low;
+        }
+
+        // follow path; spin when near the spot
+        private void updateTravel() {
+            Pose pose = follower.pose();
+            if (Math.hypot(pose.x() - spinX, pose.y() - spinY) <= Tunables.visionTunerSpinEnterRadius
+                    || !follower.isBusy()) {
+                beginSpin();
+                return;
+            }
+            // abort only if stuck
+            if (follower.velocity().linSpeed() >= STALL_SPEED) {
+                legTimer.reset();
+            } else if (legTimer.milliseconds() >= Tunables.visionTunerMoveTimeoutMillis) {
+                abort("travel stalled");
+            }
+        }
+
+        private void beginSpin() {
+            state = State.SPIN;
+            status = "running: spin";
+            spinTimer.reset();
+            follower.hold(new Pose(spinX, spinY, AngleUnit.normalizeRadians(spinFrom)));
+        }
+
+        // slide hold heading at constant rate
+        private void updateSpin() {
+            double sweep = spinTo - spinFrom;
+            double rate = Math.toRadians(Math.max(Tunables.visionTunerSpinDegPerSec, 1));
+            double fraction = Math.abs(sweep) < EPSILON ? 1 : Math.min(spinTimer.seconds() * rate / Math.abs(sweep), 1);
+            follower.hold(new Pose(spinX, spinY, AngleUnit.normalizeRadians(spinFrom + sweep * fraction)));
+            // sweep done: go on immediately
+            if (fraction >= 1) {
+                targetIdx++;
+                advanceTarget();
+            }
+        }
+
+        // grid: drivable nodes, and spots outside the band
         private void buildGrid() {
             xs = axis(Tunables.visionTunerSpotX);
             ys = axis(Tunables.visionTunerSpotY);
-            valid = new boolean[xs.length][ys.length];
+            navigable = new boolean[xs.length][ys.length];
+            isSpot = new boolean[xs.length][ys.length];
             for (int i = 0; i < xs.length; i++) {
                 for (int j = 0; j < ys.length; j++) {
-                    valid[i][j] = isPointSafe(xs[i], ys[j]);
+                    navigable[i][j] = isPointSafe(xs[i], ys[j]);
+                    isSpot[i][j] = navigable[i][j] && !inNoRecordBand(ys[j]);
                 }
             }
         }
@@ -556,7 +599,7 @@ public class VisionTuner extends LinearOpMode {
             double bestDist = Double.MAX_VALUE;
             for (int i = 0; i < xs.length; i++) {
                 for (int j = 0; j < ys.length; j++) {
-                    if (!valid[i][j]) continue;
+                    if (!navigable[i][j]) continue;
                     double d = Math.hypot(xs[i] - x, ys[j] - y);
                     if (d < bestDist && isSegmentSafe(x, y, xs[i], ys[j])) {
                         bestDist = d;
@@ -567,14 +610,14 @@ public class VisionTuner extends LinearOpMode {
             return best;
         }
 
-        // lists all valid spots row by row, zigzag style, so the robot doesn't backtrack
+        // spots row by row, zigzag
         private List<int[]> serpentine() {
             List<int[]> out = new ArrayList<>();
             for (int j = 0; j < ys.length; j++) {
                 boolean forward = j % 2 == 0;
                 for (int k = 0; k < xs.length; k++) {
                     int i = forward ? k : xs.length - 1 - k;
-                    if (valid[i][j]) out.add(new int[]{i, j});
+                    if (isSpot[i][j]) out.add(new int[]{i, j});
                 }
             }
             return out;
@@ -582,7 +625,7 @@ public class VisionTuner extends LinearOpMode {
 
         // can we drive from node a to node b safely?
         private boolean edgeSafe(int i0, int j0, int i1, int j1) {
-            return valid[i1][j1] && isSegmentSafe(xs[i0], ys[j0], xs[i1], ys[j1]);
+            return navigable[i1][j1] && isSegmentSafe(xs[i0], ys[j0], xs[i1], ys[j1]);
         }
 
         // finds a path of grid nodes between two spots without crossing obstacles

@@ -95,18 +95,16 @@ public class Tunables {
     public static double visionTunerWallMargin = 3;
     public static double visionTunerObstacleAMinX = 0, visionTunerObstacleAMinY = 48, visionTunerObstacleAMaxX = 43, visionTunerObstacleAMaxY = 96;
     public static double visionTunerObstacleBMinX = 96, visionTunerObstacleBMinY = 48, visionTunerObstacleBMaxX = 144, visionTunerObstacleBMaxY = 96;
-    public static double visionTunerGridSpacing = 12;
-    public static double visionTunerHeadingStepDegrees = 30;
-    public static double visionTunerGoalHeadingLimitDegrees = 100;
-    public static double visionTunerHeadingToleranceDegrees = 4;
-    public static double visionTunerPositionTolerance = 2;
-    public static double visionTunerTurnTimeoutMillis = 3000;
-    public static double visionTunerSettleMillis = 100;
-    public static int visionTunerSamplesPerHeading = 4;
+    public static double visionTunerGridSpacing = 8;
+    public static double visionTunerGoalHeadingLimitDegrees = 100; // sweep +-this around goal
+    public static double visionTunerSpinDegPerSec = 45;
+    public static double visionTunerSpinEnterRadius = 4; // in, start spin this close to spot
+    public static double visionTunerNoRecordMinY = 48; // full-width no-record band
+    public static double visionTunerNoRecordMaxY = 96;
+    public static double visionTunerLatencyOffsetMillis = 0; // extra camera delay
     public static int visionTunerMinTags = 2;
     public static double visionTunerTrueZ = 0;
-    public static double visionTunerMoveTimeoutMillis = 6000;
-    public static double visionTunerSampleTimeoutMillis = 300;
+    public static double visionTunerMoveTimeoutMillis = 6000; // stall timeout
 
     /** field tunables (used in Field.java) **/
 
