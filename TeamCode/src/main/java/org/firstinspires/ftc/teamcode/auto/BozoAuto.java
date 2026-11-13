@@ -508,7 +508,7 @@ public abstract class BozoAuto extends OpMode {
     @Override
     public void loop() {
         loopTimer.reset();
-        vision.update(follower.pose().heading());
+        vision.update();
         follower.update();
         robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage());
         robot.update(); // advances the shooting state machine and intake power-save

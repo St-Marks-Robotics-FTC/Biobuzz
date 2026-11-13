@@ -181,7 +181,8 @@ the **start** button toggles between robot/field centric control
 
 - `FlywheelTuner`: tune flywheel PIDF
 - `ServoTuner`: tune servo positions
-- `VisionTuner`: tune vision
+- `VisionTuner`: manual vision tuning, toggle logging
+- `AutoVisionTuner`: drives field, records vision data CSV
 
 # vision
 

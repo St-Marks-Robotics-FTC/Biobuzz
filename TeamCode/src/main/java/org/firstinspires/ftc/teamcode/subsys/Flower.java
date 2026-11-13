@@ -8,7 +8,7 @@ import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
 
 public class Flower {
-    private Servo flowerServo;
+    private SServo flowerServo;
 
     private enum State {
         UP,

@@ -69,8 +69,6 @@ public abstract class BozoTeleOp extends OpMode {
     public void loop() {
         loopTimer.reset();
 
-        vision.update(follower.pose().heading());
-        relocalize();
         updateLastScoringData();
         handleDrive();
         handleFlywheel();
@@ -90,18 +88,6 @@ public abstract class BozoTeleOp extends OpMode {
         robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
 
         updateTelemetry();
-    }
-
-    private void relocalize() {
-        Pose visionPose = vision.takeNewBotPose();
-        if (visionPose == null || isTurning) return;
-        if (follower.velocity().linSpeed() > Tunables.visionPoseMaxSpeed) return;
-        Pose pose = follower.pose();
-        double gain = Tunables.visionPoseGain;
-        follower.setPose(new Pose(
-                pose.x() + gain * (visionPose.x() - pose.x()),
-                pose.y() + gain * (visionPose.y() - pose.y()),
-                pose.heading()));
     }
 
     private void handleDrive() {

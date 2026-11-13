@@ -106,6 +106,23 @@ public class Tunables {
     public static double visionTunerTrueZ = 0;
     public static double visionTunerMoveTimeoutMillis = 6000; // stall timeout
 
+    public static int cameraHeight = 9;
+    public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
+
+    /** fusion tunables (used in Fusion.java) **/
+
+    // all distances in inches; "std" = standard deviation = typical size of the error
+    public static double fusionStartStd = 2; // how unsure we are about our starting pose after auto
+    public static double fusionOdoVariancePerInch = 0.02; // how much odometry uncertainty grows per inch driven (in^2 per in)
+    public static double fusionVisionBaseStd = 0.187; // vision error with ONE tag at fusionVisionRefDistance
+    public static double fusionVisionRefDistance = 59; // distance (in) that fusionVisionBaseStd was measured at
+    public static double fusionTimingErrorMs = 10; // how far off our vision timing might be; turns driving speed into error
+    public static double fusionTurnStd = 1.0; // extra vision error per rad/s of turning (motion blur)
+    public static double fusionMinVisionStd = 0.5; // never trust a vision frame more than this, even if everything says it's perfect
+    public static double fusionGateSigmas = 3; // reject vision frames more than this many std devs from our estimate
+    public static int fusionRejectsBeforeDoubt = 10; // rejected frames in a row before we start doubting odometry instead
+    public static double fusionExtraLatencyMs = 0; // extra delay on top of what the Limelight reports; tune if fused pose wobbles when driving
+
     /** field tunables (used in Field.java) **/
 
     // auto RPM
