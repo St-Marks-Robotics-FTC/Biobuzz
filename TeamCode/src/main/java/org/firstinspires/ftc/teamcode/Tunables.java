@@ -74,12 +74,18 @@ public class Tunables {
     public static double visionZOffset = 0; // in, subtracted from raw z
     public static double visionZPerDist = 0; // in/in of avg tag distance, subtracted from raw z
 
-    public static double visionCameraErrorForward = 0.356; // in, robot frame
-    public static double visionCameraErrorLeft = -3.763;  // in, robot frame
-    public static double visionBlueBiasX = -3.426; // in, field frame
-    public static double visionBlueBiasY = -0.260;
-    public static double visionRedBiasX = -1.477;
-    public static double visionRedBiasY = 0.130;
+    // camera offset
+    public static double visionCameraErrorForward = 0.446;
+    public static double visionCameraErrorLeft = -4.165;
+    public static double visionBlueBiasX = -4.001;
+    public static double visionBlueBiasY = -0.267;
+    public static double visionRedBiasX = -1.392;
+    public static double visionRedBiasY = 0.006;
+
+    public static double visionMinGoalDist = 35; // in, ignore vision closer than this to the hive
+    public static double visionMaxZSensitivity = 1.4; // reject if hive math amplifies z error this much
+    public static double visionSensitivityRef = 1.2; // sensitivity above this inflates std dev
+    public static double visionJumpMax = 8; // in, reject frames this far from the 9-frame median
 
     public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
     public static double visionJumpMargin = 4; // in, allowed frame noise
@@ -108,9 +114,6 @@ public class Tunables {
 
     public static int cameraHeight = 9;
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
-
-    public static double yfix = -28;
-    public static double zfix = -20;
 
     /** fusion tunables (used in Fusion.java) **/
 
