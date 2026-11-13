@@ -29,6 +29,7 @@ public class Flower {
         shakeTimer = new Timer();
 
         flowerServo.setPosition(Tunables.flowerUp); // start up
+        flowerServo.forceUpdate(); // move on init
     }
 
     public void toggle() {
