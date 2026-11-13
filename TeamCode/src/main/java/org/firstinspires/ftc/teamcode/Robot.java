@@ -7,6 +7,9 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
+import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
+import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
@@ -14,12 +17,24 @@ import org.firstinspires.ftc.teamcode.subsys.Transfer;
 public class Robot {
     public LynxModule controlHub;
     public LynxModule expansionHub;
+    public HWScheduler scheduler;
     public Flywheel flywheel;
     public Intake intake;
     public Transfer transfer;
 
-    private boolean isLaunching = false;
+    public Flower flower;
+
     private Timer launchTimer;
+
+    private enum LaunchState {
+        LOCKED,
+        START_LAUNCH,
+        STOPPING_INTAKE,
+        OPENING_TRANSFER,
+        SHOOTING
+    }
+
+    private LaunchState launchState = LaunchState.LOCKED;
 
     public Robot(HardwareMap hw) {
         // initialize everything here
@@ -30,9 +45,12 @@ public class Robot {
         controlHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         expansionHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
 
-        flywheel = new Flywheel(hw);
-        intake = new Intake(hw);
-        transfer = new Transfer(hw);
+        scheduler = new HWScheduler(hw); // subsystems register their devices with this
+
+        flywheel = new Flywheel(scheduler);
+        intake = new Intake(scheduler);
+        transfer = new Transfer(scheduler);
+        flower = new Flower(scheduler);
 
         launchTimer = new Timer();
     }
@@ -41,29 +59,53 @@ public class Robot {
         return (controlHub.getCurrent(CurrentUnit.AMPS) + expansionHub.getCurrent(CurrentUnit.AMPS));
     }
 
-    public void startLaunch() {
-        transfer.open();
-        intake.forwardLaunching();
-        launchTimer.reset();
-        isLaunching = true;
+    public double getExpansionHubVoltage() {
+        return expansionHub.getInputVoltage(VoltageUnit.VOLTS);
     }
 
-    public void updateLaunch() { // returns true when we're done launching
-        if (isLaunching) {
-            if (launchTimer.milliseconds() >= Tunables.launchOpenTime) {
-                // end launch
-                transfer.close();
-                intake.forward();
-                isLaunching = false;
-            }
-        } else {
-            if (intake.getState() == Intake.State.FORWARD_LAUNCHING) {
-                intake.forward();
-            }
+    public void startLaunch() {
+        launchState = LaunchState.START_LAUNCH;
+    }
+
+    public void update() {
+        switch (launchState) {
+            case LOCKED:
+                // do nothing
+                break;
+            case START_LAUNCH:
+                launchTimer.reset();
+                intake.off();
+                launchState = LaunchState.STOPPING_INTAKE;
+            case STOPPING_INTAKE:
+                if (launchTimer.milliseconds() >= Tunables.launchIntakeStopTime) {
+                    // we've waited for intake to slow down so we can now open transfer without killing the servo
+                    transfer.open();
+                    launchState = LaunchState.OPENING_TRANSFER;
+                    launchTimer.reset();
+                }
+                break;
+            case OPENING_TRANSFER:
+                if (launchTimer.milliseconds() >= Tunables.launchTransferOpeningTime) {
+                    // we've waited for transfer to open so we can now start our intake at launching power
+                    intake.forward();
+                    launchState = LaunchState.SHOOTING;
+                    launchTimer.reset();
+                }
+                break;
+            case SHOOTING:
+                if (launchTimer.milliseconds() >= Tunables.launchShootingTime) {
+                    // we've waited for all the balls to come through
+                    intake.forward(); // go forward full power
+                    transfer.close(); // keep any more balls from falling through
+                    launchState = LaunchState.LOCKED;
+                }
+                break;
         }
+
+        intake.update(isLaunching());
     }
 
     public boolean isLaunching() {
-        return isLaunching;
+        return launchState != LaunchState.LOCKED;
     }
 }

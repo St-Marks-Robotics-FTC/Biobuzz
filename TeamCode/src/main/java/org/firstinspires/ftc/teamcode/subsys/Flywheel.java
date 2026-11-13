@@ -6,31 +6,35 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
-import org.firstinspires.ftc.teamcode.subsys.PIDF;
+import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
+import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
 
 public class Flywheel {
     public static final int MOTOR_TICKS_PER_MOTOR_REV = 28; // encoder ticks per motor revolution
     public static final double LAUNCH_RATIO = 1; // motor->flywheel ratio (output rotations / motor rotations)
+    private static final double priorityMultiplier = 1; // PIDF makes small power changes, so boost them to keep up with bigger changes
 
     /** hardware **/
-    private DcMotorEx launchMotor;
+    private SMotor launchMotor; // writes go through the scheduler, reads go straight to launchMotor.m
 
     /** stuff that changes **/
     private PIDF pidf;
+    private double lastSetRPM = 0;
 
-    public Flywheel(HardwareMap hw) {
+    public Flywheel(HWScheduler scheduler) {
         // launch motors (all are DcMotorEx for current monitoring)
-        launchMotor = hw.get(DcMotorEx.class, "launchMotor");
+        launchMotor = new SMotor("launchMotor", priorityMultiplier, scheduler.hw());
+        scheduler.addDevice(launchMotor);
 
-        // set up hardware
-        launchMotor.setDirection(DcMotorEx.Direction.FORWARD);
-        launchMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
+        // set up hardware (one-time config, so it doesn't need to be scheduled)
+        launchMotor.m.setDirection(DcMotorEx.Direction.REVERSE);
+        launchMotor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
 
         // set up PIDF
         pidf = new PIDF(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF); // create our PIDF controller for our launch motors
     }
 
-    public void update(double RPM) {
+    public void update(double RPM, double voltage) {
         pidf.updateTerms(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF);
         double currentTPS = getTPS();
         double setpointTPS = RPMToTPS(RPM);
@@ -38,14 +42,7 @@ public class Flywheel {
 
         if (setpointTPS == 0) {
             newPower = 0.0;
-        } else if (setpointTPS - currentTPS < Tunables.flywheelQuickStartThreshold) {
-            // small difference -> use PIDF
-            newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
-        } else {
-            // big difference -> full power
-            newPower = 1.0;
-            pidf.reset(); // keep the lastTime from growing too large and causing integral accumulation
-        }
+        } else newPower = pidf.calc(setpointTPS, currentTPS) * getVoltageCompensation(voltage); // calc new motor power
 
         double clippedPower = Range.clip(newPower, -Tunables.maxFlywheelBraking, 1.0);
 
@@ -58,30 +55,37 @@ public class Flywheel {
         launchMotor.setPower(clippedPower);
     }
 
-    /** internal methods **/
-
     public double getTPS() {
         // get TPS of flywheel in the fastest way while also being able to fall back between encoders
-        return Math.abs(launchMotor.getVelocity());
+        return Math.abs(launchMotor.m.getVelocity());
     }
 
     /** getter methods **/
 
     public double getRPM() {
-        return TPSToRPM(launchMotor.getVelocity());
+        return TPSToRPM(launchMotor.m.getVelocity());
     }
+
+    public double getLastSetRPM() { return lastSetRPM; }
 
     // these should only be used for tuning
     public double getPower() {
-        return launchMotor.getPower(); // doesn't mater which one we query for power - we're both setting them the same
+        return launchMotor.getPower(); // last power the scheduler actually wrote to the motor
     }
 
     public double getCurrent() { // return sum current in amps
-        return launchMotor.getCurrent(CurrentUnit.AMPS);
+        return launchMotor.m.getCurrent(CurrentUnit.AMPS);
     }
 
     private static double getMotorTicksPerOutputRev() {
         return MOTOR_TICKS_PER_MOTOR_REV / LAUNCH_RATIO;
+    }
+
+    // return how much to multiply power by to compensate for voltage fall
+    private double getVoltageCompensation(double voltage) {
+        return Range.scale(voltage,
+                Tunables.flywheelVoltageStart, Tunables.flywheelVoltageEnd,
+                Tunables.flywheelCompensationMax, 1.0);  // reverse to scale inversely
     }
 
     public double TPSToRPM(double TPS) {

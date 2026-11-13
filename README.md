@@ -15,13 +15,13 @@ it may take a second for the control hub to show up in Android Studio
 
 Using Panels interferes with Pedro Pathing's auto tuner so in order to tune Pedro Pathing you must switch to the `pedro-tuner` branch
 
-## Fusion tuning
+## Panels Presets
 
-refer to [fusion-tuning.md](doc/fusion-tuning.md)
+Input our Panels presets by going to [panels-configs.md](doc/panels-configs.md)
 
 # hardware map
 
-driver station config name: `v0`
+INSTEAD OF ENTERING IN THE HARDWARE MAP MANUALLY FOLLOW [THE GUIDE](doc/configs/CONFIGS.md) TO IMPORT AUTOMATICALLY
 
 ## control hub
 
@@ -69,18 +69,18 @@ make sure to save the config with the Limelight under a new name, as scanning ma
 | `2`         | GoBILDA 5202/3/4 series | `backLeft`    | ❌        |
 | `3`         | GoBILDA 5202/3/4 series | `backRight`   | ❌        |
 
-make sure to connect every motor with the correct polarity; the reversing is done in software
+make sure to connect every motor to the correct port with the correct polarity; the reversing is done in software
 
 ### servos
 
-| servo port   | servo type       | verbatim name |
-|:-------------|------------------|:--------------|
-| `0`          | *unused*         | *unused*      |
-| `1`          | *unused*         | *unused*      |
-| `2`          | *unused*         | *unused*      |
-| `3`          | *unused*         | *unused*      |
-| `4`          | *unused*         | *unused*      |
-| `5`          | *unused*         | *unused*      |
+| servo port   | servo type | verbatim name |
+|:-------------|------------|:--------------|
+| `0`          | Servo      | `flowerServo` |
+| `1`          | Servo      | `hoodServo`   |
+| `2`          | *unused*   | *unused*      |
+| `3`          | *unused*   | *unused*      |
+| `4`          | *unused*   | *unused*      |
+| `5`          | *unused*   | *unused*      |
 
 ## expansion hub
 
@@ -145,16 +145,15 @@ the **start** button toggles between robot/field centric control
 ## triggers
 
 - **left trigger**: slow mode
-- **right trigger**: *unused*
+- **right trigger**: hold to lower flower mechanism
 
 ## buttons
 
 ### face buttons
 - **A**: toggle intake
 - **B**: toggle flywheel power
-- **Y**: toggle intake reverse
-- **X**: reset field centric heading
-  - make sure to orient the robot towards the top of the field (in between the goals)
+- **X**: toggle intake reverse
+- **Y**: toggle auto RPM
 
 ### d-pad
 - **up**: increment flywheel RPM
@@ -164,7 +163,7 @@ the **start** button toggles between robot/field centric control
 
 ### other buttons
 - **start**: toggle field/robot centric
-- **back**: emergency exit from auto turn
+- **back**: reset field centric heading
 
 # OpModes
 
@@ -175,13 +174,8 @@ the **start** button toggles between robot/field centric control
 
 ## Auto
 
-### blue team
-
-- `BlueAuto`: starting by bottom triangle
-
-### red team
-
-- `RedAuto`: starting by bottom triangle
+- `BlueAuto`: start in middle of tile touching wall directly across from goal
+- `RedAuto`: start in middle of tile touching wall directly across from goal
 
 ## Tuner
 
