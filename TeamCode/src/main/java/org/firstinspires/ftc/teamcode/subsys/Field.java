@@ -46,13 +46,17 @@ public class Field {
         double goalX = 0;
         double goalY = 0;
 
-        if (robotX > target.getCenterPose().x()) {
+        if (robotX > target.getCenterPose().x() && robotX - target.getCenterPose().x() >= 13.5) {
             goalX = target.getLeftPose().x();
             goalY = target.getLeftPose().y();
         }
-        else if (robotX < target.getCenterPose().x()) {
+        else if (robotX < target.getCenterPose().x() && target.getCenterPose().x() - robotX >= 13.5) {
             goalX = target.getRightPose().x();
             goalY = target.getRightPose().y();
+        }
+        else {
+            goalX = target.getCenterPose().x();
+            goalY = target.getCenterPose().y();
         }
 
         double dY = goalY - robotY;
