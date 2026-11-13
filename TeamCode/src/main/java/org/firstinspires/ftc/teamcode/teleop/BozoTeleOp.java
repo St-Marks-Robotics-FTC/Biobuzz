@@ -14,6 +14,8 @@ import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Drive;
 import org.firstinspires.ftc.teamcode.subsys.Field;
+import org.firstinspires.ftc.teamcode.subsys.Fusion;
+import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 import java.util.concurrent.TimeUnit;
@@ -25,6 +27,7 @@ public abstract class BozoTeleOp extends OpMode {
     private Drive drive;
     private Field field;
     private Vision vision;
+    private Fusion fusion;
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
@@ -49,6 +52,7 @@ public abstract class BozoTeleOp extends OpMode {
         follower = Constants.create(hardwareMap);
 
         follower.setPose(HandoffState.pose);
+        fusion = new Fusion(HandoffState.pose);
 
         robot.transfer.close();
 
@@ -80,6 +84,8 @@ public abstract class BozoTeleOp extends OpMode {
         }
 
         follower.update();
+        vision.update();
+        fusion.update(follower.pose(), follower.velocity(), vision.getResult()); // must come after follower.update() and vision.update()
 
         robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
 
@@ -220,6 +226,16 @@ public abstract class BozoTeleOp extends OpMode {
             telemetryM.addData("current RPM", robot.flywheel.getRPM());
             telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
 
+        // odo
+        telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
+        telemetryM.addData("odo x", follower.pose().x());
+        telemetryM.addData("odo y", follower.pose().y());
+
+        // fusion
+        telemetryM.addData("fused x", fusion.getPose().x());
+        telemetryM.addData("fused y", fusion.getPose().y());
+        telemetryM.addData("fusion std x/y", fusion.getStdX() + " / " + fusion.getStdY());
+        telemetryM.addData("fusion last frame", fusion.getLastResult());
             // odo
             telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
             telemetryM.addData("odo x", follower.pose().x());
