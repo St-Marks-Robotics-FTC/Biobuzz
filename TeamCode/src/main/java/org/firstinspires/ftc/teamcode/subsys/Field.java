@@ -65,27 +65,25 @@ public class Field {
         double dFromIdealY = dY - 1.04;
         double dFromIdealX = dX - 0.885;
 
-        if (isAudienceUp) {
-            if (dFromIdealY <= 0) {
-                goalY -= Tunables.dyMultiplier * dFromIdealY;
+        if (goalX != target.getCenterPose().x()) {
+            if (isAudienceUp) {
+                if (dFromIdealY <= 0) {
+                    goalY -= Tunables.dyMultiplier * dFromIdealY;
+                } else {
+                    goalY += Tunables.dyMultiplier * dFromIdealY;
+                }
+            } else {
+                if (dFromIdealY <= 0) {
+                    goalY += Tunables.dyMultiplier * dFromIdealY;
+                } else {
+                    goalY -= Tunables.dyMultiplier * dFromIdealY;
+                }
             }
-            else {
-                goalY += Tunables.dyMultiplier * dFromIdealY;
+            if (dFromIdealX <= 0) {
+                goalX += Tunables.dxMultiplier * dFromIdealX;
+            } else {
+                goalX -= Tunables.dxMultiplier * dFromIdealX;
             }
-        }
-        else {
-            if (dFromIdealY <= 0) {
-                goalY += Tunables.dyMultiplier * dFromIdealY;
-            }
-            else {
-                goalY -= Tunables.dyMultiplier * dFromIdealY;
-            }
-        }
-        if (dFromIdealX <= 0) {
-            goalX += Tunables.dyMultiplier * dFromIdealX;
-        }
-        else {
-            goalX -= Tunables.dyMultiplier * dFromIdealX;
         }
 
         dY = goalY - robotY;
