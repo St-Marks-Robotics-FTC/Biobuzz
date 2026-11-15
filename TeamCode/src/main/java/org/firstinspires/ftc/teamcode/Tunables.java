@@ -171,7 +171,7 @@ public class Tunables {
          */
 
     //dy + dx multipliers
-    public static double dyMultiplier = 0.8;
+    public static double dyMultiplier = 0.08;
     public static double dxMultiplier = 0.07;
     public static double centerThreshold = 13.5;
 
