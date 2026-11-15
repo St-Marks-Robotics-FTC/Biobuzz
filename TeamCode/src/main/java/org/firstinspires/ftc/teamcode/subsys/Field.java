@@ -112,8 +112,8 @@ public class Field {
                         new Pose(85, Tunables.audienceY + 3));
             } else {
                 return new Goal(true,
-                        new Pose(74, Tunables.scoringY - 2),
-                        new Pose(94.7, Tunables.scoringY),
+                        new Pose(72, Tunables.scoringY),
+                        new Pose(96.7, Tunables.scoringY + 2),
                         new Pose(85, Tunables.scoringY - 3));
             }
         } else {
