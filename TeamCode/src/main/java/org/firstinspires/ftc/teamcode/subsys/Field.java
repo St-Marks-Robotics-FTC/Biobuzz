@@ -92,7 +92,11 @@ public class Field {
 
         double angleToGoal = AngleUnit.normalizeRadians(Math.atan2(dY, dX));
         double dToGoal = Math.sqrt(dY * dY + dX * dX);
-        boolean canScore = angleToGoal > Tunables.maxScoringAngle;
+        boolean canScore = (Math.abs(target.getCenterPose().x() - robotX) <= Tunables.maxScoringAbsRelativeX) &&
+                    (isAudienceUp ?
+                            (((target.getCenterPose().y() - robotY) <= Tunables.maxScoringRelativeY) && ((target.getCenterPose().y() - robotY) >= Tunables.minScoringRelativeY)) :
+                            (((robotY - target.getCenterPose().y()) <= Tunables.maxScoringRelativeY) && ((robotY - target.getCenterPose().y()) >= Tunables.minScoringRelativeY))
+                    );
 
         double idealRPM = getShittyRPM(dToGoal);
 
@@ -103,14 +107,14 @@ public class Field {
         if (isBlueTeam) {
             if (isAudienceUp) {
                 return new Goal(true,
-                        new Pose(75, Tunables.audienceY),
+                        new Pose(75, Tunables.audienceY - 2),
                         new Pose(94.7, Tunables.audienceY),
-                        new Pose(85, Tunables.audienceY + 1));
+                        new Pose(85, Tunables.audienceY + 3));
             } else {
                 return new Goal(true,
-                        new Pose(75, Tunables.scoringY),
+                        new Pose(75, Tunables.scoringY - 2),
                         new Pose(94.7, Tunables.scoringY),
-                        new Pose(85, Tunables.scoringY - 2));
+                        new Pose(85, Tunables.scoringY - 3));
             }
         } else {
             if (isAudienceUp) {

@@ -34,6 +34,10 @@ public abstract class BozoTeleOp extends OpMode {
     private boolean isTurning = false;
     private boolean isManualRPM = false;
     private boolean flowerIsDown = true;
+    private boolean rumble = false;
+    private Timer rumbleTimer;
+    private boolean canScore = false;
+    private boolean lastCanScore = false;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
     private Field.ScoringData lastScoringData = null;
 
@@ -41,6 +45,8 @@ public abstract class BozoTeleOp extends OpMode {
     public void init() {
         loopTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
+
+        rumbleTimer = new Timer();
 
         robot = new Robot(hardwareMap);
         drive = new Drive(robot.scheduler); // teleop only - auto drives through the follower
@@ -172,6 +178,25 @@ public abstract class BozoTeleOp extends OpMode {
         boolean shootPressed = gamepad1.rightBumperWasPressed();
 
         if (shootPressed) robot.startLaunch();
+
+        canScore = field.getScoringData(vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP, follower.pose()).canScore();
+
+        if (!lastCanScore && canScore) { // start rumbling
+            rumble = true;
+            rumbleTimer.reset();
+            gamepad1.rumble(150);
+        } else if (lastCanScore && !canScore) { // stop rumbling
+            rumble = false;
+            rumbleTimer.reset();
+            gamepad1.stopRumble();
+        }
+
+        if (rumbleTimer.milliseconds() > 120 && rumble) { // keep rumbling
+            rumbleTimer.reset();
+            gamepad1.rumble(150);
+        }
+
+        lastCanScore = canScore;
 
         robot.update();
 

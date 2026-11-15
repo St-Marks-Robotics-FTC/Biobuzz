@@ -180,7 +180,10 @@ public class Tunables {
     public static double scoringY = 86;
 
 
-    public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
+    public static double maxScoringAngle = Math.toRadians(35); // max angle in radians goal can accept ball
+    public static double maxScoringAbsRelativeX = 36;
+    public static double maxScoringRelativeY = 48;
+    public static double minScoringRelativeY = 10;
 
     /** hardware scheduler tunables (used in HWScheduler.java) **/
 
