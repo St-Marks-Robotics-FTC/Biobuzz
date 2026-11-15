@@ -38,7 +38,7 @@ public class RedAuto extends BozoAuto {
     // ---------------------------------------------------------------- PARK
     public static Pose parkControlPoseFromShoot = new Pose(12, 12, Math.toRadians(0));
     public static Pose parkControlPoseFromTippedShoot = new Pose(24, 120, Math.toRadians(0));
-    public static Pose parkControlPoseFromScoringFlower = new Pose(48, 120, Math.toRadians(0));
+    public static Pose parkControlPoseFromScoringFlower = new Pose(48, 102, Math.toRadians(0)); // must differ from scoringFlowerIntermediatePose: coincident points give a zero tangent ("cannot normalize 0 vector")
     public static Pose parkPose = new Pose(12, 102, Math.toRadians(0));
 
     @Override
