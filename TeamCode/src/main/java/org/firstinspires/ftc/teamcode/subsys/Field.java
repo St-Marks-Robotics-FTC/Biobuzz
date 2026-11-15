@@ -102,14 +102,14 @@ public class Field {
         if (isBlueTeam) {
             if (isAudienceUp) {
                 return new Goal(true,
-                        new Pose(75, Tunables.audienceY),
+                        new Pose(75, Tunables.audienceY - 2),
                         new Pose(94.7, Tunables.audienceY),
-                        new Pose(85, Tunables.audienceY + 1));
+                        new Pose(85, Tunables.audienceY + 3));
             } else {
                 return new Goal(true,
-                        new Pose(75, Tunables.scoringY),
+                        new Pose(75, Tunables.scoringY - 2),
                         new Pose(94.7, Tunables.scoringY),
-                        new Pose(85, Tunables.scoringY - 2));
+                        new Pose(85, Tunables.scoringY - 3));
             }
         } else {
             if (isAudienceUp) {
