@@ -18,7 +18,7 @@ public class Tunables {
 
     public static double manualStartingRPM = 3150;
     public static double adjustRPM = 50;
-    public static double shootHeadingMargin = Math.toRadians(5);
+    public static double shootHeadingMargin = Math.toRadians(1);
     public static boolean teleBrake = true;
 
     /** Adjustable Hood tunables (will be used in Hood.java) **/
@@ -142,8 +142,8 @@ public class Tunables {
     /** field tunables (used in Field.java) **/
 
     // auto RPM
-    public static double autoRPMMultiplier = 1; // multiply auto RPM output by this
-    public static double autoRPMAddition = 0; // add this many RPMs to auto RPM output
+    public static double autoRPMAddition = -75; // add this many RPMs to auto RPM output
+    public static double autoRPMMultiplier = 0.95; // multiply auto RPM output by this
 
     public static Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
     public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
@@ -171,7 +171,7 @@ public class Tunables {
          */
 
     //dy + dx multipliers
-    public static double dyMultiplier = 0.8;
+    public static double dyMultiplier = 0.08;
     public static double dxMultiplier = 0.07;
     public static double centerThreshold = 13.5;
 
@@ -180,7 +180,10 @@ public class Tunables {
     public static double scoringY = 86;
 
 
-    public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
+    public static double maxScoringAngle = Math.toRadians(35); // max angle in radians goal can accept ball
+    public static double maxScoringAbsRelativeX = 36;
+    public static double maxScoringRelativeY = 48;
+    public static double minScoringRelativeY = 10;
 
     /** hardware scheduler tunables (used in HWScheduler.java) **/
 
