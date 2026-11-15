@@ -106,27 +106,31 @@ public class Field {
     private Goal getGoal(boolean isAudienceUp) {
         if (isBlueTeam) {
             if (isAudienceUp) {
+                // blue audience
                 return new Goal(true,
                         new Pose(78, Tunables.audienceY + 2),
                         new Pose(92.7, Tunables.audienceY - 2),
                         new Pose(85, Tunables.audienceY + 3));
             } else {
+                // blue scoring
                 return new Goal(true,
-                        new Pose(72, Tunables.scoringY),
-                        new Pose(98.7, Tunables.scoringY + 2),
+                        new Pose(78, Tunables.scoringY + 2),
+                        new Pose(92.7, Tunables.scoringY - 2),
                         new Pose(85, Tunables.scoringY - 3));
             }
         } else {
             if (isAudienceUp) {
+                // red audience
                 return new Goal(false,
-                        new Pose(49.0, Tunables.audienceY),
-                        new Pose(69, Tunables.audienceY),
-                        new Pose(59, Tunables.audienceY + 1));
+                        new Pose(51.3, Tunables.audienceY - 2),
+                        new Pose(66, Tunables.audienceY + 0),
+                        new Pose(59, Tunables.audienceY + 3));
             } else {
+                // red scoring
                 return new Goal(false,
-                        new Pose(49.0, Tunables.scoringY),
-                        new Pose(69, Tunables.scoringY),
-                        new Pose(59, Tunables.scoringY - 2));
+                        new Pose(51.3, Tunables.scoringY - 2),
+                        new Pose(66, Tunables.scoringY + 0),
+                        new Pose(59, Tunables.scoringY + 3));
             }
         }
     }

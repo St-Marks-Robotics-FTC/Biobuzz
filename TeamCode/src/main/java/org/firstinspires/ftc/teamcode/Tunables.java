@@ -145,31 +145,6 @@ public class Tunables {
     public static double autoRPMAddition = -75; // add this many RPMs to auto RPM output
     public static double autoRPMMultiplier = 0.95; // multiply auto RPM output by this
 
-    public static Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
-    public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
-    public static Pose redAudienceGoalPose = new Pose(59, 58, Math.toRadians(90));
-    public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
-    /*
-
-        blueAudienceRight (dx > 0): (94.7, 57.55)
-
-        redAudienceLeft (dx < 0): (49.0, 57.55)
-
-
-        blueAudienceLeft (dx < 0): (75, 57.55)
-
-        redAudienceRight (dx > 0): (69, 57.55)
-
-        blueGoalRight (dx > 0): (94.7, 88)
-
-        blueGoalLeft (dx < 0): (75, 88)
-
-        redGoalRight (dx > 0): (69, 88)
-
-        redGoalLeft (dx < 0): (49.0, 88)
-
-         */
-
     //dy + dx multipliers
     public static double dyMultiplier = 0.06;
     public static double dxMultiplier = 0.06;
