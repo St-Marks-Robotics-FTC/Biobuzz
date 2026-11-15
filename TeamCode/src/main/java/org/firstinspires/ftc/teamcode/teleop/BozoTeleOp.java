@@ -191,7 +191,7 @@ public abstract class BozoTeleOp extends OpMode {
             gamepad1.stopRumble();
         }
 
-        if (rumbleTimer.milliseconds() > 120 && canScore) { // keep rumbling
+        if (rumbleTimer.milliseconds() > 120 && rumble) { // keep rumbling
             rumbleTimer.reset();
             gamepad1.rumble(150);
         }

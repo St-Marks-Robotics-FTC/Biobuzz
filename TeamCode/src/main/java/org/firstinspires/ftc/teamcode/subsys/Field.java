@@ -92,7 +92,6 @@ public class Field {
         double angleToGoal = AngleUnit.normalizeRadians(Math.atan2(dY, dX));
         double dToGoal = Math.sqrt(dY * dY + dX * dX);
         boolean canScore = (Math.abs(target.getCenterPose().x() - robotX) <= Tunables.maxScoringAbsRelativeX) &&
-                    (angleToGoal > Tunables.maxScoringAngle) &&
                     (isAudienceUp ?
                             (((target.getCenterPose().y() - robotY) <= Tunables.maxScoringRelativeY) && ((target.getCenterPose().y() - robotY) >= Tunables.minScoringRelativeY)) :
                             (((robotY - target.getCenterPose().y()) <= Tunables.maxScoringRelativeY) && ((robotY - target.getCenterPose().y()) >= Tunables.minScoringRelativeY))
