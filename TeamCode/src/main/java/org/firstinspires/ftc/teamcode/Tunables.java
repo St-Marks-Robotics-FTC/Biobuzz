@@ -187,6 +187,6 @@ public class Tunables {
     public static long teleTargetLoopLength = 20; // target loop length in ms
     public static long autoTargetLoopLength = 25; // autos generally have longer loops
 
-    public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
-    public static boolean softScheduling = false; // if true (or isDebugging is true): update device once max staleness has been exceeded
+    public static double stalenessReduction = 1; // how important staleness is. higher values are less important
+    public static boolean softScheduling = true; // if true (or isDebugging is true): update device once max staleness has been exceeded
 }

@@ -56,6 +56,9 @@ public abstract class Device {
         return estimatedUpdateLength;
     }
 
+    public void setMaxStaleness(long max) {
+        maxStaleness = max;
+    }
     public long getMaxStaleness() {
         return maxStaleness;
     }
