@@ -18,7 +18,7 @@ public class Tunables {
 
     public static double manualStartingRPM = 3150;
     public static double adjustRPM = 50;
-    public static double shootHeadingMargin = Math.toRadians(5);
+    public static double shootHeadingMargin = Math.toRadians(1);
     public static boolean teleBrake = true;
 
     /** Adjustable Hood tunables (will be used in Hood.java) **/
