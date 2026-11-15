@@ -113,7 +113,7 @@ public class Field {
             } else {
                 return new Goal(true,
                         new Pose(72, Tunables.scoringY),
-                        new Pose(96.7, Tunables.scoringY + 2),
+                        new Pose(98.7, Tunables.scoringY + 2),
                         new Pose(85, Tunables.scoringY - 3));
             }
         } else {
