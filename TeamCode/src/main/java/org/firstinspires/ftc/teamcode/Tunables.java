@@ -142,8 +142,8 @@ public class Tunables {
     /** field tunables (used in Field.java) **/
 
     // auto RPM
-    public static double autoRPMMultiplier = 1; // multiply auto RPM output by this
-    public static double autoRPMAddition = 0; // add this many RPMs to auto RPM output
+    public static double autoRPMAddition = -75; // add this many RPMs to auto RPM output
+    public static double autoRPMMultiplier = 0.95; // multiply auto RPM output by this
 
     public static Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
     public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
