@@ -108,7 +108,7 @@ public class Field {
             if (isAudienceUp) {
                 return new Goal(true,
                         new Pose(78, Tunables.audienceY + 2),
-                        new Pose(94.7, Tunables.audienceY),
+                        new Pose(92.7, Tunables.audienceY - 2),
                         new Pose(85, Tunables.audienceY + 3));
             } else {
                 return new Goal(true,
