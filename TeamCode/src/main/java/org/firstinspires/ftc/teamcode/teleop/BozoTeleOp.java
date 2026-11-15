@@ -172,8 +172,8 @@ public abstract class BozoTeleOp extends OpMode {
 
     private void handleIntake() {
         if (gamepad1.aWasPressed()) robot.intake.toggle();
-        if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
-        if (gamepad1.xWasReleased()) robot.intake.toggleReverse();
+        if (gamepad1.xWasPressed()) robot.intake.reverse();
+        if (gamepad1.xWasReleased()) robot.intake.forward();
     }
 
     private void handleShoot() {
