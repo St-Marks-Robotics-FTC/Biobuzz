@@ -171,9 +171,9 @@ public class Tunables {
          */
 
     //dy + dx multipliers
-    public static double dyMultiplier = 0.08;
-    public static double dxMultiplier = 0.07;
-    public static double centerThreshold = 13.5;
+    public static double dyMultiplier = 0.06;
+    public static double dxMultiplier = 0.06;
+    public static double centerThreshold = 14.5;
 
     public static double audienceY = 59.55;
 
@@ -190,6 +190,6 @@ public class Tunables {
     public static long teleTargetLoopLength = 20; // target loop length in ms
     public static long autoTargetLoopLength = 25; // autos generally have longer loops
 
-    public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
-    public static boolean softScheduling = false; // if true (or isDebugging is true): update device once max staleness has been exceeded
+    public static double stalenessReduction = 1; // how important staleness is. higher values are less important
+    public static boolean softScheduling = true; // if true (or isDebugging is true): update device once max staleness has been exceeded
 }
