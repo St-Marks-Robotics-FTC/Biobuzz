@@ -6,6 +6,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.HandoffState;
@@ -172,6 +173,7 @@ public abstract class BozoTeleOp extends OpMode {
     private void handleIntake() {
         if (gamepad1.aWasPressed()) robot.intake.toggle();
         if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
+        if (gamepad1.xWasReleased()) robot.intake.toggleReverse();
     }
 
     private void handleShoot() {
