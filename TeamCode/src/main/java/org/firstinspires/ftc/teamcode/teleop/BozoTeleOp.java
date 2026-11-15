@@ -213,6 +213,9 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void updateTelemetry() {
+        // super secret isDebugging toggle
+        if (gamepad1.left_stick_button && gamepad1.right_stick_button) Tunables.isDebugging = !Tunables.isDebugging;
+
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
 
         // always output these to telemetry
