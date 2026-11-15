@@ -165,7 +165,7 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleFlower() {
-        if (gamepad1.right_trigger_pressed) robot.flower.goDown();
+        if (gamepad1.right_trigger_pressed) robot.flower.startShake();
         else robot.flower.goUp();
     }
 
@@ -179,7 +179,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (shootPressed) robot.startLaunch();
 
-        canScore = field.getScoringData(vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP, follower.pose()).canScore();
+        canScore = field.getScoringData(follower.pose()).canScore();
 
         if (!lastCanScore && canScore) { // start rumbling
             rumble = true;
