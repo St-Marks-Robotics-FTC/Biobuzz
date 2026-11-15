@@ -14,6 +14,7 @@ import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Drive;
 import org.firstinspires.ftc.teamcode.subsys.Field;
+import org.firstinspires.ftc.teamcode.subsys.Fusion;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 import java.util.concurrent.TimeUnit;
@@ -25,6 +26,7 @@ public abstract class BozoTeleOp extends OpMode {
     private Drive drive;
     private Field field;
     private Vision vision;
+    private Fusion fusion;
     private Follower follower;
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
@@ -49,6 +51,7 @@ public abstract class BozoTeleOp extends OpMode {
         follower = Constants.create(hardwareMap);
 
         follower.setPose(HandoffState.pose);
+        fusion = new Fusion(follower.pose());
 
         robot.transfer.close();
 
@@ -65,10 +68,15 @@ public abstract class BozoTeleOp extends OpMode {
     public void loop() {
         loopTimer.reset();
 
-        vision.update(follower.pose().heading());
+        follower.update();
 
-        updateLastScoringData();
-        handleDrive();
+        vision.update(follower.pose().heading());
+        fusion.update(follower.pose(), follower.velocity(), vision.getResult());
+
+        Pose fusedPose = fusion.getPose();
+
+        updateLastScoringData(fusedPose);
+        handleDrive(fusedPose);
         handleFlywheel();
         handleIntake();
         handleShoot();
@@ -79,14 +87,12 @@ public abstract class BozoTeleOp extends OpMode {
             follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
         }
 
-        follower.update();
-
         robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
 
-        updateTelemetry();
+        updateTelemetry(fusedPose);
     }
 
-    private void handleDrive() {
+    private void handleDrive(Pose fusedPose) {
         if (gamepad1.startWasPressed()) isRobotCentric = !isRobotCentric;
 
         double slowModeMultiplier = Range.scale(gamepad1.left_trigger, 0, 1, 1, 0.5);
@@ -103,15 +109,15 @@ public abstract class BozoTeleOp extends OpMode {
                 if (isBlueTeam()) flipControl = -1; // blue team needs to be flipped
                 else flipControl = 1; // red team doesn't need to be flipped
 
-                drive.driveFieldCentric(forward * flipControl, strafe * flipControl, turn, follower.pose().heading(), slowModeMultiplier);
+                drive.driveFieldCentric(forward * flipControl, strafe * flipControl, turn, fusedPose.heading(), slowModeMultiplier);
             }
         } else {
             boolean exitTurning = false;
 
             // under what conditions to exit turning
-            if (Math.abs(follower.pose().heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) exitTurning = true;
+            if (Math.abs(fusedPose.heading() - lastTurnPose.heading()) < Tunables.shootHeadingMargin) exitTurning = true;
             // emergency exit if pose is invalid
-            if (follower.pose() == null || follower.pose().equals(new Pose(0, 0, 0))) {
+            if (fusedPose == null || fusedPose.equals(new Pose(0, 0, 0))) {
                 exitTurning = true;
             }
 
@@ -151,7 +157,8 @@ public abstract class BozoTeleOp extends OpMode {
             if (isManualRPM) {
                 robot.flywheel.update(setRPM, robot.getExpansionHubVoltage());
             } else { // automatic RPM
-                robot.flywheel.update(lastScoringData.idealRPM(), robot.getExpansionHubVoltage());
+                double targetRPM = lastScoringData != null ? lastScoringData.idealRPM() : setRPM;
+                robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage());
             }
         } else {
             robot.flywheel.update(0, robot.getExpansionHubVoltage());
@@ -175,28 +182,31 @@ public abstract class BozoTeleOp extends OpMode {
 
         robot.update();
 
-        if (gamepad1.leftBumperWasPressed()) {
-            // they got rid of follower.turnTo() so we have to make it ourselves
-            startTurn(new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.angle()));
+        if (gamepad1.leftBumperWasPressed() && lastScoringData != null) {
+            // they got rid of follower.turnTo() so we have to make it ourselves.
+            // Use the odometry position for Pedro's hold target, but the fused heading for the goal.
+            // Passing fused x/y here would command a translation equal to the odometry drift.
+            Pose odoPose = follower.pose();
+            startTurn(new Pose(odoPose.x(), odoPose.y(), lastScoringData.angle()));
         }
     }
 
-    private void updateLastScoringData() {
+    private void updateLastScoringData(Pose fusedPose) {
         if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
-            lastScoringData = field.getScoringData(true, follower.pose());
+            lastScoringData = field.getScoringData(true, fusedPose);
         } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
-            lastScoringData = field.getScoringData(false, follower.pose());
+            lastScoringData = field.getScoringData(false, fusedPose);
         } else {
             // we don't have data from Vision so we fall back to odometry
-            if (follower.pose().y() <= 72) {
-                lastScoringData = field.getScoringData(true, follower.pose());
+            if (fusedPose.y() <= 72) {
+                lastScoringData = field.getScoringData(true, fusedPose);
             } else {
-                lastScoringData = field.getScoringData(false, follower.pose());
+                lastScoringData = field.getScoringData(false, fusedPose);
             }
         }
     }
 
-    private void updateTelemetry() {
+    private void updateTelemetry(Pose fusedPose) {
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
 
         // always output these to telemetry
@@ -215,6 +225,19 @@ public abstract class BozoTeleOp extends OpMode {
             telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
             telemetryM.addData("odo x", follower.pose().x());
             telemetryM.addData("odo y", follower.pose().y());
+
+            // fusion
+            telemetryM.addData("fused x", fusedPose.x());
+            telemetryM.addData("fused y", fusedPose.y());
+            telemetryM.addData("fusion offset x", fusion.getOffsetX());
+            telemetryM.addData("fusion offset y", fusion.getOffsetY());
+            telemetryM.addData("fusion std x", fusion.getStdX());
+            telemetryM.addData("fusion std y", fusion.getStdY());
+            telemetryM.addData("last vision std x", fusion.getLastVisionStdX());
+            telemetryM.addData("last vision std y", fusion.getLastVisionStdY());
+            telemetryM.addData("fusion accepted", fusion.getAcceptedCount());
+            telemetryM.addData("fusion rejected", fusion.getRejectedCount());
+            telemetryM.addData("fusion odo dropped", fusion.getOdoRejectedCount());
 
             // Field
             telemetryM.addData("last hive state", vision.getLastHiveState());

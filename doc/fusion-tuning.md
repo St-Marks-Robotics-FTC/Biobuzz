@@ -1,6 +1,16 @@
 # Fusion Tuning
 
-`Fusion.java` combines odometry and Limelight vision into one pose. Odometry is smooth but drifts. Vision doesn't drift but is noisy and delayed. Fusion keeps an offset (how far odometry has drifted) and corrects it with every vision frame, trusting each source based on how uncertain it is.
+`Fusion.java` combines odometry and Limelight vision into one pose. Odometry is smooth but drifts. Vision doesn't drift but is noisy and delayed. Fusion runs a Kalman filter (`KalmanFilter.java`, one for x and one for y) that trusts each source based on how uncertain it is. `fusion offset` is simply `fused position - odometry position`, i.e. how far odometry has drifted; it is a useful number to watch but it is not the filter's state.
+
+Each loop:
+
+1. Drop the odometry sample if it jumped farther than the robot could have driven since the last accepted sample (`fusionOdoMaxSpeed * elapsed + fusionOdoJumpMargin`). After `fusionOdoRejectsBeforeReset` consecutive drops, treat it as a real re-localization and accept it.
+2. Predict: add the odometry displacement to the fused pose, and grow the uncertainty by the distance driven.
+3. If a new vision frame arrived, move it forward by the odometry displacement since the picture was taken (vision is delayed).
+4. Reject it if it disagrees with the prediction by more than `fusionGateSigmas`.
+5. Otherwise update: `K = P / (P + R)`, `position += K * (vision - position)`, `P = (1 - K) * P`.
+
+Heading is not filtered; it comes straight from the Pinpoint IMU.
 
 All values below are in `Tunables.java` and can be changed live in [Panels](http://192.168.43.1:8001). Once something works, put the number in `Tunables.java` with the date, like the other tuned values.
 
@@ -22,6 +32,7 @@ All values below are in `Tunables.java` and can be changed live in [Panels](http
 | `fusion std x/y`           | how unsure fusion is about its pose, in inches                 |
 | `last vision std x/y`      | how unsure fusion thought the last vision frame was, in inches |
 | `fusion accepted/rejected` | frame counts                                                   |
+| `fusion odo dropped`       | odometry samples thrown out as impossible teleports            |
 | `fusion last frame`        | whether the last frame was used, and if not, why               |
 
 "std" is standard deviation. Read it as "usually off by about this much".

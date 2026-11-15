@@ -96,10 +96,36 @@ public class Tunables {
     // reject vision poses farther than visionMaxSpeed * (time since last accepted) + visionJumpMargin
     public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
     public static double visionJumpMargin = 4; // in, allowed frame noise
+    public static int visionJumpRejectsBeforeReset = 5; // jump-rejected frames before vision re-acquires a moved robot
 
     // VisionTuner: tape-measured pose of the current calibration spot (A button applies it)
     public static double visionTunerSpotX = 72;
     public static double visionTunerSpotY = 72;
+
+    // VisionDataCollector: automatic grid sweep used to fit the camera/hive models
+    public static double visionTunerRobotLength = 18; // in
+    public static double visionTunerRobotWidth = 18; // in
+    public static double visionTunerWallMargin = 2; // in, extra clearance kept from field elements
+    public static double visionTunerGridSpacing = 12; // in between sample spots
+    public static double visionTunerHeadingStepDegrees = 45; // degrees between samples at each spot
+    public static int visionTunerSettleMillis = 500; // wait after a move before sampling
+    public static int visionTunerMoveTimeoutMillis = 8000; // give up on a leg/heading after this long
+    public static double visionTunerSpeed = 0.35; // fraction of max path speed while collecting
+    public static double visionTunerHeadingToleranceDegrees = 3;
+    public static double visionTunerPositionTolerance = 1.5; // in
+    public static int visionTunerMinTags = 2; // frames with fewer tags are counted as dropped
+    public static int visionTunerSamplesPerHeading = 5;
+    public static int visionTunerSampleTimeoutMillis = 3000;
+    public static double visionTunerTrueZ = 9; // in, camera height written to the CSV for fit_hive.py
+    // field-element rectangles to keep the collector away from (measure these on the real field)
+    public static double visionTunerObstacleAMinX = 44;
+    public static double visionTunerObstacleAMinY = 54;
+    public static double visionTunerObstacleAMaxX = 100;
+    public static double visionTunerObstacleAMaxY = 62;
+    public static double visionTunerObstacleBMinX = 44;
+    public static double visionTunerObstacleBMinY = 83;
+    public static double visionTunerObstacleBMaxX = 100;
+    public static double visionTunerObstacleBMaxY = 91;
 
     /** field tunables (used in Field.java) **/
 
@@ -143,19 +169,19 @@ public class Tunables {
     public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
 
     /** vision tunables (used in Vision.java) **/
-    public static int cameraHeight = 9;
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
 
     /** fusion tunables (used in Fusion.java) **/
-
-    // all distances in inches; "std" = standard deviation = typical size of the error
     public static double fusionStartStd = 2; // how unsure we are about our starting pose after auto
-    public static double fusionOdoVariancePerInch = 0.02; // how much odometry uncertainty grows per inch driven (in^2 per in)
+    public static double fusionOdoVariancePerInch = 0.017; // how much odometry uncertainty grows per inch driven (in^2 per in)
+    public static double fusionOdoMaxSpeed = 56.53; // Maximum speed of robot
+    public static double fusionOdoJumpMargin = 4; // in, allowed odometry noise/timing error before a sample is dropped
+    public static int fusionOdoRejectsBeforeReset = 5; // consecutive teleports before accepting a real re-localization
     public static double fusionVisionBaseStd = 0.187; // vision error with ONE tag at fusionVisionRefDistance
     public static double fusionVisionRefDistance = 59; // distance (in) that fusionVisionBaseStd was measured at
     public static double fusionTimingErrorMs = 10; // how far off our vision timing might be; turns driving speed into error
     public static double fusionTurnStd = 1.0; // extra vision error per rad/s of turning (motion blur)
-    public static double fusionMinVisionStd = 0.5; // never trust a vision frame more than this, even if everything says it's perfect
+    public static double fusionMinVisionStd = 0.7; // never trust a vision frame more than this, even if everything says it's perfect
     public static double fusionGateSigmas = 3; // reject vision frames more than this many std devs from our estimate
     public static int fusionRejectsBeforeDoubt = 10; // rejected frames in a row before we start doubting odometry instead
     public static double fusionExtraLatencyMs = 0; // extra delay on top of what the Limelight reports; tune if fused pose wobbles when driving

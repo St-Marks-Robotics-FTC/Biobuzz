@@ -1,23 +1,28 @@
 /**
  * Fuses odometry (fast, smooth, but slowly drifts) with Limelight vision (no drift, but noisy and delayed).
  *
- * IDEA:
- * - we never touch the odometry itself; instead we learn an `offset` = how far odometry has drifted
- * - fused pose = odometry pose + offset
- * - heading always comes straight from the Pinpoint IMU, which is already very good
+ * This is a Kalman filter: one filter for x and one for y (see KalmanFilter.java).
+ * The state is the robot's real field position in inches.
  *
- * EVERY LOOP (odometry):
- * - odometry drifts the further we drive, so our uncertainty (variance) grows with distance driven
+ *   PREDICT (every loop, using TeleOp odometry):
+ *     x = x + odometryDelta
+ *     P = P + Q          Q grows with distance driven
  *
- * EVERY NEW VISION FRAME:
- * 1. look up where odometry thought we were when the picture was taken (vision is delayed)
- * 2. measure how uncertain this frame is (tag count, tag distance, Limelight std dev, robot motion)
- * 3. throw it out if it's clearly wrong
- * 4. combine the two estimates with a weighted average, weight = 1 / variance (this is a Kalman filter update)
+ *   UPDATE (new vision frame):
+ *     K = P / (P + R)    R is the vision uncertainty for this frame
+ *     x = x + K * (vision - x)
+ *     P = (1 - K) * P
  *
- * USAGE: Fusion doesn't own the follower or the vision; every loop, the OpMode updates both and hands their data in:
+ * Heading always comes straight from the Pinpoint IMU; only x/y are filtered.
+ *
+ * Vision is delayed, so the frame is first moved forward by the odometry displacement
+ * that happened between the picture and now. This lets the filter update the current pose
+ * without keeping a full delayed-state history.
+ *
+ * USAGE: Fusion doesn't own the follower or the vision; every loop, the OpMode updates both
+ * and hands their data in:
  *   follower.update();
- *   vision.update();
+ *   vision.update(follower.pose().heading());
  *   fusion.update(follower.pose(), follower.velocity(), vision.getResult());
  *   Pose fused = fusion.getPose();
  */
@@ -32,17 +37,22 @@ import org.firstinspires.ftc.teamcode.Tunables;
 import java.util.ArrayDeque;
 
 public class Fusion {
-    private static final long HISTORY_MS = 1000; // how much odometry history to keep; must be longer than the vision delay
+    private static final long HISTORY_MS = 1500; // how much odometry history to keep; must be longer than the vision delay
+    private static final long STARTUP_HISTORY_SLACK_MS = 250; // allow the first frame to be slightly older than our history
 
     // one odometry reading and when it was taken
     private static class OdoSample {
         final long timeMs;
         final double x, y;
+        final double vx, vy, omega;
 
-        OdoSample(long timeMs, double x, double y) {
+        OdoSample(long timeMs, double x, double y, double vx, double vy, double omega) {
             this.timeMs = timeMs;
             this.x = x;
             this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+            this.omega = omega;
         }
     }
 
@@ -51,17 +61,20 @@ public class Fusion {
     /** filter state **/
 
     private Pose odoPose; // newest odometry pose we were given
-    private Velocity odoVelocity; // newest odometry velocity we were given
-    private double offsetX, offsetY; // how far odometry has drifted in inches (true = odometry + offset)
-    private double varianceX, varianceY; // how unsure we are about our estimate, in inches squared
+    private Pose lastOdoPose; // odometry pose at the previous update (for the predict step)
+    private KalmanFilter filterX; // real field x position, inches
+    private KalmanFilter filterY; // real field y position, inches
+    private long lastAcceptedMs = -1;
     private int rejectedInARow = 0; // vision frames in a row that disagreed too much with us
-    private long lastFusedTime = -1; // acquisition time of the last picture we fused
+    private int odoRejectsInARow = 0; // odometry frames in a row that teleported too far
+    private long lastFusedTime = Long.MIN_VALUE; // acquisition time of the last picture we fused
 
     /** debug info **/
 
     private double lastVisionStdX, lastVisionStdY;
     private int acceptedCount = 0;
     private int rejectedCount = 0;
+    private int odoRejectedCount = 0;
     private String lastResult = "no vision yet";
 
     // startPose = the pose the follower starts at
@@ -69,119 +82,164 @@ public class Fusion {
         reset(startPose);
     }
 
-    // forget all corrections, use this after setting the follower to a pose you know is correct
+    // set to pose that is known to be correct
     public void reset(Pose pose) {
         odoPose = pose;
-        odoVelocity = null;
+        lastOdoPose = pose;
         history.clear();
-        lastFusedTime = -1;
-        offsetX = 0;
-        offsetY = 0;
-        varianceX = Tunables.fusionStartStd * Tunables.fusionStartStd;
-        varianceY = varianceX;
+        lastAcceptedMs = -1;
+
+        double startVariance = Tunables.fusionStartStd * Tunables.fusionStartStd;
+
+        filterX = new KalmanFilter(pose.x(), startVariance);
+        filterY = new KalmanFilter(pose.y(), startVariance);
+
         rejectedInARow = 0;
+        odoRejectsInARow = 0;
+        lastFusedTime = Long.MIN_VALUE;
+        lastVisionStdX = 0;
+        lastVisionStdY = 0;
+        acceptedCount = 0;
+        rejectedCount = 0;
+        odoRejectedCount = 0;
+        lastResult = "no vision yet";
     }
 
     // call once per loop, AFTER follower.update() and vision.update()
     // visionResult may be null (no valid frame this loop)
     public void update(Pose odo, Velocity velocity, Vision.VisionResult visionResult) {
-        odoPose = odo;
-        odoVelocity = velocity;
-        long now = System.currentTimeMillis();
+        if (odo == null) return;
 
-        // 1. odometry drifts more the further we drive, so grow our uncertainty by distance driven
-        OdoSample newest = history.peekLast();
-        if (newest != null) {
-            double distance = Math.hypot(odo.x() - newest.x, odo.y() - newest.y);
-            varianceX += Tunables.fusionOdoVariancePerInch * distance;
-            varianceY += Tunables.fusionOdoVariancePerInch * distance;
+        long now = System.currentTimeMillis();
+        boolean firstUpdate = lastAcceptedMs < 0;
+        double dx = 0;
+        double dy = 0;
+
+        if (!firstUpdate) {
+            dx = odo.x() - lastOdoPose.x();
+            dy = odo.y() - lastOdoPose.y();
+            double distance = Math.hypot(dx, dy);
+            double seconds = Math.max(0, now - lastAcceptedMs) / 1000.0;
+            double maxTravel = Tunables.fusionOdoMaxSpeed * seconds + Tunables.fusionOdoJumpMargin;
+
+            if (distance > maxTravel) {  //Prevent teleportation pedro affecting the filter
+                odoRejectsInARow++;
+                odoRejectedCount++;
+                lastResult = "odometry dropped: teleport";
+
+                if (odoRejectsInARow < Tunables.fusionOdoRejectsBeforeReset) return;
+                odoRejectsInARow = 0;
+                history.clear();
+            } else {
+                odoRejectsInARow = 0;
+            }
         }
 
-        // 2. remember where odometry is right now, and throw away history that's too old to be useful
-        history.addLast(new OdoSample(now, odo.x(), odo.y()));
-        while (history.peekFirst().timeMs < now - HISTORY_MS) history.removeFirst();
+        odoPose = odo;
 
-        // 3. if there's a vision result we haven't fused yet, use it to correct the offset
-        // Don't send the same picture twice
+        if (firstUpdate) {
+            filterX.setState(odo.x());
+            filterY.setState(odo.y());
+        } else {
+            double distance = Math.hypot(dx, dy);
+            double processNoise = Tunables.fusionOdoVariancePerInch * distance;
+
+            filterX.predict(dx, processNoise);
+            filterY.predict(dy, processNoise);
+        }
+        lastOdoPose = odo;
+        lastAcceptedMs = now;
+
+        // If it is too old, then throw it away
+        recordOdometry(now, odo, velocity);
+        while (!history.isEmpty() && history.peekFirst().timeMs < now - HISTORY_MS) history.removeFirst();
+
+        // if there's a vision result we haven't fused yet, use it to correct the pose.
+        // Don't send the same picture twice.
         if (visionResult != null && visionResult.acquisitionTime() != lastFusedTime) {
             lastFusedTime = visionResult.acquisitionTime();
             useVision(visionResult);
         }
     }
 
+    private void recordOdometry(long now, Pose odo, Velocity velocity) {
+        double vx = 0, vy = 0, omega = 0;
+        if (velocity != null) {
+            vx = velocity.vx;
+            vy = velocity.vy;
+            omega = velocity.omega;
+        }
+
+        OdoSample newest = history.peekLast();
+        if (newest != null && newest.timeMs == now) {
+            history.removeLast(); // keep one sample per millisecond so interpolation never divides by zero
+        }
+        history.addLast(new OdoSample(now, odo.x(), odo.y(), vx, vy, omega));
+    }
+
     private void useVision(Vision.VisionResult result) {
-        // STEP 1: where did odometry think we were when the picture was taken?
-        long captureTimeMs = result.acquisitionTime() - Math.round(Tunables.fusionExtraLatencyMs);
+        // where did odometry think we were when the picture was taken?
+        long captureTimeMs = Math.min(lastAcceptedMs,
+                result.acquisitionTime() - Math.round(Tunables.fusionExtraLatencyMs));
         OdoSample odoThen = odometryAt(captureTimeMs);
         if (odoThen == null) {
             reject("picture older than odometry history");
             return;
         }
 
-        // STEP 2: we now have two estimates of where the robot was at that moment, each with an uncertainty
-        double odoEstimateX = odoThen.x + offsetX; // uncertainty: varianceX
-        double odoEstimateY = odoThen.y + offsetY; // uncertainty: varianceY
+        // Move delayed vision to the current odo capture
+        double visionEstimateX = result.pose().x() + (odoPose.x() - odoThen.x);
+        double visionEstimateY = result.pose().y() + (odoPose.y() - odoThen.y);
 
-        double visionEstimateX = result.pose().x();
-        double visionEstimateY = result.pose().y();
-        measureVisionStd(result); // sets lastVisionStdX and lastVisionStdY
+        measureVisionStd(result, odoThen); // sets lastVisionStdX and lastVisionStdY
         double visionVarianceX = lastVisionStdX * lastVisionStdX;
         double visionVarianceY = lastVisionStdY * lastVisionStdY;
 
-        // STEP 3: if the two estimates disagree way more than their uncertainties explain, the frame is probably bad
-        boolean tooFarX = Math.abs(visionEstimateX - odoEstimateX) > Tunables.fusionGateSigmas * Math.sqrt(varianceX + visionVarianceX);
-        boolean tooFarY = Math.abs(visionEstimateY - odoEstimateY) > Tunables.fusionGateSigmas * Math.sqrt(varianceY + visionVarianceY);
+        // if the two estimates disagree way more than their uncertainties explain, the frame is probably bad
+        boolean tooFarX = filterX.isOutlier(visionEstimateX, visionVarianceX, Tunables.fusionGateSigmas);
+        boolean tooFarY = filterY.isOutlier(visionEstimateY, visionVarianceY, Tunables.fusionGateSigmas);
         if (tooFarX || tooFarY) {
-            reject("too far from current estimate");
             rejectedInARow++;
+            reject("too far from current estimate");
 
             // if vision keeps disagreeing, odometry is probably the one that's wrong (ex. we got hit),
-            // so admit we're less sure, allows vision to get back in
+            // so admit we're less sure. This lets vision get back in after a collision.
             if (rejectedInARow >= Tunables.fusionRejectsBeforeDoubt) {
-                varianceX *= 4;
-                varianceY *= 4;
+                filterX.inflateVariance(4);
+                filterY.inflateVariance(4);
                 rejectedInARow = 0;
             }
             return;
         }
         rejectedInARow = 0;
-
-        // STEP 4: combine the two estimates, trusting each one according to how certain it is
-        double fusedX = weightedAverage(odoEstimateX, varianceX, visionEstimateX, visionVarianceX);
-        double fusedY = weightedAverage(odoEstimateY, varianceY, visionEstimateY, visionVarianceY);
-
-        // after combining, we're more certain than either estimate was alone
-        varianceX = combinedVariance(varianceX, visionVarianceX);
-        varianceY = combinedVariance(varianceY, visionVarianceY);
-
-        // shift the offset so that odometry (at that moment) + offset lands on the fused estimate
-        offsetX += fusedX - odoEstimateX;
-        offsetY += fusedY - odoEstimateY;
+        filterX.update(visionEstimateX, visionVarianceX);
+        filterY.update(visionEstimateY, visionVarianceY);
 
         acceptedCount++;
         lastResult = "accepted";
     }
 
-    // how uncertain is this vision frame? (std dev in inches, for x and y)
-    private void measureVisionStd(Vision.VisionResult result) {
+    // how uncertain is this vision frame?
+    private void measureVisionStd(Vision.VisionResult result, OdoSample odoThen) {
         // tags: error grows with distance squared (far tags are tiny in the image), and shrinks with more tags
-        // (each tag is another independent measurement, so error shrinks by sqrt(number of tags))
-        double distanceRatio = result.avgTagDistance() / Tunables.fusionVisionRefDistance;
-        double tagStd = Tunables.fusionVisionBaseStd * distanceRatio * distanceRatio / Math.sqrt(result.tagCount());
+        double tagCount = Math.max(1, result.tagCount());
+        double avgDistance = isFinite(result.avgTagDistance()) ? Math.max(0, result.avgTagDistance()) : 0;
+        double distanceRatio = avgDistance / Math.max(1e-6, Tunables.fusionVisionRefDistance);
+        double tagStd = Tunables.fusionVisionBaseStd * distanceRatio * distanceRatio / Math.sqrt(tagCount);
 
         // Limelight's own std dev: take whichever of the two is more pessimistic
-        double stdX = Math.max(tagStd, result.stdDev()[0]);
-        double stdY = Math.max(tagStd, result.stdDev()[1]);
+        double limelightStdX = isFinite(result.stdDevX()) ? Math.abs(result.stdDevX()) : 0;
+        double limelightStdY = isFinite(result.stdDevY()) ? Math.abs(result.stdDevY()) : 0;
+        double stdX = Math.max(tagStd, limelightStdX);
+        double stdY = Math.max(tagStd, limelightStdY);
 
-        // motion: if our timing is a little off, driving turns that into position error, and turning blurs the image
-        double motionStd = 0;
-        if (odoVelocity != null) {
-            double speedStd = Math.hypot(odoVelocity.vx, odoVelocity.vy) * Tunables.fusionTimingErrorMs / 1000.0;
-            double turnStd = Math.abs(odoVelocity.omega) * Tunables.fusionTurnStd;
-            motionStd = Math.hypot(speedStd, turnStd);
-        }
+        // turning blurs the image.
+        // Use the velocity from the moment the picture was taken, not our current velocity.
+        double speedStd = Math.hypot(odoThen.vx, odoThen.vy) * Tunables.fusionTimingErrorMs / 1000.0;
+        double turnStd = Math.abs(odoThen.omega) * Tunables.fusionTurnStd;
+        double motionStd = Math.hypot(speedStd, turnStd);
 
-        // independent errors add like the sides of a right triangle: total = sqrt(a^2 + b^2)
+        // independent errors add like hypotenuse
         stdX = Math.hypot(stdX, motionStd);
         stdY = Math.hypot(stdY, motionStd);
 
@@ -190,16 +248,8 @@ public class Fusion {
         lastVisionStdY = Math.max(stdY, Tunables.fusionMinVisionStd);
     }
 
-    // average of two estimates, where each one's weight is 1 / its variance (more certain = more weight)
-    private static double weightedAverage(double a, double varianceA, double b, double varianceB) {
-        double weightA = 1 / varianceA;
-        double weightB = 1 / varianceB;
-        return (a * weightA + b * weightB) / (weightA + weightB);
-    }
-
-    // variance of the weighted average above; always smaller than both inputs
-    private static double combinedVariance(double varianceA, double varianceB) {
-        return 1 / (1 / varianceA + 1 / varianceB);
+    private static boolean isFinite(double value) {
+        return !Double.isNaN(value) && !Double.isInfinite(value);
     }
 
     private void reject(String reason) {
@@ -213,12 +263,20 @@ public class Fusion {
         OdoSample before = null;
         for (OdoSample after : history) { // oldest -> newest
             if (after.timeMs >= timeMs) {
-                if (before == null) return null; // older than everything we have
+                if (before == null) {
+                    // Frame is from just before we started keeping history. At startup this is
+                    // normal, so use the oldest sample instead of rejecting for a whole second.
+                    if (after.timeMs - timeMs <= STARTUP_HISTORY_SLACK_MS) return after;
+                    return null;
+                }
 
                 double t = (double) (timeMs - before.timeMs) / (after.timeMs - before.timeMs); // 0 = before, 1 = after
                 return new OdoSample(timeMs,
                         before.x + t * (after.x - before.x),
-                        before.y + t * (after.y - before.y));
+                        before.y + t * (after.y - before.y),
+                        before.vx + t * (after.vx - before.vx),
+                        before.vy + t * (after.vy - before.vy),
+                        before.omega + t * (after.omega - before.omega));
             }
             before = after;
         }
@@ -227,16 +285,18 @@ public class Fusion {
 
     // our best guess of where the robot actually is
     public Pose getPose() {
-        return new Pose(odoPose.x() + offsetX, odoPose.y() + offsetY, odoPose.heading());
+        double heading = odoPose != null ? odoPose.heading() : 0;
+        return new Pose(filterX.getState(), filterY.getState(), heading);
     }
 
-    public double getOffsetX() { return offsetX; }
-    public double getOffsetY() { return offsetY; }
-    public double getStdX() { return Math.sqrt(varianceX); } // uncertainty of the fused pose, in inches
-    public double getStdY() { return Math.sqrt(varianceY); } // uncertainty of the fused pose, in inches
+    public double getOffsetX() { return odoPose != null ? filterX.getState() - odoPose.x() : 0; } // how far odometry has drifted
+    public double getOffsetY() { return odoPose != null ? filterY.getState() - odoPose.y() : 0; }
+    public double getStdX() { return filterX.getStdDev(); } // uncertainty of the fused pose, in inches
+    public double getStdY() { return filterY.getStdDev(); } // uncertainty of the fused pose, in inches
     public double getLastVisionStdX() { return lastVisionStdX; } // uncertainty of the last vision frame, in inches
     public double getLastVisionStdY() { return lastVisionStdY; } // uncertainty of the last vision frame, in inches
     public int getAcceptedCount() { return acceptedCount; }
     public int getRejectedCount() { return rejectedCount; }
+    public int getOdoRejectedCount() { return odoRejectedCount; } // odometry samples dropped as teleports
     public String getLastResult() { return lastResult; }
 }
