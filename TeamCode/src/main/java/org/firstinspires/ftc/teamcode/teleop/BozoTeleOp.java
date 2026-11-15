@@ -181,17 +181,17 @@ public abstract class BozoTeleOp extends OpMode {
 
         canScore = field.getScoringData(vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP, follower.pose()).canScore();
 
-        if (!lastCanScore && canScore) {
-            rumble = false;
-            rumbleTimer.reset();
-            gamepad1.stopRumble();
-        } else if (canScore && !lastCanScore) {
+        if (!lastCanScore && canScore) { // start rumbling
             rumble = true;
             rumbleTimer.reset();
             gamepad1.rumble(150);
+        } else if (lastCanScore && !canScore) { // stop rumbling
+            rumble = false;
+            rumbleTimer.reset();
+            gamepad1.stopRumble();
         }
 
-        if (rumbleTimer.milliseconds() > 120) {
+        if (rumbleTimer.milliseconds() > 120 && canScore) { // keep rumbling
             rumbleTimer.reset();
             gamepad1.rumble(150);
         }
