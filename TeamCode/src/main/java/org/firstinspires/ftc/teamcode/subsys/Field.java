@@ -35,10 +35,11 @@ public class Field {
 
      */
 
-    public ScoringData getScoringData(boolean isAudienceUp, Pose robotPose) {
+    public ScoringData getScoringData(Pose robotPose) {
         if (robotPose == null || robotPose.equals(new Pose(0, 0, 0))) {
             return null; // make sure it's not a bad pose
         }
+        boolean isAudienceUp = (robotPose.y() < 72);
         Goal target = getGoal(isAudienceUp);
 
         double robotX = robotPose.x();

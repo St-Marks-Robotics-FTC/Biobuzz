@@ -182,18 +182,7 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void updateLastScoringData() {
-        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
-            lastScoringData = field.getScoringData(true, follower.pose());
-        } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
-            lastScoringData = field.getScoringData(false, follower.pose());
-        } else {
-            // we don't have data from Vision so we fall back to odometry
-            if (follower.pose().y() <= 72) {
-                lastScoringData = field.getScoringData(true, follower.pose());
-            } else {
-                lastScoringData = field.getScoringData(false, follower.pose());
-            }
-        }
+        lastScoringData = field.getScoringData(follower.pose());
     }
 
     private void updateTelemetry() {
