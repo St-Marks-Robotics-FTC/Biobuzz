@@ -102,26 +102,26 @@ public class Field {
         if (isBlueTeam) {
             if (isAudienceUp) {
                 return new Goal(true,
-                        new Pose(75, 57.55),
-                        new Pose(94.7, 57.55),
-                        new Pose(85, 58));
+                        new Pose(75, Tunables.audienceY),
+                        new Pose(94.7, Tunables.audienceY),
+                        new Pose(85, Tunables.audienceY + 1));
             } else {
                 return new Goal(true,
-                        new Pose(75, 88),
-                        new Pose(94.7, 88),
-                        new Pose(85, 86));
+                        new Pose(75, Tunables.scoringY),
+                        new Pose(94.7, Tunables.scoringY),
+                        new Pose(85, Tunables.scoringY - 2));
             }
         } else {
             if (isAudienceUp) {
                 return new Goal(false,
-                        new Pose(49.0, 57.55),
-                        new Pose(69, 57.55),
-                        new Pose(59, 58));
+                        new Pose(49.0, Tunables.audienceY),
+                        new Pose(69, Tunables.audienceY),
+                        new Pose(59, Tunables.audienceY + 1));
             } else {
                 return new Goal(false,
-                        new Pose(49.0, 88),
-                        new Pose(69, 88),
-                        new Pose(59, 86));
+                        new Pose(49.0, Tunables.scoringY),
+                        new Pose(69, Tunables.scoringY),
+                        new Pose(59, Tunables.scoringY - 2));
             }
         }
     }
