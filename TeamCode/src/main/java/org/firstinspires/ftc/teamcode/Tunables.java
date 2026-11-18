@@ -148,11 +148,11 @@ public class Tunables {
     //dy + dx multipliers
     public static double dyMultiplier = 0.06;
     public static double dxMultiplier = 0.03;
-    public static double centerThreshold = 14.5;
+    public static double centerThreshold = 20;
 
-    public static double audienceY = 59.55;
+    public static double audienceY = 64;
 
-    public static double scoringY = 86;
+    public static double scoringY = 80;
 
 
     public static double maxScoringAngle = Math.toRadians(35); // max angle in radians goal can accept ball

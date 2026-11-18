@@ -50,6 +50,7 @@ public class Field {
         double goalX = aimPost.x();
         double goalY = aimPost.y();
 
+        /*
         if (isCrossCourt) {
             // push the aim point past the far post, away from the robot on both axes, scaled by
             // how far away the robot is. With equal multipliers this only lengthens the shot;
@@ -59,6 +60,7 @@ public class Field {
             goalX += Math.signum(dX) * Tunables.dxMultiplier * Math.abs(dX);
             goalY += behindY * Tunables.dyMultiplier * Math.abs(dY);
         }
+         */
 
         double dY = goalY - robotY;
         double dX = goalX - robotX;
@@ -81,15 +83,15 @@ public class Field {
         if (isBlueTeam) {
             // both goals for blue team share the same x values
             return new Goal(true,
-                    new Pose(78, baseY + behindY * 2),
-                    new Pose(92.7, baseY - behindY * 2),
-                    new Pose(85, baseY + behindY * 3));
+                    new Pose(76, baseY + behindY * 2),  // actual pose: 74in
+                    new Pose(94, baseY - behindY * 2),  // actual pos: 96in
+                    new Pose(85, baseY + behindY * 3)); // actual middle
         } else {
             // both goals for red team share the same x values
             return new Goal(false,
-                    new Pose(51.3, baseY - behindY * 2),
-                    new Pose(66, baseY),
-                    new Pose(59, baseY + behindY * 3));
+                    new Pose(68, baseY - behindY * 2), // actual pose: 70in
+                    new Pose(50, baseY),                    // actual pose: 48in
+                    new Pose(59, baseY + behindY * 3));  // actual middle
         }
     }
 
