@@ -177,12 +177,9 @@ public abstract class BozoAuto extends OpMode {
     /** fraction of max path speed for the final straight run from a flower's intermediate pose into the flower **/
     private static final double FLOWER_APPROACH_SPEED = 0.2;
 
-    /** fraction of a cross-field path (by path parameter) held at the fast heading before turning to the final heading **/
-    private static final double CROSS_FIELD_HOLD_UNTIL = 0.9;
-
     /**
      * Heading override for a path that crosses the field midline: face 90 deg (+y) when driving toward +y, 270 deg
-     * (-y) when driving toward -y, hold it until {@link #CROSS_FIELD_HOLD_UNTIL}, then turn to {@code to}'s heading.
+     * (-y) when driving toward -y, hold it until {@link Tunables#crossFieldHoldUntil}, then turn to {@code to}'s heading.
      * Red audience->scoring is +y so 90; Blue is the point reflection so its audience->scoring is -y so 270, which
      * matches the mirror rule with no per-alliance code.
      * Precondition: {@code from.y() != to.y()}.
@@ -191,7 +188,7 @@ public abstract class BozoAuto extends OpMode {
         double hold = Math.toRadians(to.y() > from.y() ? 90 : 270);
         Pose holdPose = new Pose(from.x(), from.y(), hold);
         return path.heading(Interpolator.piecewise()
-                .until(CROSS_FIELD_HOLD_UNTIL, Interpolator.constant(holdPose))
+                .until(Tunables.crossFieldHoldUntil, Interpolator.constant(holdPose))
                 .until(1.0, Interpolator.linear(holdPose, to)));
     }
 
