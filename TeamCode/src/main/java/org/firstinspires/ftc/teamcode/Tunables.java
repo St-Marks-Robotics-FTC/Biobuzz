@@ -144,11 +144,11 @@ public class Tunables {
 
     // auto RPM
     public static double autoRPMAddition = -75; // add this many RPMs to auto RPM output
-    public static double autoRPMMultiplier = 0.95; // multiply auto RPM output by this
+    public static double autoRPMMultiplier = 0.92; // multiply auto RPM output by this
 
     //dy + dx multipliers
     public static double dyMultiplier = 0.06;
-    public static double dxMultiplier = 0.06;
+    public static double dxMultiplier = 0.03;
     public static double centerThreshold = 14.5;
 
     public static double audienceY = 59.55;
