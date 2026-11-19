@@ -101,7 +101,7 @@ public class Field {
             // shallow angle shot
             mathRPM = 14.068 * d + 2287.62051;
             // keep it within the regression outputs
-            mathRPM = Range.clip(mathRPM, 2900, 3400);
+            mathRPM = Range.clip(mathRPM, 2900, 3500);
         }
 
         return mathRPM * Tunables.autoRPMMultiplier + Tunables.autoRPMAddition;
