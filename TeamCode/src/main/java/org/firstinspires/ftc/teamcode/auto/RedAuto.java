@@ -29,7 +29,7 @@ public class RedAuto extends BozoAuto {
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
     public static Pose audienceFlowerPose = new Pose(Tunables.flowerDistance, 48, Math.toRadians(180));
-    public static Pose audienceCheckpointPose = new Pose(47, 44, Math.toRadians(55));
+    public static Pose audienceCheckpointPose = new Pose(47, 44, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(12, 18, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(12, 70, Math.toRadians(90));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(12, 12, Math.toRadians(0));
