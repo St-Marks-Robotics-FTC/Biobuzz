@@ -58,8 +58,8 @@ public class Tunables {
     public static int    shakeMillis = 60; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
     public static double flowerDown = .77;
     public static double flowerUp = .24;
-    public static double flowerShake = 0.03; // flower shake: servo position amplitude (NOT a time) around flowerDown
-    public static double flowerDistance = 13.125; // how far from the edge of the field where the flower is should we refuel
+    public static double flowerShake = 0.06; // flower shake: servo position amplitude (NOT a time) around flowerDown
+    public static double flowerDistance = 14; // how far from the edge of the field where the flower is should we refuel
 
     /** robot tunables (used in Robot.java) **/
 

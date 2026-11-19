@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.Tunables;
 @Configurable
 @Autonomous(name = "BlueAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
 public class BlueAuto extends BozoAuto {
-    // LAST MIRRORED: 2026-11-15
+    // LAST MIRRORED: 2026-11-18
 
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(84, 137.246, Math.toRadians(270));
@@ -31,7 +31,7 @@ public class BlueAuto extends BozoAuto {
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(126, 64, Math.toRadians(0));
     public static Pose audienceFlowerIntermediatePose = new Pose(120, 96, Math.toRadians(0));
     public static Pose audienceFlowerPose = new Pose(144 - Tunables.flowerDistance, 96, Math.toRadians(0));
-    public static Pose audienceCheckpointPose = new Pose(98, 108, Math.toRadians(255));
+    public static Pose audienceCheckpointPose = new Pose(97, 100, Math.toRadians(235));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(132, 126, Math.toRadians(270));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(132, 74, Math.toRadians(270));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(132, 132, Math.toRadians(180));
