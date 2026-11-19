@@ -501,7 +501,7 @@ public abstract class BozoAuto extends OpMode {
                     }
                     */
 
-                    if (Vision.limelight.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                    if (Vision.limelight.getLatestResult().getBotposeTagCount() < Tunables.tagThreshold) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
                     else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
                 }
                 break;
