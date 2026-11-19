@@ -404,8 +404,13 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
-                    else driveThen(audienceCheckpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
+                    if (isBlueTeam()) {
+                        if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
+                        else driveThen(audienceCheckpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
+                    } else {
+                        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
+                        else driveThen(audienceCheckpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
+                    }
                 }
                 break;
 
@@ -481,8 +486,13 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
-                    else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
+                    if (isBlueTeam()) {
+                        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                        else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
+                    } else {
+                        if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                        else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
+                    }
                 }
                 break;
 
