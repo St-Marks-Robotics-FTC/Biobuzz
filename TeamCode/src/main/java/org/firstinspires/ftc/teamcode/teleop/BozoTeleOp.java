@@ -34,13 +34,11 @@ public abstract class BozoTeleOp extends OpMode {
     private boolean flywheelOn = true;
     private boolean isTurning = false;
     private boolean isManualRPM = false;
-    private boolean flowerIsDown = true;
     private boolean rumble = false;
     private Timer rumbleTimer;
-    private boolean canScore = false;
-    private boolean lastCanScore = false;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
-    private Field.ScoringData lastScoringData = null;
+    private Field.ScoringData lastScoringData;
+    private boolean lastCanScore = false;
 
     @Override
     public void init() {
@@ -181,7 +179,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (shootPressed) robot.startLaunch();
 
-        canScore = field.getScoringData(follower.pose()).canScore();
+        boolean canScore = lastScoringData.canScore();
 
         if (!lastCanScore && canScore) { // start rumbling
             rumble = true;
