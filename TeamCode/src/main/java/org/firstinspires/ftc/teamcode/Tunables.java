@@ -93,46 +93,9 @@ public class Tunables {
     public static double visionRedBiasX = -1.392;
     public static double visionRedBiasY = 0.006;
 
-    public static double visionMinGoalDist = 35; // in, ignore vision closer than this to the hive
-    public static double visionMaxZSensitivity = 1.4; // reject if hive math amplifies z error this much
-    public static double visionSensitivityRef = 1.2; // sensitivity above this inflates std dev
-    public static double visionJumpMax = 8; // in, reject frames this far from the 9-frame median
-
     public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
     public static double visionJumpMargin = 4; // in, allowed frame noise
     public static int visionJumpRejectsBeforeReset = 5; // jump-rejected frames before vision re-acquires a moved robot
-    public static double visionPoseGain = 0.1;
-    public static double visionPoseMaxSpeed = 10; // in/s, teleop relocalizes only below this
-
-    public static double visionTunerSpotX = 72;
-    public static double visionTunerSpotY = 72;
-
-    // VisionDataCollector: automatic grid sweep used to fit the camera/hive models
-    public static double visionTunerRobotLength = 18; // in
-    public static double visionTunerRobotWidth = 18; // in
-    public static double visionTunerWallMargin = 2; // in, extra clearance kept from field elements
-    public static double visionTunerGridSpacing = 12; // in between sample spots
-    public static double visionTunerHeadingStepDegrees = 45; // degrees between samples at each spot
-    public static int visionTunerSettleMillis = 500; // wait after a move before sampling
-    public static int visionTunerMoveTimeoutMillis = 8000; // give up on a leg/heading after this long
-    public static double visionTunerSpeed = 0.35; // fraction of max path speed while collecting
-    public static double visionTunerHeadingToleranceDegrees = 3;
-    public static double visionTunerPositionTolerance = 1.5; // in
-    public static int visionTunerMinTags = 2; // frames with fewer tags are counted as dropped
-    public static int visionTunerSamplesPerHeading = 5;
-    public static int visionTunerSampleTimeoutMillis = 3000;
-    public static double visionTunerTrueZ = 9; // in, camera height written to the CSV for fit_hive.py
-    // field-element rectangles to keep the collector away from (measure these on the real field)
-    public static double visionTunerObstacleAMinX = 44;
-    public static double visionTunerObstacleAMinY = 54;
-    public static double visionTunerObstacleAMaxX = 100;
-    public static double visionTunerObstacleAMaxY = 62;
-    public static double visionTunerObstacleBMinX = 44;
-    public static double visionTunerObstacleBMinY = 83;
-    public static double visionTunerObstacleBMaxX = 100;
-    public static double visionTunerObstacleBMaxY = 91;
-
-    public static int cameraHeight = 9;
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
 
     /** field tunables (used in Field.java) **/
