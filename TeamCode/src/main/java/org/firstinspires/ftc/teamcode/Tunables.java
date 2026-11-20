@@ -59,13 +59,13 @@ public class Tunables {
     public static double flowerDown = .77;
     public static double flowerUp = .24;
     public static double flowerShake = 0.08; // flower shake: servo position amplitude (NOT a time) around flowerDown
-    public static double flowerDistance = 14.25; // how far from the edge of the field where the flower is should we refuel
+    public static double flowerDistance = 13.78; // how far from the edge of the field where the flower is should we refuel
 
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 525;
+    public static double launchShootingTime = 555;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
