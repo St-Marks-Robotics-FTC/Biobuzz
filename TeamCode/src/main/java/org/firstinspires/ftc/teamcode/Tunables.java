@@ -60,7 +60,7 @@ public class Tunables {
     public static double flowerDown = 0.52;
     public static double flowerUp = 0.008;
     public static double flowerShake = 0.08; // flower shake: servo position amplitude (NOT a time) around flowerDown
-    public static double flowerDistance = 13.725; // how far from the edge of the field where the flower is should we refuel
+    public static double flowerDistance = 13.500; // how far from the edge of the field where the flower is should we refuel
 
     /** robot tunables (used in Robot.java) **/
 

@@ -651,6 +651,7 @@ public abstract class BozoAuto extends OpMode {
         loopTimer = new Timer();
         stateTimer = new Timer();
         telemetryTimer = new Timer();
+        autoTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = new Robot(hardwareMap);
         robot.scheduler.setAutoLoopLength(); // make sure we use the longer auto loops
