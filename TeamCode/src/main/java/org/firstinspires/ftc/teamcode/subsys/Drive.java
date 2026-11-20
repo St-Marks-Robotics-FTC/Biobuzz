@@ -31,7 +31,7 @@ public class Drive {
             } else {
                 motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
             }
-            motor.setMaxStaleness(1 * 1000000); // instant writes
+            motor.setMaxStaleness(0); // instant writes
             motor.m.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
             scheduler.addDevice(motor);
         }
