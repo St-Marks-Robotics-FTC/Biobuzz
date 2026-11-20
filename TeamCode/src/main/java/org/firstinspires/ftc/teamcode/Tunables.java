@@ -32,14 +32,15 @@ public class Tunables {
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.008;
+    public static double flywheelP = 0.002;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
-    public static double flywheelF = 0.0004;
+    public static double flywheelF = 0.00038;
     public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
     public static double flywheelVoltageStart = 12.0; // start voltage of compensation scale
     public static double flywheelVoltageEnd = 13.5;   // end voltage of compensation scale
     public static double flywheelCompensationMax = 1.2; // max amount to scale voltage
+    public static boolean flywheelUsingVoltageCompensation = false;
 
     /** intake tunables (used in Intake.java) **/
 
@@ -56,23 +57,23 @@ public class Tunables {
     public static double transferClosed = 0.108;
 
     public static int    shakeMillis = 80; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
-    public static double flowerDown = .77;
+    public static double flowerDown = 0.78;
     public static double flowerUp = .24;
-    public static double flowerShake = 0.08; // flower shake: servo position amplitude (NOT a time) around flowerDown
+    public static double flowerShake = 0.12; // flower shake: servo position amplitude (NOT a time) around flowerDown
     public static double flowerDistance = 13.78; // how far from the edge of the field where the flower is should we refuel
 
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 555;
+    public static double launchShootingTime = 650;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
     public static double tagThreshold = 3; // amount of tags we need at least
     public static double shootRPM = 3038; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
-    public static long flowerRefuelDurationMillis = 550; // how long to intake while driving through the refuel line
+    public static long flowerRefuelDurationMillis = 700; // how long to intake while driving through the refuel line
     public static long refuelDurationMillis = 200; // how long to intake while driving through the refuel line
     public static double flowerIntakeSpeed = 0.3; // 0-1 speed to intake flower (lower=slower)
     public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)

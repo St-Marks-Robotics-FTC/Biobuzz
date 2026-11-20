@@ -43,7 +43,10 @@ public class Flywheel {
 
         if (setpointTPS == 0) {
             newPower = 0.0;
-        } else newPower = pidf.calc(setpointTPS, currentTPS) * getVoltageCompensation(voltage); // calc new motor power
+        } else newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
+        if (Tunables.flywheelUsingVoltageCompensation) {
+            newPower *= getVoltageCompensation(voltage);
+        }
 
         double clippedPower = Range.clip(newPower, -Tunables.maxFlywheelBraking, 1.0);
 

@@ -16,7 +16,7 @@ public class BlueAuto extends BozoAuto {
     public static Pose startPose = new Pose(84, 137.246, Math.toRadians(270));
     public static Pose shootPose = new Pose(84, 134, Math.toRadians(270));
     public static Pose intermediatePose = new Pose(122, 132.25, Math.toRadians(30));
-    public static Pose refuelPose = new Pose(134, 137.246, Math.toRadians(0));
+    public static Pose refuelPose = new Pose(134, 137.5, Math.toRadians(0));
 
     // ---------------------------------------------------------------- SCORING SIDE (shootPose mirrored over y = 72)
     public static Pose tippedControlPose1 = new Pose(132, 132, Math.toRadians(270));
