@@ -59,7 +59,7 @@ public class HWScheduler {
             // this ignores our time budget - otherwise a slow loop would let devices go stale forever
             for (Device device : deviceList) {
                 if (device.getChange() != 0 && device.getStaleness() >= device.getMaxStaleness()) {
-                    device.update();
+                    device.write();
                 }
             }
         }

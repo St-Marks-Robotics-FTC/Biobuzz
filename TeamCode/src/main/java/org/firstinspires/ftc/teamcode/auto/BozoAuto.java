@@ -175,7 +175,6 @@ public abstract class BozoAuto extends OpMode {
     private static final double REFUEL_ROTATE_START = 0.7;
 
     /** fraction of max path speed for the final straight run from a flower's intermediate pose into the flower **/
-    private static final double FLOWER_APPROACH_SPEED = 0.2;
 
     /**
      * Heading override for a path that crosses the field midline: face 90 deg (+y) when driving toward +y, 270 deg
@@ -197,9 +196,8 @@ public abstract class BozoAuto extends OpMode {
         return line(from, to).linear(from, to);
     }
 
-    /** a straight line {@code from} -> {@code to} at {@link #FLOWER_APPROACH_SPEED}, for creeping into a flower **/
     private static Path creepLine(Pose from, Pose to) {
-        return plainLine(from, to).with(Constants.foresightConfig.maxPathSpeed.at(FLOWER_APPROACH_SPEED));
+        return plainLine(from, to).with(Constants.foresightConfig.maxPathSpeed.at(Tunables.flowerApproachSpeed));
     }
 
     /**
@@ -629,6 +627,8 @@ public abstract class BozoAuto extends OpMode {
             sendTelemetry(false);
         }
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
+        telemetryM.addData("target RPM", targetRPM);
+        telemetryM.addData("RPM", robot.flywheel.getRPM());
         telemetryM.update(telemetry);
     }
 
