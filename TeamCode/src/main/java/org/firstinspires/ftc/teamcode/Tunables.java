@@ -132,23 +132,6 @@ public class Tunables {
     public static double visionTunerObstacleBMaxX = 100;
     public static double visionTunerObstacleBMaxY = 91;
 
-    public static double visionTunerSpeed = 0.3;
-    public static double visionTunerRobotLength = 20;
-    public static double visionTunerRobotWidth = 18;
-    public static double visionTunerWallMargin = 3;
-    public static double visionTunerObstacleAMinX = 0, visionTunerObstacleAMinY = 48, visionTunerObstacleAMaxX = 43, visionTunerObstacleAMaxY = 96;
-    public static double visionTunerObstacleBMinX = 96, visionTunerObstacleBMinY = 48, visionTunerObstacleBMaxX = 144, visionTunerObstacleBMaxY = 96;
-    public static double visionTunerGridSpacing = 8;
-    public static double visionTunerGoalHeadingLimitDegrees = 100; // sweep +-this around goal
-    public static double visionTunerSpinDegPerSec = 45;
-    public static double visionTunerSpinEnterRadius = 4; // in, start spin this close to spot
-    public static double visionTunerNoRecordMinY = 48; // full-width no-record band
-    public static double visionTunerNoRecordMaxY = 96;
-    public static double visionTunerLatencyOffsetMillis = 0; // extra camera delay
-    public static int visionTunerMinTags = 2;
-    public static double visionTunerTrueZ = 0;
-    public static double visionTunerMoveTimeoutMillis = 6000; // stall timeout
-
     public static int cameraHeight = 9;
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
 
@@ -168,9 +151,6 @@ public class Tunables {
     public static double maxScoringAbsRelativeX = 36;
     public static double maxScoringRelativeY = 48;
     public static double minScoringRelativeY = 10;
-
-    /** vision tunables (used in Vision.java) **/
-    public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
 
     /** fusion tunables (used in Fusion.java) **/
     public static double fusionStartStd = 2; // how unsure we are about our starting pose after auto
