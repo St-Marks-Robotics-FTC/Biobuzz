@@ -220,7 +220,8 @@ public class Vision {
         double visionHeading = AngleUnit.normalizeRadians(
                 botpose3D.getOrientation().getYaw(AngleUnit.RADIANS) - Math.PI / 2);
 
-        lastResult = new VisionResult(new Pose(newX, newY), acquisitionTimeMs,
+        // DON'T SCREW WITH X
+        lastResult = new VisionResult(new Pose(x, newY), acquisitionTimeMs,
                 result.getBotposeTagCount(), avgDist, stdX, stdY, visionHeading);
         return lastResult;
     }
