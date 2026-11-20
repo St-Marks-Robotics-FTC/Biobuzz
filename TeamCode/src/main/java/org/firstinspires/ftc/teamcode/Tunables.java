@@ -57,8 +57,8 @@ public class Tunables {
     public static double transferClosed = 0.108;
 
     public static int    shakeMillis = 80; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
-    public static double flowerDown = 0.838;
-    public static double flowerUp = 0.323;
+    public static double flowerDown = 0.52;
+    public static double flowerUp = 0.008;
     public static double flowerShake = 0.08; // flower shake: servo position amplitude (NOT a time) around flowerDown
     public static double flowerDistance = 13.725; // how far from the edge of the field where the flower is should we refuel
 
@@ -78,7 +78,7 @@ public class Tunables {
     public static double flowerIntakeSpeed = 0.3; // 0-1 speed to intake flower (lower=slower)
     public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
     public static double crossFieldHoldUntil = 0.8; // fraction (0-1] of a cross-field path spent holding 90/270 heading before turning to the final heading; read when paths are built at init
-    public static double flowerApproachSpeed = 0.5;
+    public static double flowerApproachSpeed = .25;
 
     /** vision tunables (used in subsys/Vision.java) **/
 

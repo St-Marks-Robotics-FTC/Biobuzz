@@ -47,6 +47,7 @@ public abstract class BozoAuto extends OpMode {
     private Timer stateTimer, loopTimer, telemetryTimer;
     private TelemetryManager telemetryM;
     private Pose startPose, shootPose;
+    private Timer autoTimer;
 
     /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
     private double targetRPM = 0;
@@ -141,6 +142,8 @@ public abstract class BozoAuto extends OpMode {
         CASE2B_TRAVEL_TO_PARK,      // everything off; curve (1 control point) from the intermediate pose to the park pose
 
         DONE,                  // parked; waiting for the OpMode to be stopped
+
+        SHIT
     }
 
     private State state = State.TRAVEL_TO_FIRST_SHOOT;
@@ -304,16 +307,19 @@ public abstract class BozoAuto extends OpMode {
                 if (!follower.isBusy()) driveThen(intermediateToRefuelPath, State.TRAVEL_TO_REFUEL);
                 break;
             case TRAVEL_TO_REFUEL:
-                if (finishedCreepingIntoFlower()) setState(State.REFUEL);
+                if (finishedCreepingIntoFlower()) {
+                    robot.intake.forward();
+                    setState(State.REFUEL);
+                }
                 break;
             case REFUEL:
                 if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
-                    robot.intake.forward();
                     driveThen(refuelToShootPath, State.TRAVEL_TO_SHOOT);
                 }
                 break;
             case TRAVEL_TO_SHOOT:
                 if (!follower.isBusy()) {
+                    robot.flower.goDown();
                     // Limelight sees the tags => the hive did NOT flip => CASE2; otherwise it tipped => CASE1
                     if (Vision.limelight.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold) {
                         setState(State.CASE2_SPEED_UP_SHOOT_2); // already at the shoot pose, no travel
@@ -333,6 +339,7 @@ public abstract class BozoAuto extends OpMode {
             case CASE1_FEED_SHOOT_2:
                 if (!robot.isLaunching()) {
                     robot.intake.forward(); // flywheel keeps spinning: we shoot again after the scoring flower
+                    robot.flower.goDown();
                     driveThen(tippedShootToScoringFlowerIntermediatePath, State.CASE1_TRAVEL_TO_SCORING_FLOWER_INTERMEDIATE);
                 }
                 break;
@@ -340,7 +347,6 @@ public abstract class BozoAuto extends OpMode {
             // scoring flower, then shoot again from the same tipped shoot pose
             case CASE1_TRAVEL_TO_SCORING_FLOWER_INTERMEDIATE:
                 if (!follower.isBusy()) {
-                    robot.flower.goDown();
                     driveThen(scoringFlowerIntermediateToScoringFlowerPath, State.CASE1_TRAVEL_TO_SCORING_FLOWER);
                 }
                 break;
@@ -370,6 +376,7 @@ public abstract class BozoAuto extends OpMode {
             case CASE1_FEED_SHOOT_3:
                 if (!robot.isLaunching()) {
                     robot.intake.forward();
+                    robot.flower.goDown();
                     driveThen(tippedShootToAudienceFlowerIntermediatePath, State.CASE1_TRAVEL_TO_AUDIENCE_FLOWER_INTERMEDIATE);
                 }
                 break;
@@ -377,7 +384,6 @@ public abstract class BozoAuto extends OpMode {
             // audience flower, then the checkpoint
             case CASE1_TRAVEL_TO_AUDIENCE_FLOWER_INTERMEDIATE:
                 if (!follower.isBusy()) {
-                    robot.flower.goDown();
                     driveThen(audienceFlowerIntermediateToAudienceFlowerPath, State.CASE1_TRAVEL_TO_AUDIENCE_FLOWER);
                 }
                 break;
@@ -389,7 +395,6 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_COLLECT_AUDIENCE_FLOWER:
                 if (finishedCollecting()) {
-                    robot.flower.goDown();
                     driveThen(audienceFlowerToAudienceFlowerIntermediatePath, State.CASE1_TRAVEL_FROM_AUDIENCE_FLOWER_TO_INTERMEDIATE);
                 }
                 break;
@@ -457,6 +462,7 @@ public abstract class BozoAuto extends OpMode {
             case CASE2_FEED_SHOOT_2:
                 if (!robot.isLaunching()) {
                     robot.intake.forward();
+                    robot.flower.goDown();
                     driveThen(shootToAudienceFlowerIntermediatePath, State.CASE2_TRAVEL_TO_AUDIENCE_FLOWER_INTERMEDIATE);
                 }
                 break;
@@ -464,7 +470,6 @@ public abstract class BozoAuto extends OpMode {
             // audience flower, then the checkpoint
             case CASE2_TRAVEL_TO_AUDIENCE_FLOWER_INTERMEDIATE:
                 if (!follower.isBusy()) {
-                    robot.flower.goDown();
                     driveThen(audienceFlowerIntermediateToAudienceFlowerPath, State.CASE2_TRAVEL_TO_AUDIENCE_FLOWER);
                 }
                 break;
@@ -513,12 +518,12 @@ public abstract class BozoAuto extends OpMode {
             case CASE2A_FEED_SHOOT_3:
                 if (!robot.isLaunching()) {
                     robot.intake.forward();
+                    robot.flower.goDown();
                     driveThen(tippedShootToScoringFlowerIntermediatePath, State.CASE2A_TRAVEL_TO_SCORING_FLOWER_INTERMEDIATE);
                 }
                 break;
             case CASE2A_TRAVEL_TO_SCORING_FLOWER_INTERMEDIATE:
                 if (!follower.isBusy()) {
-                    robot.flower.goDown();
                     driveThen(scoringFlowerIntermediateToScoringFlowerPath, State.CASE2A_TRAVEL_TO_SCORING_FLOWER);
                 }
                 break;
@@ -600,6 +605,9 @@ public abstract class BozoAuto extends OpMode {
             case DONE:
                 requestOpModeStop();
                 break;
+
+            case SHIT:
+                follower.stop();
         }
     }
 
@@ -623,6 +631,11 @@ public abstract class BozoAuto extends OpMode {
         robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
         robot.scheduler.update(loopTimer.nanoseconds()); // write hardware first: skipping this budget starves every device
+
+        if (autoTimer.milliseconds() > 29_750) {
+            setState(State.SHIT);
+        }
+
         if (Tunables.isDebugging) {
             sendTelemetry(false);
         }
@@ -664,6 +677,7 @@ public abstract class BozoAuto extends OpMode {
         targetRPM = Tunables.shootRPM; // begin spinning up immediately
         telemetryTimer.reset();
         loopTimer.reset(); // so the first loop() doesn't report init time as loop time
+        autoTimer.reset();
         follower.follow(startToShootPath);
         setState(State.TRAVEL_TO_FIRST_SHOOT);
     }
