@@ -35,6 +35,7 @@ public class Flywheel {
     }
 
     public void update(double RPM, double voltage) {
+        lastSetRPM = RPM;
         pidf.updateTerms(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF);
         double currentTPS = getTPS();
         double setpointTPS = RPMToTPS(RPM);

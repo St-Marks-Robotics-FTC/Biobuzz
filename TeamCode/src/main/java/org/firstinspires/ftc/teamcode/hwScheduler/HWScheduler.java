@@ -58,7 +58,7 @@ public class HWScheduler {
             // first update any devices that are past their max stale time
             // this ignores our time budget - otherwise a slow loop would let devices go stale forever
             for (Device device : deviceList) {
-                if (device.getPriority() > 0 && device.getStaleness() >= device.getMaxStaleness()) {
+                if (device.getChange() != 0 && device.getStaleness() >= device.getMaxStaleness()) {
                     device.update();
                 }
             }

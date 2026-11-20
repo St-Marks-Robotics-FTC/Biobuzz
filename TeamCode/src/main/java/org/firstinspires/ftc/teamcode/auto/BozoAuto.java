@@ -177,6 +177,21 @@ public abstract class BozoAuto extends OpMode {
     /** fraction of max path speed for the final straight run from a flower's intermediate pose into the flower **/
     private static final double FLOWER_APPROACH_SPEED = 0.2;
 
+    /**
+     * Heading override for a path that crosses the field midline: face 90 deg (+y) when driving toward +y, 270 deg
+     * (-y) when driving toward -y, hold it until {@link Tunables#crossFieldHoldUntil}, then turn to {@code to}'s heading.
+     * Red audience->scoring is +y so 90; Blue is the point reflection so its audience->scoring is -y so 270, which
+     * matches the mirror rule with no per-alliance code.
+     * Precondition: {@code from.y() != to.y()}.
+     */
+    private static Path crossFieldHeading(Path path, Pose from, Pose to) {
+        double hold = Math.toRadians(to.y() > from.y() ? 90 : 270);
+        Pose holdPose = new Pose(from.x(), from.y(), hold);
+        return path.heading(Interpolator.piecewise()
+                .until(Tunables.crossFieldHoldUntil, Interpolator.constant(holdPose))
+                .until(1.0, Interpolator.linear(holdPose, to)));
+    }
+
     /** a straight line {@code from} -> {@code to}, heading turning linearly between them **/
     private static Path plainLine(Pose from, Pose to) {
         return line(from, to).linear(from, to);
@@ -206,8 +221,9 @@ public abstract class BozoAuto extends OpMode {
 
         // ---------------------------------------------------------------- CASE1: hive tipped
         // shoot -> scoring side (cubic curve bent by the two tipped control poses)
-        shootToTippedShootPath = curve(shootPose, config.tippedControlPose1, config.tippedControlPose2, config.tippedShootPose)
-                .linear(shootPose, config.tippedShootPose);
+        shootToTippedShootPath = crossFieldHeading(
+                curve(shootPose, config.tippedControlPose1, config.tippedControlPose2, config.tippedShootPose),
+                shootPose, config.tippedShootPose);
         // scoring flower: full-speed line out, creep in, line back out, line to tippedShoot
         tippedShootToScoringFlowerIntermediatePath = plainLine(config.tippedShootPose, config.scoringFlowerIntermediatePose);
         scoringFlowerIntermediateToScoringFlowerPath = creepLine(config.scoringFlowerIntermediatePose, config.scoringFlowerPose);
@@ -217,8 +233,9 @@ public abstract class BozoAuto extends OpMode {
                 );;
         scoringFlowerIntermediateToTippedShootPath = plainLine(config.scoringFlowerIntermediatePose, config.tippedShootPose);
         // audience flower: like the scoring flower but the full-speed approach is a curve (1 control point); then on to the checkpoint
-        tippedShootToAudienceFlowerIntermediatePath = curve(config.tippedShootPose, config.tippedShootToAudienceFlowerControlPose, config.audienceFlowerIntermediatePose)
-                .linear(config.tippedShootPose, config.audienceFlowerIntermediatePose);
+        tippedShootToAudienceFlowerIntermediatePath = crossFieldHeading(
+                curve(config.tippedShootPose, config.tippedShootToAudienceFlowerControlPose, config.audienceFlowerIntermediatePose),
+                config.tippedShootPose, config.audienceFlowerIntermediatePose);
         audienceFlowerIntermediateToAudienceFlowerPath = creepLine(config.audienceFlowerIntermediatePose, config.audienceFlowerPose);
         audienceFlowerToAudienceFlowerIntermediatePath = plainLine(config.audienceFlowerPose, config.audienceFlowerIntermediatePose)
                 .with(
@@ -226,8 +243,9 @@ public abstract class BozoAuto extends OpMode {
                 );;
         audienceFlowerIntermediateToAudienceCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.audienceCheckpointPose);
         // CASE1A: audienceCheckpoint -> ORIGINAL shoot pose (plain line, shared with CASE2B) -> park (curve, 1 control point)
-        shootToParkPath = curve(shootPose, config.parkControlPoseFromShoot, config.parkPose)
-                .linear(shootPose, config.parkPose);
+        shootToParkPath = crossFieldHeading(
+                curve(shootPose, config.parkControlPoseFromShoot, config.parkPose),
+                shootPose, config.parkPose);
         // CASE1B: audienceCheckpoint -> tippedShoot (cubic curve, 2 control points, shared with CASE2A) -> park (curve, 1 control point)
         tippedShootToParkPath = curve(config.tippedShootPose, config.parkControlPoseFromTippedShoot, config.parkPose)
                 .linear(config.tippedShootPose, config.parkPose);
@@ -236,12 +254,14 @@ public abstract class BozoAuto extends OpMode {
         // audience flower: full-speed line out, creep in and back out (CASE1's audience flower paths), line to the checkpoint
         shootToAudienceFlowerIntermediatePath = plainLine(shootPose, config.audienceFlowerIntermediatePose);
         // CASE2A: audienceCheckpoint -> tippedShoot (cubic curve, 2 control points, shared with CASE1B); the scoring flower round trip and the park reuse CASE1's paths
-        audienceCheckpointToTippedShootPath = curve(config.audienceCheckpointPose, config.audienceCheckpointToTippedShootControlPose1, config.audienceCheckpointToTippedShootControlPose2, config.tippedShootPose)
-                .linear(config.audienceCheckpointPose, config.tippedShootPose);
+        audienceCheckpointToTippedShootPath = crossFieldHeading(
+                curve(config.audienceCheckpointPose, config.audienceCheckpointToTippedShootControlPose1, config.audienceCheckpointToTippedShootControlPose2, config.tippedShootPose),
+                config.audienceCheckpointPose, config.tippedShootPose);
         // CASE2B: audienceCheckpoint -> ORIGINAL shoot pose (shared with CASE1A) -> scoring flower (cubic curve, 2 control points) -> park (curve, 1 control point)
         audienceCheckpointToShootPath = plainLine(config.audienceCheckpointPose, shootPose);
-        shootToScoringFlowerIntermediatePath = curve(shootPose, config.shootToScoringFlowerControlPose1, config.shootToScoringFlowerControlPose2, config.scoringFlowerIntermediatePose)
-                .linear(shootPose, config.scoringFlowerIntermediatePose);
+        shootToScoringFlowerIntermediatePath = crossFieldHeading(
+                curve(shootPose, config.shootToScoringFlowerControlPose1, config.shootToScoringFlowerControlPose2, config.scoringFlowerIntermediatePose),
+                shootPose, config.scoringFlowerIntermediatePose);
         scoringFlowerIntermediateToParkPath = curve(config.scoringFlowerIntermediatePose, config.parkControlPoseFromScoringFlower, config.parkPose)
                 .linear(config.scoringFlowerIntermediatePose, config.parkPose);
     }
@@ -384,7 +404,17 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE1_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
+                    /*
+                    if (isBlueTeam()) {
+                        if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
+                        else driveThen(audienceCheckpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
+                    } else {
+                        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
+                        else driveThen(audienceCheckpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
+                    }
+                    */
+
+                    if (Vision.limelight.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
                     else driveThen(audienceCheckpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
                 }
                 break;
@@ -461,7 +491,17 @@ public abstract class BozoAuto extends OpMode {
                 break;
             case CASE2_TRAVEL_FROM_INTERMEDIATE_TO_CHECKPOINT:
                 if (!follower.isBusy()) {
-                    if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                    /*
+                    if (isBlueTeam()) {
+                        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                        else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
+                    } else {
+                        if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                         else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
+                    }
+                    */
+
+                    if (Vision.limelight.getLatestResult().getBotposeTagCount() < Tunables.tagThreshold) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
                     else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
                 }
                 break;
@@ -581,10 +621,9 @@ public abstract class BozoAuto extends OpMode {
     @Override
     public void loop() {
         loopTimer.reset();
-        vision.update(follower.pose().heading());
+        vision.update();
         follower.update();
         robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
-        robot.flower.update();
         robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
         robot.scheduler.update(loopTimer.nanoseconds()); // write hardware first: skipping this budget starves every device

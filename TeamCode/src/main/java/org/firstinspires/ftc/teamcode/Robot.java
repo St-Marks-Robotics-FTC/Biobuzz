@@ -103,6 +103,7 @@ public class Robot {
         }
 
         intake.update(isLaunching());
+        flower.update();
     }
 
     public boolean isLaunching() {

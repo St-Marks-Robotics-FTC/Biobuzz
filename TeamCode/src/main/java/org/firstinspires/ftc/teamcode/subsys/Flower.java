@@ -29,6 +29,7 @@ public class Flower {
         shakeTimer = new Timer();
 
         flowerServo.setPosition(Tunables.flowerUp); // start up
+        flowerServo.forceUpdate(); // move on init
     }
 
     public void toggle() {
@@ -54,7 +55,7 @@ public class Flower {
 
     public void update() { // shake n bake
         if (state == State.SHAKE_HIGH && shakeTimer.milliseconds() > Tunables.shakeMillis) {
-            flowerServo.setPosition(shakeLowPosition());
+            flowerServo.setPosition(Tunables.flowerDown);
             state = State.SHAKE_LOW;
 
             shakeTimer.reset();
@@ -68,12 +69,7 @@ public class Flower {
 
     /** servo position of the far end of the shake; {@link Tunables#flowerShake} is a servo position, not a time **/
     private static double shakeHighPosition() {
-        return Tunables.flowerDown + (2 * Tunables.flowerShake);
-    }
-
-    /** servo position of the near end of the shake **/
-    private static double shakeLowPosition() {
-        return Tunables.flowerDown + (0.5 * Tunables.flowerShake);
+        return Tunables.flowerDown - (Tunables.flowerShake);
     }
 
     public void goDown() {

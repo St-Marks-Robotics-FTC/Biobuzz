@@ -6,6 +6,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.utils.Timer;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.HandoffState;
@@ -35,14 +36,18 @@ public abstract class BozoTeleOp extends OpMode {
     private boolean flywheelOn = true;
     private boolean isTurning = false;
     private boolean isManualRPM = false;
-    private boolean flowerIsDown = true;
+    private boolean rumble = false;
+    private Timer rumbleTimer;
     private Pose lastTurnPose = new Pose(0, 0, 0); // don't be null cause i don't like crashes
-    private Field.ScoringData lastScoringData = null;
+    private Field.ScoringData lastScoringData;
+    private boolean lastCanScore = false;
 
     @Override
     public void init() {
         loopTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
+
+        rumbleTimer = new Timer();
 
         robot = new Robot(hardwareMap);
         drive = new Drive(robot.scheduler); // teleop only - auto drives through the follower
@@ -166,19 +171,39 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleFlower() {
-        if (gamepad1.right_trigger_pressed) robot.flower.goDown();
+        if (gamepad1.right_trigger_pressed) robot.flower.startShake();
         else robot.flower.goUp();
     }
 
     private void handleIntake() {
         if (gamepad1.aWasPressed()) robot.intake.toggle();
-        if (gamepad1.xWasPressed()) robot.intake.toggleReverse();
+        if (gamepad1.xWasPressed()) robot.intake.reverse();
+        if (gamepad1.xWasReleased()) robot.intake.forward();
     }
 
     private void handleShoot() {
         boolean shootPressed = gamepad1.rightBumperWasPressed();
 
         if (shootPressed) robot.startLaunch();
+
+        boolean canScore = lastScoringData.canScore();
+
+        if (!lastCanScore && canScore) { // start rumbling
+            rumble = true;
+            rumbleTimer.reset();
+            gamepad1.rumble(150);
+        } else if (lastCanScore && !canScore) { // stop rumbling
+            rumble = false;
+            rumbleTimer.reset();
+            gamepad1.stopRumble();
+        }
+
+        if (rumbleTimer.milliseconds() > 120 && rumble) { // keep rumbling
+            rumbleTimer.reset();
+            gamepad1.rumble(150);
+        }
+
+        lastCanScore = canScore;
 
         robot.update();
 
@@ -192,21 +217,13 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void updateLastScoringData(Pose fusedPose) {
-        if (vision.getLastHiveState() == Vision.HiveState.AUDIENCE_UP) {
-            lastScoringData = field.getScoringData(true, fusedPose);
-        } else if (vision.getLastHiveState() == Vision.HiveState.SCORING_UP) {
-            lastScoringData = field.getScoringData(false, fusedPose);
-        } else {
-            // we don't have data from Vision so we fall back to odometry
-            if (fusedPose.y() <= 72) {
-                lastScoringData = field.getScoringData(true, fusedPose);
-            } else {
-                lastScoringData = field.getScoringData(false, fusedPose);
-            }
-        }
+            lastScoringData = field.getScoringData(fusedPose);
     }
 
     private void updateTelemetry(Pose fusedPose) {
+        // super secret isDebugging toggle
+        if (gamepad1.left_stick_button && gamepad1.right_stick_button) Tunables.isDebugging = !Tunables.isDebugging;
+
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
 
         // always output these to telemetry
@@ -240,7 +257,6 @@ public abstract class BozoTeleOp extends OpMode {
             telemetryM.addData("fusion odo dropped", fusion.getOdoRejectedCount());
 
             // Field
-            telemetryM.addData("last hive state", vision.getLastHiveState());
             if (lastScoringData != null) {
                 telemetryM.addLine(lastScoringData.toString());
             } else {

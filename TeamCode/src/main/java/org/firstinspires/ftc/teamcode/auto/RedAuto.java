@@ -29,8 +29,8 @@ public class RedAuto extends BozoAuto {
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
     public static Pose audienceFlowerPose = new Pose(Tunables.flowerDistance, 48, Math.toRadians(180));
-    public static Pose audienceCheckpointPose = new Pose(46, 36, Math.toRadians(75));
-    public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(12, 18, Math.toRadians(90));
+    public static Pose audienceCheckpointPose = new Pose(60, 14, Math.toRadians(90));
+    public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(12, 10, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(12, 70, Math.toRadians(90));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(12, 12, Math.toRadians(0));
     public static Pose shootToScoringFlowerControlPose2 = new Pose(12, 80, Math.toRadians(0));
@@ -38,7 +38,7 @@ public class RedAuto extends BozoAuto {
     // ---------------------------------------------------------------- PARK
     public static Pose parkControlPoseFromShoot = new Pose(12, 12, Math.toRadians(0));
     public static Pose parkControlPoseFromTippedShoot = new Pose(24, 120, Math.toRadians(0));
-    public static Pose parkControlPoseFromScoringFlower = new Pose(48, 120, Math.toRadians(0));
+    public static Pose parkControlPoseFromScoringFlower = new Pose(48, 102, Math.toRadians(0)); // must differ from scoringFlowerIntermediatePose: coincident points give a zero tangent ("cannot normalize 0 vector")
     public static Pose parkPose = new Pose(12, 102, Math.toRadians(0));
 
     @Override

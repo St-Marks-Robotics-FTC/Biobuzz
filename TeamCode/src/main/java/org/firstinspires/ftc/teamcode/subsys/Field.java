@@ -15,129 +15,99 @@ public class Field {
     }
 
     /*
+    Goal aim points. Each goal has a left post (lower x), a right post
+    (higher x) and a center point. Y offsets are measured "behind" the goal, i.e. away from the
+    side the robot shoots from: +y for the audience goal (robot below it), -y for the scoring
+    goal (robot above it). Both goals of a color share the same offsets, mirrored.
 
-    blueAudienceRight (dx > 0): (94.7, 57.55)
+    The audience (y=64) and scoring (y=80) goals are mirrored across y=72, so behindY flips the
+    offset direction between them.
 
-    redAudienceLeft (dx < 0): (49.0, 57.55)
-
-
-    blueAudienceLeft (dx < 0): (75, 57.55)
-
-    redAudienceRight (dx > 0): (69, 57.55)
-
-    blueGoalRight (dx > 0): (94.7, 88)
-
-    blueGoalLeft (dx < 0): (75, 88)
-
-    redGoalRight (dx > 0): (69, 88)
-
-    redGoalLeft (dx < 0): (49.0, 88)
-
+    blue: left x=76 (+2 behind), right x=94 (+2 behind), center x=85 (+3 behind)
+    red:  left x=50 (+2 behind), right x=68 (+2 behind), center x=59 (+3 behind)
      */
 
-    public ScoringData getScoringData(boolean isAudienceUp, Pose robotPose) {
-        if (robotPose == null || robotPose.equals(new Pose(0, 0, 0))) {
-            return null; // make sure it's not a bad pose
-        }
+    public ScoringData getScoringData(Pose robotPose) {
+        boolean isAudienceUp = (robotPose.y() < 72);
         Goal target = getGoal(isAudienceUp);
+        double behindY = isAudienceUp ? 1 : -1; // direction from the robot's side of the goal toward the backboard
 
         double robotX = robotPose.x();
         double robotY = robotPose.y();
-        double goalX = 0;
-        double goalY = 0;
+        double centerX = target.getCenterPose().x();
 
-        if (robotX > target.getCenterPose().x() && robotX - target.getCenterPose().x() >= Tunables.centerThreshold) {
-            goalX = target.getLeftPose().x();
-            goalY = target.getLeftPose().y();
+        Pose aimPost;
+
+        if (robotX - centerX >= Tunables.centerThreshold) {
+            aimPost = target.getLeftPose(); // robot is to the right, aim at the far (left) post
+        } else if (centerX - robotX >= Tunables.centerThreshold) {
+            aimPost = target.getRightPose(); // robot is to the left, aim at the far (right) post
+        } else { // robot is close enough to the center
+            aimPost = target.getCenterPose();
         }
-        else if (robotX < target.getCenterPose().x() && target.getCenterPose().x() - robotX >= Tunables.centerThreshold) {
-            goalX = target.getRightPose().x();
-            goalY = target.getRightPose().y();
-        }
-        else {
-            goalX = target.getCenterPose().x();
-            goalY = target.getCenterPose().y();
-        }
+
+        double goalX = aimPost.x();
+        double goalY = aimPost.y();
 
         double dY = goalY - robotY;
         double dX = goalX - robotX;
-
-        double dFromIdealY = dY - 1.04;
-        double dFromIdealX = dX - 0.885;
-
-        if (isAudienceUp) {
-            if (dFromIdealY <= 0) {
-                goalY -= Tunables.dyMultiplier * dFromIdealY;
-            }
-            else {
-                goalY += Tunables.dyMultiplier * dFromIdealY;
-            }
-        }
-        else {
-            if (dFromIdealY <= 0) {
-                goalY += Tunables.dyMultiplier * dFromIdealY;
-            }
-            else {
-                goalY -= Tunables.dyMultiplier * dFromIdealY;
-            }
-        }
-        if (dFromIdealX <= 0) {
-            goalX += Tunables.dyMultiplier * dFromIdealX;
-        }
-        else {
-            goalX -= Tunables.dyMultiplier * dFromIdealX;
-        }
-
-        dY = goalY - robotY;
-        dX = goalX - robotX;
-
         double angleToGoal = AngleUnit.normalizeRadians(Math.atan2(dY, dX));
-        double dToGoal = Math.sqrt(dY * dY + dX * dX);
-        boolean canScore = angleToGoal > Tunables.maxScoringAngle;
+        double dToGoal = robotPose.distance(aimPost);
 
-        double idealRPM = getShittyRPM(dToGoal);
+        // robot must be on its shooting side of the goal (in front of it, not behind the backboard)
+        double centerDistInFront = behindY * (target.getCenterPose().y() - robotY);
+        boolean canScore = (Math.abs(centerX - robotX) <= Tunables.maxScoringAbsRelativeX) &&
+                (centerDistInFront >= Tunables.minScoringRelativeY) &&
+                (centerDistInFront <= Tunables.maxScoringRelativeY);
+
+        double idealRPM = getGuudRPM(robotPose, aimPost);
 
         return new ScoringData(canScore, dToGoal, angleToGoal, idealRPM);
     }
 
     private Goal getGoal(boolean isAudienceUp) {
+        double baseY = isAudienceUp ? Tunables.audienceY : Tunables.scoringY;
+        double behindY = isAudienceUp ? 1 : -1; // +y is behind the audience goal, -y behind the scoring goal
         if (isBlueTeam) {
-            if (isAudienceUp) {
-                return new Goal(true,
-                        new Pose(75, 57.55),
-                        new Pose(94.7, 57.55),
-                        new Pose(85, 58));
-            } else {
-                return new Goal(true,
-                        new Pose(75, 88),
-                        new Pose(94.7, 88),
-                        new Pose(85, 86));
-            }
+            // both goals for blue team share the same x values
+            return new Goal(true,
+                    new Pose(76, baseY + behindY * 2),  // actual x pos: 74in
+                    new Pose(94, baseY + behindY * 2),  // actual x pos: 96in
+                    new Pose(85, baseY + behindY * 3));
         } else {
-            if (isAudienceUp) {
-                return new Goal(false,
-                        new Pose(49.0, 57.55),
-                        new Pose(69, 57.55),
-                        new Pose(59, 58));
-            } else {
-                return new Goal(false,
-                        new Pose(49.0, 88),
-                        new Pose(69, 88),
-                        new Pose(59, 86));
-            }
+            // both goals for red team share the same x values
+            return new Goal(false,
+                    new Pose(50, baseY + behindY * 2),  // actual x pos: 48in
+                    new Pose(68, baseY + behindY * 2),  // actual x pos: 70in
+                    new Pose(59, baseY + behindY * 3));
         }
     }
 
-    // take in distance in inches and return ideal flywheel RPM
-    public double getShittyRPM(double dist) {
-        // from Desmos https://www.desmos.com/calculator/vzl5asi9fo
-        // 10-31-2026
-        double mathRPM = (0.182518 * dist * dist) - (7.65866 * dist) + 3191.20234;
-        double autoRPM = mathRPM * Tunables.autoRPMMultiplier + Tunables.autoRPMAddition;
-        return Range.clip(autoRPM, 2500, 4000); // keep RPM from going too low or high
+    public double getGuudRPM(Pose robotPose, Pose goalPose) {
+        // from Desmos: https://www.desmos.com/calculator/gy5epbwyah
+        // 11-18-2026
+
+        double d = robotPose.distance(goalPose);
+        double angleToGoal = Math.atan2(Math.abs(robotPose.y() - goalPose.y()), Math.abs(robotPose.x() - goalPose.x()));
+
+        double mathRPM;
+        // select our dataset
+        if (angleToGoal > Tunables.autoRPMSwitchoffAngle) {
+            // shooting pretty directly
+            mathRPM = 1.02203 * d * d - 95.34311 * d + 5278.09381;
+            // keep it within the regression outputs
+            mathRPM = Range.clip(mathRPM, 3000, 3100);
+        } else {
+            // shallow angle shot
+            mathRPM = 14.068 * d + 2287.62051;
+            // keep it within the regression outputs
+            mathRPM = Range.clip(mathRPM, 2900, 3500);
+        }
+
+        return mathRPM * Tunables.autoRPMMultiplier + Tunables.autoRPMAddition;
     }
 
-    public class Goal {
+    private class Goal {
         private boolean isBlue;
         private Pose leftPose;
         private Pose rightPose;
@@ -150,7 +120,7 @@ public class Field {
             this.centerPose = centerPose;
         }
 
-        public boolean getBlue() {
+        public boolean getIsBlue() {
             return isBlue;
         }
 
@@ -165,36 +135,8 @@ public class Field {
             return centerPose;
         }
 
-        public void updateLeftPose(boolean direction, double value) {
-            double dir = 0;
-            if (direction) {
-                dir = 1;
-            }
-            else {
-                dir = -1;
-            }
-            leftPose = new Pose (leftPose.x() * 1, leftPose.y() * dir * value);
-        }
-
-        public void updateRightPose(boolean direction, double value) {
-            double dir = 0;
-            if (direction) {
-                dir = 1;
-            }
-            else {
-                dir = -1;
-            }
-            rightPose = new Pose (rightPose.x() * 1, rightPose.y() * dir * value);
-        }
-
         public String toString() {
-            String teamName = "";
-            if (isBlue) {
-                teamName = "Blue";
-            }
-            else {
-                teamName = "Red";
-            }
+            String teamName = isBlue ? "Blue" : "Red";
             return "Team: " + teamName + " Center Pose: " + centerPose.toString() + " Left Pose: " + leftPose.toString() + " Right Pose: " + rightPose.toString();
 
         }

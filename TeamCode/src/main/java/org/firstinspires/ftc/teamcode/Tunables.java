@@ -18,7 +18,7 @@ public class Tunables {
 
     public static double manualStartingRPM = 3150;
     public static double adjustRPM = 50;
-    public static double shootHeadingMargin = Math.toRadians(5);
+    public static double shootHeadingMargin = Math.toRadians(1);
     public static boolean teleBrake = true;
 
     /** Adjustable Hood tunables (will be used in Hood.java) **/
@@ -55,26 +55,27 @@ public class Tunables {
     public static double transferOpen = 0.41;
     public static double transferClosed = 0.108;
 
-    public static int    shakeMillis = 60; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
-    public static double flowerDown = 0.7872;
-    public static double flowerUp = 0.2461;
-    public static double flowerShake = 0.05; // flower shake: servo position amplitude (NOT a time) around flowerDown
-    public static double flowerDistance = 13.125; // how far from the edge of the field where the flower is should we refuel
+    public static int    shakeMillis = 80; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
+    public static double flowerDown = .77;
+    public static double flowerUp = .24;
+    public static double flowerShake = 0.08; // flower shake: servo position amplitude (NOT a time) around flowerDown
+    public static double flowerDistance = 13.78; // how far from the edge of the field where the flower is should we refuel
 
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 525;
+    public static double launchShootingTime = 555;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
-    public static double tagThreshold = 2; // amount of tags we need at least
-    public static double shootRPM = 2975; // target flywheel RPM while lined up to shoot
+    public static double tagThreshold = 3; // amount of tags we need at least
+    public static double shootRPM = 3038; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
     public static long flowerRefuelDurationMillis = 550; // how long to intake while driving through the refuel line
     public static long refuelDurationMillis = 200; // how long to intake while driving through the refuel line
     public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
+    public static double crossFieldHoldUntil = 0.8; // fraction (0-1] of a cross-field path spent holding 90/270 heading before turning to the final heading; read when paths are built at init
 
     /** vision tunables (used in subsys/Vision.java) **/
 
@@ -84,21 +85,25 @@ public class Tunables {
     public static double visionZOffset = 0; // in, subtracted from raw z
     public static double visionZPerDist = 0; // in/in of avg tag distance, subtracted from raw z
 
-    // limelight - pedro = R(heading) * (forward, left) + bias; Vision subtracts it
-    // fit on better_z_vision.csv (11-07), non-flip frames
-    public static double visionCameraErrorForward = 0.356; // in, robot frame
-    public static double visionCameraErrorLeft = -3.763;  // in, robot frame
-    public static double visionBlueBiasX = -3.426; // in, field frame
-    public static double visionBlueBiasY = -0.260;
-    public static double visionRedBiasX = -1.477;
-    public static double visionRedBiasY = 0.130;
+    // camera offset
+    public static double visionCameraErrorForward = 0.446;
+    public static double visionCameraErrorLeft = -4.165;
+    public static double visionBlueBiasX = -4.001;
+    public static double visionBlueBiasY = -0.267;
+    public static double visionRedBiasX = -1.392;
+    public static double visionRedBiasY = 0.006;
 
-    // reject vision poses farther than visionMaxSpeed * (time since last accepted) + visionJumpMargin
+    public static double visionMinGoalDist = 35; // in, ignore vision closer than this to the hive
+    public static double visionMaxZSensitivity = 1.4; // reject if hive math amplifies z error this much
+    public static double visionSensitivityRef = 1.2; // sensitivity above this inflates std dev
+    public static double visionJumpMax = 8; // in, reject frames this far from the 9-frame median
+
     public static double visionMaxSpeed = 81; // in/s, pedro maxAchievableForwardVelocity
     public static double visionJumpMargin = 4; // in, allowed frame noise
     public static int visionJumpRejectsBeforeReset = 5; // jump-rejected frames before vision re-acquires a moved robot
+    public static double visionPoseGain = 0.1;
+    public static double visionPoseMaxSpeed = 10; // in/s, teleop relocalizes only below this
 
-    // VisionTuner: tape-measured pose of the current calibration spot (A button applies it)
     public static double visionTunerSpotX = 72;
     public static double visionTunerSpotY = 72;
 
@@ -127,46 +132,42 @@ public class Tunables {
     public static double visionTunerObstacleBMaxX = 100;
     public static double visionTunerObstacleBMaxY = 91;
 
+    public static double visionTunerSpeed = 0.3;
+    public static double visionTunerRobotLength = 20;
+    public static double visionTunerRobotWidth = 18;
+    public static double visionTunerWallMargin = 3;
+    public static double visionTunerObstacleAMinX = 0, visionTunerObstacleAMinY = 48, visionTunerObstacleAMaxX = 43, visionTunerObstacleAMaxY = 96;
+    public static double visionTunerObstacleBMinX = 96, visionTunerObstacleBMinY = 48, visionTunerObstacleBMaxX = 144, visionTunerObstacleBMaxY = 96;
+    public static double visionTunerGridSpacing = 8;
+    public static double visionTunerGoalHeadingLimitDegrees = 100; // sweep +-this around goal
+    public static double visionTunerSpinDegPerSec = 45;
+    public static double visionTunerSpinEnterRadius = 4; // in, start spin this close to spot
+    public static double visionTunerNoRecordMinY = 48; // full-width no-record band
+    public static double visionTunerNoRecordMaxY = 96;
+    public static double visionTunerLatencyOffsetMillis = 0; // extra camera delay
+    public static int visionTunerMinTags = 2;
+    public static double visionTunerTrueZ = 0;
+    public static double visionTunerMoveTimeoutMillis = 6000; // stall timeout
+
+    public static int cameraHeight = 9;
+    public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
+
     /** field tunables (used in Field.java) **/
 
     // auto RPM
-    public static double autoRPMMultiplier = 1; // multiply auto RPM output by this
     public static double autoRPMAddition = 0; // add this many RPMs to auto RPM output
+    public static double autoRPMMultiplier = 1; // multiply auto RPM output by this
 
-    // goal poses
-    // headings should be to score a ball, not the direction that the goal faces
-    public static Pose blueAudienceGoalPose = new Pose(85, 58, Math.toRadians(90));
-    public static Pose blueScoringGoalPose = new Pose(85, 86, Math.toRadians(270));
-    public static Pose redAudienceGoalPose = new Pose(59, 58, Math.toRadians(90));
-    public static Pose redScoringGoalPose = new Pose(59, 86, Math.toRadians(270));
-    /*
+    public static double centerThreshold = 20;
 
-        blueAudienceRight (dx > 0): (94.7, 57.55)
+    public static double audienceY = 64;
 
-        redAudienceLeft (dx < 0): (49.0, 57.55)
+    public static double scoringY = 80;
+    public static double autoRPMSwitchoffAngle = 0.965251;
 
-
-        blueAudienceLeft (dx < 0): (75, 57.55)
-
-        redAudienceRight (dx > 0): (69, 57.55)
-
-        blueGoalRight (dx > 0): (94.7, 88)
-
-        blueGoalLeft (dx < 0): (75, 88)
-
-        redGoalRight (dx > 0): (69, 88)
-
-        redGoalLeft (dx < 0): (49.0, 88)
-
-         */
-
-    //dy + dx multipliers
-    public static double dyMultiplier = 0.1;
-    public static double dxMultiplier = 0.07;
-    public static double centerThreshold = 13.5;
-
-
-    public static double maxScoringAngle = Math.toRadians(40); // max angle in radians goal can accept ball
+    public static double maxScoringAbsRelativeX = 36;
+    public static double maxScoringRelativeY = 48;
+    public static double minScoringRelativeY = 10;
 
     /** vision tunables (used in Vision.java) **/
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
@@ -191,6 +192,6 @@ public class Tunables {
     public static long teleTargetLoopLength = 20; // target loop length in ms
     public static long autoTargetLoopLength = 25; // autos generally have longer loops
 
-    public static double stalenessReduction = 1000000; // how important staleness is. higher values are less important
-    public static boolean softScheduling = false; // if true (or isDebugging is true): update device once max staleness has been exceeded
+    public static double stalenessReduction = 1; // how important staleness is. higher values are less important
+    public static boolean softScheduling = true; // if true (or isDebugging is true): update device once max staleness has been exceeded
 }
