@@ -32,10 +32,10 @@ public class Tunables {
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.008;
+    public static double flywheelP = 0.006;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
-    public static double flywheelF = 0.00038;
+    public static double flywheelF = 0.0004;
     public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
     public static double flywheelVoltageStart = 12.0; // start voltage of compensation scale
     public static double flywheelVoltageEnd = 13.5;   // end voltage of compensation scale
