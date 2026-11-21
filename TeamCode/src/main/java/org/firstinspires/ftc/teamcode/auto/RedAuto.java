@@ -28,7 +28,7 @@ public class RedAuto extends BozoAuto {
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
-    public static Pose audienceFlowerPose = new Pose(Tunables.flowerDistance, 48, Math.toRadians(180));
+    public static Pose audienceFlowerPose = new Pose(Tunables.flowerDistance - 1, 48, Math.toRadians(180));
     public static Pose audienceCheckpointPose = new Pose(60, 14, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(12, 10, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(12, 70, Math.toRadians(90));
