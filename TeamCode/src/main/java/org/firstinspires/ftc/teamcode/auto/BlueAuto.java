@@ -30,7 +30,7 @@ public class BlueAuto extends BozoAuto {
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(126, 64, Math.toRadians(0));
     public static Pose audienceFlowerIntermediatePose = new Pose(120, 96, Math.toRadians(0));
-    public static Pose audienceFlowerPose = new Pose(144 - Tunables.flowerDistance, 96, Math.toRadians(0));
+    public static Pose audienceFlowerPose = new Pose(144 - Tunables.flowerDistance + 1, 96, Math.toRadians(0));
     public static Pose audienceCheckpointPose = new Pose(84, 130, Math.toRadians(270));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(132, 134, Math.toRadians(270));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(132, 74, Math.toRadians(270));
