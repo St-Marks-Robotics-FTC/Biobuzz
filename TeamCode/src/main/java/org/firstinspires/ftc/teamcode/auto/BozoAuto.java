@@ -249,7 +249,8 @@ public abstract class BozoAuto extends OpMode {
                 shootPose, config.parkPose);
         // CASE1B: audienceCheckpoint -> tippedShoot (cubic curve, 2 control points, shared with CASE2A) -> park (curve, 1 control point)
         tippedShootToParkPath = curve(config.tippedShootPose, config.parkControlPoseFromTippedShoot, config.parkPose)
-                .linear(config.tippedShootPose, config.parkPose);
+                .tangent();
+                //.linear(config.tippedShootPose, config.parkPose);
 
         // ---------------------------------------------------------------- CASE2: hive not tipped
         // audience flower: full-speed line out, creep in and back out (CASE1's audience flower paths), line to the checkpoint
