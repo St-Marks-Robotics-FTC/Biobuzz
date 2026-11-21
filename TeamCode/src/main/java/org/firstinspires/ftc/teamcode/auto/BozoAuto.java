@@ -631,7 +631,7 @@ public abstract class BozoAuto extends OpMode {
         robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
         robot.scheduler.update(loopTimer.nanoseconds()); // write hardware first: skipping this budget starves every device
-
+        updateHandoff();
         if (autoTimer.milliseconds() > 29_750) {
             setState(State.SHIT);
         }
