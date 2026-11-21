@@ -23,7 +23,7 @@ public class Tunables {
 
     /** Robot Dimensions **/
 
-    public static double robotWidthToCenter = 6.75;
+    public static double robotWidthToCenter = 6.72;
     public static double robotLengthToCenter = 6.754;
 
     /** Adjustable Hood tunables (will be used in Hood.java) **/
