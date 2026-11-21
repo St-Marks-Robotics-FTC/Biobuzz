@@ -24,6 +24,7 @@ public class Constants {
                 new Foresight(foresightConfig)
         );
     }
+
     public static MecanumConfig driveConfig = new MecanumConfig(
             c -> {
                 c.frontLeftName.set("frontLeft");
@@ -54,31 +55,32 @@ public class Constants {
         c.offsetUnits.set(DistanceUnit.INCH);
     });
 
-    // tuned 10-04-2026
+    // tuned 11-21-2026
     public static ForesightConfig foresightConfig = new ForesightConfig(
             c -> {
-                Controller primaryTranslationalForward = Controller.proportional(0.22233000197218108);
-                Controller secondaryTranslationalForward = Controller.proportional(0.08214499496165555);
-                Controller primaryTranslationalLateral = Controller.proportional(0.33143586930130875);
-                Controller secondaryTranslationalLateral = Controller.proportional(0.12245669757730018);
+                Controller primaryTranslationalForward = Controller.proportional(0.38553348405752125);
+                Controller secondaryTranslationalForward = Controller.proportional(0.142444320714832);
+                Controller primaryTranslationalLateral = Controller.proportional(0.5520421403520164);
+                Controller secondaryTranslationalLateral = Controller.proportional(0.20396482002240976);
 
                 c.forwardTranslational.set(Controller.piecewise(secondaryTranslationalForward).put(2.5, primaryTranslationalForward));
                 c.strafeTranslational.set(Controller.piecewise(secondaryTranslationalLateral).put(2.5, primaryTranslationalLateral));
 
-                c.coast.set(Controller.proportionalFeedforward(0.012076073252877517));
-                c.brake.set(Controller.proportionalFeedforward(0.010264662264945889));
+                c.coast.set(Controller.proportionalFeedforward(0.017600939138013603));
+                c.brake.set(Controller.proportionalFeedforward(0.014960798267311563));
 
-                c.headingFeedback.set(Controller.proportional(3.0420800202658467));
-                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.038024109766697727, 0.00804985174818463));
+                c.headingFeedback.set(Controller.proportional(3.7635771228552604));
+                c.headingBrakeCoefficients.set(Vector2D.cartesian(0.052094969675594294, 0.00675970361732308));
 
-                c.linearBrakeCoefficients.set(Matrix.diag(0.0738998340860344, 0.04427225148118583));
-                c.quadraticBrakeCoefficients.set(Matrix.diag(0.0019959651732527764, 0.0023078620606778273));
+                c.linearBrakeCoefficients.set(Matrix.diag(0.059921341451838445, 0.07373992860342533));
+                c.quadraticBrakeCoefficients.set(Matrix.diag(0.003508793402875559, 0.0027602564977998287));
 
-                c.maxAchievableForwardVelocity.set(80.66675078131117);
-                c.maxAchievableStrafeVelocity.set(56.530850251319045);
-                c.naturalForwardDeceleration.set(33.03196659659963);
-                c.naturalStrafeDeceleration.set(58.61417322721197);
+                c.maxAchievableForwardVelocity.set(59.065821217608956);
+                c.maxAchievableStrafeVelocity.set(30.61332927639438);
+                c.naturalForwardDeceleration.set(23.805596635175);
+                c.naturalStrafeDeceleration.set(47.72039526163324);
 
                 c.maxPathSpeed.set(1.0);
             }
-    );}
+    );
+}
