@@ -15,7 +15,7 @@ public class BlueAuto extends BozoAuto {
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(84, 137.246, Math.toRadians(270));
     public static Pose shootPose = new Pose(84, 134, Math.toRadians(270));
-    public static Pose intermediatePose = new Pose(122, 132.25, Math.toRadians(30));
+    public static Pose intermediatePose = new Pose(122, 132.2, Math.toRadians(30));
     public static Pose refuelPose = new Pose(134, 137.246, Math.toRadians(0));
 
     // ---------------------------------------------------------------- SCORING SIDE (shootPose mirrored over y = 72)
