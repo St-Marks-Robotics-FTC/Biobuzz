@@ -81,7 +81,7 @@ public abstract class BozoTeleOp extends OpMode {
 
 
         if (gamepad1.backWasPressed()) { // reset field centric heading
-            follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
+            relocalizeOdo();
         }
 
         follower.update();
@@ -139,6 +139,15 @@ public abstract class BozoTeleOp extends OpMode {
         lastTurnPose = target;
         follower.hold(lastTurnPose);
         isTurning = true;
+    }
+
+    private void relocalizeOdo() {
+        if (isBlueTeam()) {
+            follower.setPose(new Pose(144 - 6.75, 6.754, Math.toRadians(90)));
+        } else {
+            follower.setPose(new Pose(6.75, 6.754, Math.toRadians(90)));
+        }
+
     }
 
     private void handleFlywheel() {

@@ -16,7 +16,7 @@ public class Tunables {
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
 
-    public static double manualStartingRPM = 3150;
+    public static double manualStartingRPM = 3050;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(1);
     public static boolean teleBrake = true;
