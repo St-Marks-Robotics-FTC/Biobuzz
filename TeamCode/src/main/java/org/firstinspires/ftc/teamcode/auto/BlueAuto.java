@@ -33,7 +33,7 @@ public class BlueAuto extends BozoAuto {
     public static Pose audienceFlowerPose = new Pose(144 - Tunables.flowerDistance + 1, 96, Math.toRadians(0));
     public static Pose audienceCheckpointPose = new Pose(84, 130, Math.toRadians(270));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(132, 134, Math.toRadians(270));
-    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(132, 74, Math.toRadians(270));
+    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(136, 74, Math.toRadians(270));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(132, 132, Math.toRadians(180));
     public static Pose shootToScoringFlowerControlPose2 = new Pose(132, 64, Math.toRadians(180));
 
