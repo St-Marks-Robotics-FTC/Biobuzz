@@ -143,9 +143,9 @@ public abstract class BozoTeleOp extends OpMode {
 
     private void relocalizeOdo() {
         if (isBlueTeam()) {
-            follower.setPose(new Pose(144 - 6.75, 6.754, Math.toRadians(90)));
+            follower.setPose(new Pose(144 - Tunables.robotWidthToCenter, Tunables.robotLengthToCenter, Math.toRadians(90)));
         } else {
-            follower.setPose(new Pose(6.75, 6.754, Math.toRadians(90)));
+            follower.setPose(new Pose(Tunables.robotWidthToCenter, Tunables.robotLengthToCenter, Math.toRadians(90)));
         }
 
     }

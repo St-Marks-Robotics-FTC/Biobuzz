@@ -21,6 +21,11 @@ public class Tunables {
     public static double shootHeadingMargin = Math.toRadians(1);
     public static boolean teleBrake = true;
 
+    /** Robot Dimensions **/
+
+    public static double robotWidthToCenter = 6.75;
+    public static double robotLengthToCenter = 6.754;
+
     /** Adjustable Hood tunables (will be used in Hood.java) **/
 
     public static double nectarPos = 0.15;
