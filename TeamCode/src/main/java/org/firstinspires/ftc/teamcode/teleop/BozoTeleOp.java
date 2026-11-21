@@ -173,8 +173,14 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleFlower() {
-        if (gamepad1.right_trigger_pressed) robot.flower.startShake();
-        else robot.flower.goUp();
+        double trig = gamepad1.right_trigger;
+        if (trig <= 0.1) {
+            robot.flower.goUp();
+        } else if (trig <= .8) {
+            robot.flower.startShake();
+        } else {
+            robot.flower.goDown();
+        }
     }
 
     private void handleIntake() {
