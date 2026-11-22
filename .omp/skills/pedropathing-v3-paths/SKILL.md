@@ -3,7 +3,7 @@ name: pedropathing-v3-paths
 description: "Curved bezier paths, heading interpolation, per-path speed limits, or spin-in-place in BozoAuto with Pedro Pathing v3; no follower.manual."
 ---
 
-Verified via `javap` on `~/.gradle/caches/modules-2/files-2.1/com.pedropathing/core/3.0.x/*/core-3.0.x.jar` (class `com.pedropathing.api.Paths`, already `import static com.pedropathing.api.Paths.*` in BozoAuto).
+Verified via `javap` on `~/.gradle/caches/modules-2/files-2.1/com.pedropathing/core/3.0.x/*/core-3.0.x.jar` (class `com.pedropathing.api.Paths`, imported statically in `auto/paths/AutoPaths` and `PathHelpers`).
 
 ## Curve API
 
@@ -21,7 +21,7 @@ Verified via `javap` on `~/.gradle/caches/modules-2/files-2.1/com.pedropathing/c
 - `Paths.line` throws on zero length — a pure rotate-in-place path is impossible; the turn must overlap translation.
 - `isBusy()` includes a heading condition — the path isn't "done" until heading is within tolerance.
 - Mirror across x=72 for Red: heading h -> 180 - h.
-- Biobuzz: approach heading = `intermediatePose.heading()`; final = `refuelPose.heading()`; `BozoAuto.REFUEL_ROTATE_START` = 0.7.
+- Biobuzz: approach heading = `intermediatePose.heading()`; final = `refuelPose.heading()`; `AutoPaths.REFUEL_ROTATE_START` = 0.7.
 
 ## Speed limits
 
