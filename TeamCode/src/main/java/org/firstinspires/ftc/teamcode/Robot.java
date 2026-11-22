@@ -2,26 +2,19 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.pedropathing.utils.Timer;
-import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
+import org.firstinspires.ftc.teamcode.io.HubDevice;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ReadPeriod;
 import org.firstinspires.ftc.teamcode.subsys.Field;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Light;
 import org.firstinspires.ftc.teamcode.subsys.Turret;
-import org.firstinspires.ftc.teamcode.subsys.launch.Flywheel;
-import org.firstinspires.ftc.teamcode.subsys.launch.Intake;
 import org.firstinspires.ftc.teamcode.subsys.launch.Launch;
-import org.firstinspires.ftc.teamcode.subsys.launch.Transfer;
 
 public class Robot {
-    public LynxModule controlHub;
-    public LynxModule expansionHub;
-    public HWScheduler scheduler;
+    private static final long VOLTAGE_READ_PERIOD_MS = 100; // battery voltage moves slowly; each read costs a Lynx command
+
+    private final HubDevice expansionHub;
 
     public Launch pollenLaunch;
     public Launch nectarLaunch;
@@ -30,24 +23,16 @@ public class Robot {
 
     public Flower flower;
 
+    /** builds every subsystem's devices on {@code io}; call before {@code io.start()} **/
+    public Robot(IoThread io) {
+        expansionHub = new HubDevice(io, "Expansion Hub 2", ReadPeriod.millis(VOLTAGE_READ_PERIOD_MS)); // I believe this starts at 2
 
-    public Robot(HardwareMap hw) {
-        // initialize everything here
+        pollenLaunch = new Launch(io, "pollen");
+        nectarLaunch = new Launch(io, "nectar");
 
-        controlHub = hw.get(LynxModule.class, "Control Hub");
-        expansionHub = hw.get(LynxModule.class, "Expansion Hub 2"); // I believe this starts at 2
-
-        controlHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        expansionHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-
-        scheduler = new HWScheduler(hw); // subsystems register their devices with this
-
-        pollenLaunch = new Launch(scheduler, "pollen");
-        nectarLaunch = new Launch(scheduler, "nectar");
-
-        pollenTurret = new Turret(scheduler);
-        flower = new Flower(scheduler);
-        light = new Light(scheduler);
+        pollenTurret = new Turret(io);
+        flower = new Flower(io);
+        light = new Light(io);
     }
 
     public void updateAutoShoot(Field.ScoringData scoringData) {
@@ -63,11 +48,8 @@ public class Robot {
         flower.update();
     }
 
-    public double getSystemCurrent() { // return system current in amps
-        return (controlHub.getCurrent(CurrentUnit.AMPS) + expansionHub.getCurrent(CurrentUnit.AMPS));
-    }
-
+    /** newest battery voltage read by the I/O thread (at most 100 ms old) **/
     public double getExpansionHubVoltage() {
-        return expansionHub.getInputVoltage(VoltageUnit.VOLTS);
+        return expansionHub.inputVoltage().value();
     }
 }

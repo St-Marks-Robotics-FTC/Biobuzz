@@ -12,8 +12,8 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.io.IoThread;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
-import org.firstinspires.ftc.teamcode.subsys.Drive;
 import org.firstinspires.ftc.teamcode.subsys.Field;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
@@ -34,8 +34,8 @@ public abstract class BozoTeleOp extends OpMode {
     /** end configurables **/
 
     protected abstract boolean isBlueTeam();
+    private IoThread io;
     private Robot robot;
-    private Drive drive;
     private Field field;
     private Vision vision;
     private Follower follower;
@@ -60,15 +60,16 @@ public abstract class BozoTeleOp extends OpMode {
 
         rumbleTimer = new Timer();
 
-        robot = new Robot(hardwareMap);
-        drive = new Drive(robot.scheduler); // teleop only - auto drives through the follower
+        io = new IoThread(hardwareMap);
+        robot = new Robot(io);
         field = new Field(isBlueTeam());
         vision = new Vision(hardwareMap, isBlueTeam());
-        follower = Constants.create(hardwareMap);
+        follower = Constants.create(io); // drives through follower.manual(); turn-to-goal uses follower.hold()
 
         follower.setPose(HandoffState.pose);
 
-        robot.transfer.close();
+        robot.pollenLaunch.transfer.close();
+        io.start();
 
         telemetryM.addLine("init time: " + loopTimer.milliseconds() + "ms");
         telemetryM.update(telemetry);
@@ -76,11 +77,12 @@ public abstract class BozoTeleOp extends OpMode {
 
     @Override
     public void start() {
-        robot.intake.forward();
+        robot.pollenLaunch.intake.forward();
     }
 
     @Override
     public void loop() {
+        io.awaitNewCycle(); // fresh readings; the loop runs at the I/O cycle rate
         loopTimer.reset();
 
         vision.update();
@@ -99,9 +101,12 @@ public abstract class BozoTeleOp extends OpMode {
 
         follower.update();
 
-        robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
-
         updateTelemetry();
+    }
+
+    @Override
+    public void stop() {
+        if (io != null) io.stop(); // stop the I/O thread and flush the last commands
     }
 
     private void handleDrive() {
@@ -110,9 +115,9 @@ public abstract class BozoTeleOp extends OpMode {
         double slowModeMultiplier = Range.scale(gamepad1.left_trigger, 0, 1, 1, 0.5);
 
         if (!isHolding) {
-            double forward = -gamepad1.left_stick_y;
-            double strafe = -gamepad1.left_stick_x;
-            double turn = -gamepad1.right_stick_x * TURN_RATE_MULTIPLIER; // reduce speed by our turn rate
+            double forward = -gamepad1.left_stick_y * slowModeMultiplier;
+            double strafe = -gamepad1.left_stick_x * slowModeMultiplier;
+            double turn = -gamepad1.right_stick_x * TURN_RATE_MULTIPLIER * slowModeMultiplier; // reduce speed by our turn rate
 
             if (gamepad1.left_bumper) {
                 // auto aim without hold
@@ -120,19 +125,19 @@ public abstract class BozoTeleOp extends OpMode {
                 double deltaTime = 0;
                 if (previousNanoTime != 0L) deltaTime = (nanoTime - previousNanoTime) / 1e9;
                 previousNanoTime = nanoTime;
-                Pose turnPose = new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.angle());
+                Pose turnPose = new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.goalAngle());
                 DrivePowers pedroPowers = follower.algorithm().calculateHold(follower.drivetrain, turnPose, follower.localizer.state(), true, deltaTime);
                 turn = pedroPowers.turn();
             }
 
             if (isRobotCentric) { // robot-centric control
-                drive.drive(forward, strafe, turn, slowModeMultiplier);
+                follower.manual(forward, strafe, turn);
             } else { // field-centric control
                 double flipControl;
                 if (isBlueTeam()) flipControl = -1; // blue team needs to be flipped
                 else flipControl = 1; // red team doesn't need to be flipped
 
-                drive.driveFieldCentric(forward * flipControl, strafe * flipControl, turn, follower.pose().heading(), slowModeMultiplier);
+                driveFieldCentric(forward * flipControl, strafe * flipControl, turn, follower.pose().heading());
             }
         } else {
             // we're holding so do nothing with drivetrain
@@ -143,18 +148,25 @@ public abstract class BozoTeleOp extends OpMode {
         }
     }
 
-    // hand drive motors from follower back to Drive
+    /** rotate a field-relative stick vector into the robot's frame, then drive it **/
+    private void driveFieldCentric(double forward, double strafe, double turn, double heading) {
+        double cos = Math.cos(-heading);
+        double sin = Math.sin(-heading);
+
+        double robotForward = forward * cos - strafe * sin;
+        double robotStrafe = forward * sin + strafe * cos;
+
+        follower.manual(robotForward, robotStrafe, turn);
+    }
+
+    // hand the drivetrain back to the driver: the follower idles (zero power) until handleDrive calls manual() next loop
     private void endHold() {
-        follower.stop(); // follower goes idle so it stops computing hold powers
-        follower.drivetrain.stop(); // zero the motors now so pedro's cache, ours (zeroed in startTurn) and the hardware all match
+        follower.stop();
         isHolding = false;
     }
 
-    // hand motors from Drive to follower
+    // hold position while turning to the target heading
     private void startHold(Pose target) {
-        // zero the motors now so pedro's cache, ours and the hardware all match
-        // skip if the follower already has the motors, otherwise we'd write over its hold powers
-        if (!isHolding) drive.stopNow();
         lastTurnPose = target;
         follower.hold(lastTurnPose);
         isHolding = true;
@@ -183,12 +195,12 @@ public abstract class BozoTeleOp extends OpMode {
 
         if (flywheelOn) {
             if (isManualRPM) {
-                robot.flywheel.update(setRPM, robot.getExpansionHubVoltage());
+                robot.pollenLaunch.flywheel.update(setRPM, robot.getExpansionHubVoltage());
             } else { // automatic RPM
-                robot.flywheel.update(lastScoringData.idealRPM(), robot.getExpansionHubVoltage());
+                robot.pollenLaunch.flywheel.update(lastScoringData.pollenIdealRPM(), robot.getExpansionHubVoltage());
             }
         } else {
-            robot.flywheel.update(0, robot.getExpansionHubVoltage());
+            robot.pollenLaunch.flywheel.update(0, robot.getExpansionHubVoltage());
         }
     }
 
@@ -204,23 +216,23 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleIntake() {
-        if (gamepad1.aWasPressed()) robot.intake.toggle();
-        if (gamepad1.xWasPressed()) robot.intake.reverse();
-        if (gamepad1.xWasReleased()) robot.intake.forward();
+        if (gamepad1.aWasPressed()) robot.pollenLaunch.intake.toggle();
+        if (gamepad1.xWasPressed()) robot.pollenLaunch.intake.reverse();
+        if (gamepad1.xWasReleased()) robot.pollenLaunch.intake.forward();
     }
 
     private void handleShoot() {
         if (gamepad1.rightBumperWasPressed()) {
-            robot.startLaunch();
+            robot.pollenLaunch.startLaunch();
             // they got rid of follower.turnTo() so we have to make it ourselves
-            startHold(new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.angle()));
+            startHold(new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.goalAngle()));
         }
         if (gamepad1.rightBumperWasReleased()) {
-            robot.stopLaunch();
+            robot.pollenLaunch.stopLaunch();
             endHold();
         }
 
-        boolean canScore = lastScoringData.canScore();
+        boolean canScore = lastScoringData.canScoreNectar();
 
         if (!lastCanScore && canScore) { // start rumbling
             rumble = true;
@@ -239,7 +251,7 @@ public abstract class BozoTeleOp extends OpMode {
 
         lastCanScore = canScore;
 
-        robot.update();
+        robot.pollenLaunch.update();
     }
 
     private void updateLastScoringData() {
@@ -253,17 +265,18 @@ public abstract class BozoTeleOp extends OpMode {
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
 
         // always output these to telemetry
-        telemetryM.addData("desired RPM", robot.flywheel.getLastSetRPM());
+        telemetryM.addData("desired RPM", robot.pollenLaunch.flywheel.getLastSetRPM());
         telemetryM.addData("loop time (before telemetry)", loopTime);
         telemetryM.addLine("wils is a bum");
+        telemetryM.addData("I/O cycle (ms)", io.lastCycleMillis());
 
         // only output debug values if we're debugging - these kill our loop times
         if (IS_DEBUGGING) {
             // intake
-            telemetryM.addData("power save", robot.intake.getPowerSaveTrigger());
+            telemetryM.addData("power save", robot.pollenLaunch.intake.getPowerSaveTrigger());
             // flywheel
-            telemetryM.addData("current RPM", robot.flywheel.getRPM());
-            telemetryM.addData("flywheel pwr", robot.flywheel.getPower());
+            telemetryM.addData("current RPM", robot.pollenLaunch.flywheel.getRPM());
+            telemetryM.addData("flywheel pwr", robot.pollenLaunch.flywheel.getPower());
 
             // odo
             telemetryM.debug("heading (deg): " + Math.toDegrees(follower.pose().heading()));
@@ -278,8 +291,8 @@ public abstract class BozoTeleOp extends OpMode {
                 telemetryM.addLine("lastScoringData is null!");
             }
 
-            // hardware scheduler
-            telemetryM.addLine(robot.scheduler.getStatus());
+            // I/O thread
+            telemetryM.addLine(io.status());
         }
 
         telemetryM.update(telemetry);

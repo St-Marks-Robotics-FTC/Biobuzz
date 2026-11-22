@@ -3,8 +3,9 @@ package org.firstinspires.ftc.teamcode.subsys;
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.utils.Timer;
 
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ServoDevice;
+import org.firstinspires.ftc.teamcode.io.WritePolicy;
 
 @Configurable
 public class Flower {
@@ -18,7 +19,7 @@ public class Flower {
 
     /** end configurables **/
 
-    private SServo flowerServo;
+    private final ServoDevice flowerServo;
 
     private enum State {
         UP,
@@ -31,14 +32,11 @@ public class Flower {
     private Flower.State state = Flower.State.UP;
     private Timer shakeTimer;
 
-    public Flower(HWScheduler scheduler) {
-        flowerServo = new SServo("flowerServo", PRIORITY_MULTIPLIER, scheduler.hw());
-        scheduler.addDevice(flowerServo);
+    public Flower(IoThread io) {
+        // start up; the I/O thread writes it when it starts, so the servo moves during init
+        flowerServo = new ServoDevice(io, "flowerServo", POS_UP, new WritePolicy(PRIORITY_MULTIPLIER, 100));
 
         shakeTimer = new Timer();
-
-        flowerServo.setPosition(POS_UP); // start up
-        flowerServo.forceUpdate(); // move on init
     }
 
     public void goUp() {

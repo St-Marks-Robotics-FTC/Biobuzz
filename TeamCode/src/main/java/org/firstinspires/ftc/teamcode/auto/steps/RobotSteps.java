@@ -44,8 +44,8 @@ public final class RobotSteps {
     public Step shoot() {
         return sequence("shoot",
                 waitUntil("wait for flywheel", ctx::isFlywheelWithinMargin), // never feed balls below speed
-                instant("launch", robot::startLaunch),
-                waitUntil("feeding", () -> !robot.isLaunching()));
+                instant("launch", robot.pollenLaunch::startLaunch),
+                waitUntil("feeding", () -> !robot.pollenLaunch.isLaunching()));
     }
 
     /** Lowers the flower arm. **/
@@ -69,7 +69,7 @@ public final class RobotSteps {
     public Step collectFlower(FlowerSite site, Path approach) {
         return sequence("collect " + site.name,
                 instant("intake on, flower down", () -> {
-                    robot.intake.forward();
+                    robot.pollenLaunch.intake.forward();
                     robot.flower.goDown();
                 }),
                 drive("to intermediate", approach),
@@ -84,7 +84,7 @@ public final class RobotSteps {
     public Step refuel(Path path) {
         return sequence("refuel",
                 creep("creep to refuel pose", path),
-                instant("intake on", robot.intake::forward),
+                instant("intake on", robot.pollenLaunch.intake::forward),
                 waitMillis(ctx.clockMillis, () -> BozoAuto.REFUEL_DURATION_MILLIS));
     }
 

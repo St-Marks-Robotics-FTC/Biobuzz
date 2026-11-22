@@ -3,8 +3,9 @@ package org.firstinspires.ftc.teamcode.subsys;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ServoDevice;
+import org.firstinspires.ftc.teamcode.io.WritePolicy;
 
 @Configurable
 public class Turret {
@@ -20,13 +21,12 @@ public class Turret {
 
     /** end configurables **/
 
-    private SServo servo;
+    private final ServoDevice servo;
     private double lastAngle;
     private boolean isLocked;
 
-    public Turret(HWScheduler hwScheduler) {
-        servo = new SServo("turretServo", 1, hwScheduler.hw());
-        hwScheduler.addDevice(servo);
+    public Turret(IoThread io) {
+        servo = new ServoDevice(io, "turretServo", 0.5, WritePolicy.DEFAULT); // centered until the first updateAngle
         lastAngle = 0;
     }
 

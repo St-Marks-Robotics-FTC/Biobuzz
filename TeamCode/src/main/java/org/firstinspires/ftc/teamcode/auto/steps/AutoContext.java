@@ -36,18 +36,18 @@ public final class AutoContext {
 
     /** Closes the transfer, stops the intake and flywheel. **/
     public void shutOff() {
-        robot.transfer.close();
-        robot.intake.off();
+        robot.pollenLaunch.transfer.close();
+        robot.pollenLaunch.intake.off();
         targetRPM = 0;
     }
 
     /** Re-runs the flywheel PIDF; must be called every loop. **/
     public void updateFlywheel() {
-        robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage());
+        robot.pollenLaunch.flywheel.update(targetRPM, robot.getExpansionHubVoltage());
     }
 
     /** true once within {@link BozoAuto#FLYWHEEL_RPM_MARGIN} of a nonzero target **/
     public boolean isFlywheelWithinMargin() {
-        return targetRPM > 0 && Math.abs(robot.flywheel.getRPM() - targetRPM) <= BozoAuto.FLYWHEEL_RPM_MARGIN;
+        return targetRPM > 0 && Math.abs(robot.pollenLaunch.flywheel.getRPM() - targetRPM) <= BozoAuto.FLYWHEEL_RPM_MARGIN;
     }
 }

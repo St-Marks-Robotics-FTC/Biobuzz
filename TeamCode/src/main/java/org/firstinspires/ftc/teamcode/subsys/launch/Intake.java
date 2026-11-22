@@ -2,11 +2,14 @@ package org.firstinspires.ftc.teamcode.subsys.launch;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.utils.Timer;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.MotorDevice;
+import org.firstinspires.ftc.teamcode.io.ReadPeriod;
+import org.firstinspires.ftc.teamcode.io.TimedValue;
+import org.firstinspires.ftc.teamcode.io.WritePolicy;
 
 @Configurable
 public class Intake {
@@ -42,16 +45,17 @@ public class Intake {
     private PowerSaveTrigger powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
     double lastIntakeHoldPower = HOLD_POWER;
 
-    private SMotor motor; // writes go through the scheduler, reads go straight to motor.m
+    private long forwardSinceNanos = 0; // when FORWARD began; power save ignores current read before this
 
-    public Intake(HWScheduler scheduler, String ballType) {
-        motor = new SMotor(ballType + "IntakeMotor", PRIORITY_MULTIPLIER, scheduler.hw());
-        scheduler.addDevice(motor);
+    private final MotorDevice motor; // writes and reads run on the I/O thread
 
-        // one-time config, so it doesn't need to be scheduled
-        motor.m.setDirection(DcMotorEx.Direction.FORWARD);
-        motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
-        motor.m.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); // we're just running our intake at 100% speed all the time, so we don't need the encoder
+    public Intake(IoThread io, String ballType) {
+        motor = new MotorDevice(io, ballType + "IntakeMotor", new MotorDevice.Config()
+                .direction(DcMotorSimple.Direction.FORWARD)
+                .zeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT) // don't brake when we turn off the motor
+                .readEncoder() // velocity power-save trigger; free from the bulk read
+                .readCurrent(ReadPeriod.millis(() -> POWER_SAVE_CHECK_INTERVAL)) // one read per power-save check
+                .writePolicy(new WritePolicy(PRIORITY_MULTIPLIER, 100)));
 
         powerSaveWaitTimer = new Timer();
         powerSaveCheckTimer = new Timer();
@@ -77,7 +81,7 @@ public class Intake {
                             return;
                         } else {
                             powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
-                            powerSaveCheckTimer.reset(); // wait Tunables.intakePowerSaveUpdateInterval before next reading
+                            powerSaveCheckTimer.reset(); // wait POWER_SAVE_CHECK_INTERVAL before next reading
                             return;
                         }
                     }
@@ -119,6 +123,7 @@ public class Intake {
             powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
             state = State.FORWARD;
             powerSaveCheckTimer.reset();
+            forwardSinceNanos = System.nanoTime();
         }
     }
 
@@ -153,7 +158,9 @@ public class Intake {
     }
 
     public boolean isCurrentTrigger() { // whether our current amps is over our trigger amps
-        return getCurrent() >= POWER_SAVE_TRIGGER_AMPS;
+        TimedValue current = motor.current();
+        if (current.nanoTime() < forwardSinceNanos) return false; // read before we went forward: says nothing about a stall now
+        return current.value() >= POWER_SAVE_TRIGGER_AMPS;
     }
     public boolean isVelocityTrigger() { // whether our current velocity is under our trigger velocity
         return getVelocity() <= POWER_SAVE_TRIGGER_VELOCITY;
@@ -184,6 +191,6 @@ public class Intake {
 
     public PowerSaveTrigger getPowerSaveTrigger() { return powerSaveTrigger; }
     public State getState() { return state; }
-    public double getCurrent() { return motor.m.getCurrent(CurrentUnit.AMPS); } // return intake current in amps
-    public double getVelocity() { return motor.m.getVelocity(); } // get velocity in tps
+    public double getCurrent() { return motor.current().value(); } // newest intake current in amps
+    public double getVelocity() { return motor.encoder().velocityTps(); } // newest velocity in tps
 }

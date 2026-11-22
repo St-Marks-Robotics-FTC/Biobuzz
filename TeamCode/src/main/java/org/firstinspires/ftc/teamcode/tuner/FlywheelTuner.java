@@ -8,6 +8,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ReadPeriod;
+import org.firstinspires.ftc.teamcode.subsys.launch.Flywheel;
 
 @TeleOp(name="FlywheelTuner", group="Tuner")
 public class FlywheelTuner extends LinearOpMode {
@@ -21,7 +24,11 @@ public class FlywheelTuner extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        Robot robot = new Robot(hardwareMap);
+        IoThread io = new IoThread(hardwareMap);
+        Robot robot = new Robot(io);
+        Flywheel flywheel = robot.pollenLaunch.flywheel; // tune the pollen launcher
+        flywheel.readCurrent(ReadPeriod.everyCycle()); // tuning only: costs the I/O thread a Lynx command per cycle
+        io.start();
 
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
@@ -31,50 +38,53 @@ public class FlywheelTuner extends LinearOpMode {
         TuneMode mode1 = TuneMode.values()[1];
         TuneMode mode2 = TuneMode.values()[2];
 
-        waitForStart();
+        try {
+            waitForStart();
 
-        while (opModeIsActive()) {
-            telemetryM.addLine("select your tuning mode using the gamepad:");
-            telemetryM.addLine("(A): " + mode0);
-            telemetryM.addLine("(B): " + mode1);
-            telemetryM.addLine("(X): " + mode2);
+            while (opModeIsActive()) {
+                io.awaitNewCycle();
 
-            if (gamepad1.aWasReleased()) { mode = mode0; }
-            if (gamepad1.bWasReleased()) { mode = mode1; }
-            if (gamepad1.xWasReleased()) { mode = mode2; }
+                telemetryM.addLine("select your tuning mode using the gamepad:");
+                telemetryM.addLine("(A): " + mode0);
+                telemetryM.addLine("(B): " + mode1);
+                telemetryM.addLine("(X): " + mode2);
 
-            telemetryM.addLine("");
-            telemetryM.addLine("current testing mode is: " + mode);
+                if (gamepad1.aWasReleased()) { mode = mode0; }
+                if (gamepad1.bWasReleased()) { mode = mode1; }
+                if (gamepad1.xWasReleased()) { mode = mode2; }
 
-            switch (mode) {
-                case NO_POWER:
-                    robot.flywheel.powerUpdate(0.0); // apply no power
-                    break;
-                case FULL_POWER:
-                    robot.flywheel.powerUpdate(1.0);
-                    break;
-                case PIDF:
-                    double desiredFlywheelRPM = (MAX_SET_RPM * gamepad1.right_trigger);
+                telemetryM.addLine("");
+                telemetryM.addLine("current testing mode is: " + mode);
 
-                    robot.flywheel.update(desiredFlywheelRPM, robot.getExpansionHubVoltage());
+                switch (mode) {
+                    case NO_POWER:
+                        flywheel.powerUpdate(0.0); // apply no power
+                        break;
+                    case FULL_POWER:
+                        flywheel.powerUpdate(1.0);
+                        break;
+                    case PIDF:
+                        double desiredFlywheelRPM = (MAX_SET_RPM * gamepad1.right_trigger);
 
-                    telemetryM.addData("desired flywheel RPM", desiredFlywheelRPM);
-                    telemetryM.addData("desired flywheel TPS", robot.flywheel.RPMToTPS(desiredFlywheelRPM));
-                    break;
+                        flywheel.update(desiredFlywheelRPM, robot.getExpansionHubVoltage());
+
+                        telemetryM.addData("desired flywheel RPM", desiredFlywheelRPM);
+                        telemetryM.addData("desired flywheel TPS", flywheel.RPMToTPS(desiredFlywheelRPM));
+                        break;
+                }
+
+                telemetryM.addData("flywheel RPM", flywheel.getRPM());
+                telemetryM.addData("flywheel TPS", flywheel.getTPS());
+
+                telemetryM.debug("PIDF: " + Flywheel.FLYWHEEL_P + ", " + Flywheel.FLYWHEEL_I + ", " + Flywheel.FLYWHEEL_D + ", " + Flywheel.FLYWHEEL_F);
+                telemetryM.addData("flywheel power", flywheel.getPower());
+                telemetryM.addData("flywheel current", flywheel.getCurrent());
+                telemetryM.addData("I/O cycle (ms)", io.lastCycleMillis());
+
+                telemetryM.update(telemetry); // update our telemetry
             }
-
-            robot.scheduler.update(0); // write flywheel power
-
-            telemetryM.addData("flywheel RPM", robot.flywheel.getRPM());
-            telemetryM.addData("flywheel TPS", robot.flywheel.getTPS());
-
-            telemetryM.debug("PIDF: " + Tunables.flywheelP + ", " + Tunables.flywheelI + ", " + Tunables.flywheelD + ", " + Tunables.flywheelF);
-            telemetryM.addData("flywheel power", robot.flywheel.getPower());
-            telemetryM.addData("flywheel current", robot.flywheel.getCurrent());
-
-            telemetryM.update(telemetry); // update our telemetry
-
-            idle();
+        } finally {
+            io.stop();
         }
     }
 }

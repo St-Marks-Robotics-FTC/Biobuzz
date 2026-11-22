@@ -2,12 +2,9 @@
 
 package org.firstinspires.ftc.teamcode.subsys;
 
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ServoDevice;
+import org.firstinspires.ftc.teamcode.io.WritePolicy;
 
 public class Light {
     /** configurables **/
@@ -26,13 +23,10 @@ public class Light {
     double VIOLET = 0.721;
     double WHITE = 1.0;
 
-    private SServo light;
+    private final ServoDevice light;
 
-    public Light(HWScheduler hwScheduler) {
-        light = new SServo("light", PRIORITY_MULTIPLIER, hwScheduler.hw());
-        hwScheduler.addDevice(light);
-
-        off(); // start with light off
+    public Light(IoThread io) {
+        light = new ServoDevice(io, "light", OFF, new WritePolicy(PRIORITY_MULTIPLIER, 100)); // starts off
     }
 
     public void off() { light.setPosition(OFF); }

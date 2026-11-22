@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.subsys.launch;
 
 import com.pedropathing.utils.Timer;
 
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
+import org.firstinspires.ftc.teamcode.io.IoThread;
 
 public class Launch {
     /** configurables **/
@@ -28,10 +28,10 @@ public class Launch {
     public Intake intake;
     public Transfer transfer;
 
-    public Launch(HWScheduler hwScheduler, String ballType) {
-        flywheel = new Flywheel(hwScheduler, ballType);
-        intake = new Intake(hwScheduler, ballType);
-        transfer = new Transfer(hwScheduler, ballType);
+    public Launch(IoThread io, String ballType) {
+        flywheel = new Flywheel(io, ballType);
+        intake = new Intake(io, ballType);
+        transfer = new Transfer(io, ballType);
 
         launchTimer = new Timer();
     }

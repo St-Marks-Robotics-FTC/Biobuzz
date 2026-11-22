@@ -6,21 +6,25 @@ import com.pedropathing.controllers.Controller;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Matrix;
 import com.pedropathing.math.Vector2D;
-import com.pedropathing.revhub.drivetrains.Mecanum;
 import com.pedropathing.revhub.drivetrains.MecanumConfig;
 import com.pedropathing.revhub.localizers.PinpointConfig;
-import com.pedropathing.revhub.localizers.PinpointLocalizer;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.MecanumDevice;
+import org.firstinspires.ftc.teamcode.io.PinpointDevice;
 
 public class Constants {
-    public static Follower create(HardwareMap h) {
+    /**
+     * Builds the follower with its Pinpoint and drive motors owned by the I/O thread. Call before {@code io.start()};
+     * recalibrates the Pinpoint IMU (500 ms, robot must be still).
+     */
+    public static Follower create(IoThread io) {
         return new Follower(
-                new PinpointLocalizer(h, localizerConfig),
-                new Mecanum(h, driveConfig),
+                new PinpointDevice(io, localizerConfig),
+                new MecanumDevice(io, driveConfig),
                 new Foresight(foresightConfig)
         );
     }
