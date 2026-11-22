@@ -18,7 +18,7 @@ public class Flywheel {
     private SMotor launchMotor; // writes go through the scheduler, reads go straight to launchMotor.m
 
     /** stuff that changes **/
-    private PIDF pidf;
+    private Prescience prescience;
     private double lastSetRPM = 0;
 
     public Flywheel(HWScheduler scheduler) {
@@ -30,25 +30,22 @@ public class Flywheel {
         launchMotor.m.setDirection(DcMotorEx.Direction.REVERSE);
         launchMotor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT); // don't brake when we turn off the motor
 
-        // set up PIDF
-        pidf = new PIDF(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF); // create our PIDF controller for our launch motors
+        // set up prescience
+        prescience = new Prescience(Tunables.flywheelP, Tunables.flywheelS, Tunables.flywheelV);
     }
 
-    public void update(double RPM, double voltage) {
-        lastSetRPM = RPM;
-        pidf.updateTerms(Tunables.flywheelP, Tunables.flywheelI, Tunables.flywheelD, Tunables.flywheelF);
-        double currentTPS = getTPS();
-        double setpointTPS = RPMToTPS(RPM);
+    public void update(double setpointRPM, double voltage) {
+        lastSetRPM = setpointRPM;
+        prescience.updateTerms(Tunables.flywheelP, Tunables.flywheelS, Tunables.flywheelV);
+
+        double currentRPM = getRPM();
         double newPower;
 
-        if (setpointTPS == 0) {
+        if (setpointRPM == 0) {
             newPower = 0.0;
-        } else newPower = pidf.calc(setpointTPS, currentTPS); // calc new motor power
-        if (Tunables.flywheelUsingVoltageCompensation) {
-            newPower *= getVoltageCompensation(voltage);
-        }
+        } else newPower = prescience.calc(setpointRPM, currentRPM, voltage); // calc new motor power
 
-        double clippedPower = Range.clip(newPower, -Tunables.maxFlywheelBraking, 1.0);
+        double clippedPower = Range.clip(newPower, -1.0, 1.0);
 
         launchMotor.setPower(clippedPower);
     }
@@ -60,7 +57,6 @@ public class Flywheel {
     }
 
     public double getTPS() {
-        // get TPS of flywheel in the fastest way while also being able to fall back between encoders
         return Math.abs(launchMotor.m.getVelocity());
     }
 
@@ -83,13 +79,6 @@ public class Flywheel {
 
     private static double getMotorTicksPerOutputRev() {
         return MOTOR_TICKS_PER_MOTOR_REV / LAUNCH_RATIO;
-    }
-
-    // return how much to multiply power by to compensate for voltage fall
-    private double getVoltageCompensation(double voltage) {
-        return Range.scale(voltage,
-                Tunables.flywheelVoltageStart, Tunables.flywheelVoltageEnd,
-                Tunables.flywheelCompensationMax, 1.0);  // reverse to scale inversely
     }
 
     public double TPSToRPM(double TPS) {

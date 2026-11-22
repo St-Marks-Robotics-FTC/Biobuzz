@@ -36,16 +36,9 @@ public class Tunables {
 
     /** flywheel tunables (used in Flywheel.java) **/
 
-    // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.006;
-    public static double flywheelI = 0;
-    public static double flywheelD = 0;
-    public static double flywheelF = 0.0004;
-    public static double maxFlywheelBraking = 1.0; // max amount of breaking (negative power) to apply to launch motors
-    public static double flywheelVoltageStart = 12.0; // start voltage of compensation scale
-    public static double flywheelVoltageEnd = 13.5;   // end voltage of compensation scale
-    public static double flywheelCompensationMax = 1.2; // max amount to scale voltage
-    public static boolean flywheelUsingVoltageCompensation = false;
+    public static double flywheelP = 0.0;
+    public static double flywheelS = 0.0;
+    public static double flywheelV = 0.0;
 
     /** intake tunables (used in Intake.java) **/
 
@@ -172,4 +165,7 @@ public class Tunables {
 
     public static double stalenessReduction = 1; // how important staleness is. higher values are less important
     public static boolean softScheduling = true; // if true (or isDebugging is true): update device once max staleness has been exceeded
+
+    /** prescience tunables (used in Prescience.java) **/
+    public static double calibrationVoltage = 13.0; // voltage that prescience was tuned at
 }
