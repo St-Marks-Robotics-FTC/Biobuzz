@@ -95,15 +95,19 @@ public class Robot {
             case SHOOTING:
                 if (launchTimer.milliseconds() >= Tunables.launchShootingTime) {
                     // we've waited for all the balls to come through
-                    intake.forward(); // go forward full power
-                    transfer.close(); // keep any more balls from falling through
-                    launchState = LaunchState.LOCKED;
+                    stopLaunch();
                 }
                 break;
         }
 
         intake.update(isLaunching());
         flower.update();
+    }
+
+    public void stopLaunch() {
+        intake.forward();
+        transfer.close();
+        launchState = LaunchState.LOCKED;
     }
 
     public boolean isLaunching() {

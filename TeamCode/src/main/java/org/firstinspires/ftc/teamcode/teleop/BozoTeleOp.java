@@ -190,9 +190,8 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleShoot() {
-        boolean shootPressed = gamepad1.rightBumperWasPressed();
-
-        if (shootPressed) robot.startLaunch();
+        if (gamepad1.rightBumperWasPressed()) robot.startLaunch();
+        if (gamepad1.rightBumperWasReleased()) robot.stopLaunch();
 
         boolean canScore = lastScoringData.canScore();
 
