@@ -3,7 +3,7 @@ name: pedropathing-v3-paths
 description: "Curved bezier paths, heading interpolation, per-path speed limits, or spin-in-place in BozoAuto with Pedro Pathing v3; no follower.manual."
 ---
 
-Verified via `javap` on `~/.gradle/caches/modules-2/files-2.1/com.pedropathing/core/3.0.x/*/core-3.0.x.jar` (class `com.pedropathing.api.Paths`, imported statically in `auto/paths/AutoPaths` and `PathHelpers`).
+Verified via `javap` on `~/.gradle/caches/modules-2/files-2.1/com.pedropathing/core/3.0.x/*/core-3.0.x.jar` (class `com.pedropathing.api.Paths`, imported statically in `auto/paths/AutoPaths`).
 
 ## Curve API
 
