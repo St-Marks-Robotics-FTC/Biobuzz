@@ -8,21 +8,15 @@ import org.firstinspires.ftc.teamcode.subsys.Vision;
 
 import java.util.function.LongSupplier;
 
-/**
- * Everything an autonomous routine touches while it runs: the robot, the follower, the camera, a clock, and the
- * flywheel's commanded RPM (the one piece of auto state that is not on a subsystem).
- *
- * <p>The OpMode owns the single instance and calls {@link #updateFlywheel()} every loop; steps only read it and call
- * {@link #spinUpFlywheel()} / {@link #shutOff()}.
- */
+/** Robot, follower, camera, clock, and the flywheel's commanded RPM; one instance shared by all steps. **/
 public final class AutoContext {
     public final Robot robot;
     public final Follower follower;
     public final Vision vision;
-    /** monotonic milliseconds; the clock every timed step uses **/
+    /** monotonic milliseconds **/
     public final LongSupplier clockMillis = () -> System.nanoTime() / 1_000_000L;
 
-    /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
+    /** RPM we are commanding; 0 means off **/
     private double targetRPM = 0;
 
     public AutoContext(Robot robot, Follower follower, Vision vision) {
@@ -35,24 +29,24 @@ public final class AutoContext {
         return targetRPM;
     }
 
-    /** Commands {@link BozoAuto#SHOOT_RPM}; takes effect on the next {@link #updateFlywheel()}. **/
+    /** Commands {@link BozoAuto#SHOOT_RPM}. **/
     public void spinUpFlywheel() {
         targetRPM = BozoAuto.SHOOT_RPM;
     }
 
-    /** Closes the transfer, stops the intake, and stops commanding the flywheel. **/
+    /** Closes the transfer, stops the intake and flywheel. **/
     public void shutOff() {
         robot.transfer.close();
         robot.intake.off();
         targetRPM = 0;
     }
 
-    /** Re-runs the flywheel PIDF toward {@link #targetRPM()}; MUST be called every loop or RPM never converges. **/
+    /** Re-runs the flywheel PIDF; must be called every loop. **/
     public void updateFlywheel() {
         robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage());
     }
 
-    /** true once the flywheel is within {@link BozoAuto#FLYWHEEL_RPM_MARGIN} of a nonzero target RPM **/
+    /** true once within {@link BozoAuto#FLYWHEEL_RPM_MARGIN} of a nonzero target **/
     public boolean isFlywheelWithinMargin() {
         return targetRPM > 0 && Math.abs(robot.flywheel.getRPM() - targetRPM) <= BozoAuto.FLYWHEEL_RPM_MARGIN;
     }
