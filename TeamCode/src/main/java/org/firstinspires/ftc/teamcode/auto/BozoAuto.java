@@ -10,21 +10,6 @@ import org.firstinspires.ftc.teamcode.auto.paths.AutoPaths;
 import org.firstinspires.ftc.teamcode.auto.steps.AutoContext;
 import org.firstinspires.ftc.teamcode.auto.steps.RobotSteps;
 
-/**
- * The solo hive autonomous; Blue and Red only supply poses and the alliance. The route is {@link #buildRoute}.
- *
- * <pre>
- * SHARED   start -> shoot -> intermediate -> refuel -> shoot -> (look at the hive)
- *
- * tags NOT visible (hive TIPPED) -> CASE1: tippedShoot, scoring flower, tippedShoot, audience flower, checkpoint
- *     tags visible     -> CASE1A: original shoot pose, shoot, park
- *     tags not visible -> CASE1B: tippedShoot, shoot, park
- *
- * tags visible (hive NOT tipped) -> CASE2: shoot again, audience flower, checkpoint
- *     tags not visible -> CASE2A: tippedShoot, shoot, scoring flower, tippedShoot, shoot, park
- *     tags visible     -> CASE2B: original shoot pose, shoot, scoring flower, park
- * </pre>
- */
 public abstract class BozoAuto extends AutoOpMode {
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
