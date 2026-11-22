@@ -2,9 +2,6 @@ package org.firstinspires.ftc.teamcode.auto.paths;
 
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
-import static org.firstinspires.ftc.teamcode.auto.paths.PathHelpers.crossFieldHeading;
-import static org.firstinspires.ftc.teamcode.auto.paths.PathHelpers.limitSpeed;
-import static org.firstinspires.ftc.teamcode.auto.paths.PathHelpers.plainLine;
 
 import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
@@ -12,6 +9,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.auto.AutoConfig;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 /**
  * Every path of the hive autonomous, built once from an {@link AutoConfig}. Built up front so a bad pose fails at init,
@@ -28,6 +26,30 @@ import org.firstinspires.ftc.teamcode.auto.AutoConfig;
 public final class AutoPaths {
     /** heading holds the intermediate pose's heading until this fraction of the refuel path, then rotates to the refuel pose **/
     private static final double REFUEL_ROTATE_START = 0.7;
+
+    /**
+     * One physical flower: the waypoint in front of it, the flower itself, and the two short paths between them. We
+     * reach the intermediate pose at full speed by a path that differs per call site, then {@link #creepIn} slowly and
+     * {@link #backOut} again; those two never differ, so they are built here once.
+     */
+    public static final class FlowerSite {
+        public final String name;
+        public final Pose intermediatePose;
+        public final Pose flowerPose;
+        /** intermediate pose -> flower at {@link Tunables#flowerApproachSpeed} **/
+        public final Path creepIn;
+        /** flower -> intermediate pose at {@link Tunables#flowerIntakeSpeed} **/
+        public final Path backOut;
+
+        /** @param name used in telemetry and the route plan, e.g. "scoring flower" **/
+        FlowerSite(String name, Pose intermediatePose, Pose flowerPose) {
+            this.name = name;
+            this.intermediatePose = intermediatePose;
+            this.flowerPose = flowerPose;
+            this.creepIn = limitSpeed(plainLine(intermediatePose, flowerPose), Tunables.flowerApproachSpeed);
+            this.backOut = limitSpeed(plainLine(flowerPose, intermediatePose), Tunables.flowerIntakeSpeed);
+        }
+    }
 
     public final FlowerSite scoringFlower;
     public final FlowerSite audienceFlower;
@@ -95,5 +117,32 @@ public final class AutoPaths {
         tippedShootToPark = curve(c.tippedShootPose, c.parkControlPoseFromTippedShoot, c.parkPose).tangent();
         scoringFlowerIntermediateToPark = curve(c.scoringFlowerIntermediatePose, c.parkControlPoseFromScoringFlower, c.parkPose)
                 .linear(c.scoringFlowerIntermediatePose, c.parkPose);
+    }
+
+    // ======================================================================== helpers
+
+    /** a straight line {@code from} -> {@code to}, heading turning linearly between them **/
+    private static Path plainLine(Pose from, Pose to) {
+        return line(from, to).linear(from, to);
+    }
+
+    /** {@code path} capped to {@code speed} (fraction 0-1 of max path speed) for this path only **/
+    private static Path limitSpeed(Path path, double speed) {
+        return path.with(Constants.foresightConfig.maxPathSpeed.at(speed));
+    }
+
+    /**
+     * Heading override for a path that crosses the field midline: face 90 deg (+y) when driving toward +y, 270 deg
+     * (-y) when driving toward -y, hold it until {@link Tunables#crossFieldHoldUntil}, then turn to {@code to}'s heading.
+     * Red audience->scoring is +y so 90; Blue is the point reflection so its audience->scoring is -y so 270, which
+     * matches the mirror rule with no per-alliance code.
+     * Precondition: {@code from.y() != to.y()}.
+     */
+    private static Path crossFieldHeading(Path path, Pose from, Pose to) {
+        double hold = Math.toRadians(to.y() > from.y() ? 90 : 270);
+        Pose holdPose = new Pose(from.x(), from.y(), hold);
+        return path.heading(Interpolator.piecewise()
+                .until(Tunables.crossFieldHoldUntil, Interpolator.constant(holdPose))
+                .until(1.0, Interpolator.linear(holdPose, to)));
     }
 }
