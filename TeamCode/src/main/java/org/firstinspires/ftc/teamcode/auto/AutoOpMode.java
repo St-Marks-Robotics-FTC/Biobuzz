@@ -22,26 +22,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * OpMode lifecycle shared by every autonomous: hardware, per-loop update order, the 30 s cutoff, telemetry, and pose
- * handoff to TeleOp. It knows nothing about any particular route; a subclass supplies the alliance, the start pose,
- * and the route as a {@link Step}. A partner-robot autonomous extends this and builds a different route.
- */
+/** Lifecycle shared by every autonomous: hardware, loop order, 30 s cutoff, telemetry, pose handoff. Subclasses supply the route. **/
 public abstract class AutoOpMode extends OpMode {
-    /** past this the OpMode stops commanding motion so we never drive into the end-of-auto buzzer **/
+    /** past this we stop commanding motion **/
     private static final double AUTO_CUTOFF_MILLIS = 29_750;
     private static final String LOG_TAG = "AutoOpMode";
 
-    /** @return true if this OpMode runs on the blue alliance, false for red; selects the Limelight pipeline. **/
+    /** @return true for blue, false for red; selects the Limelight pipeline **/
     protected abstract boolean isBlueTeam();
 
-    /** @return where the robot is placed at init. Called once during {@link #init()}, after hardware exists. **/
+    /** @return where the robot is placed at init **/
     protected abstract Pose startPose();
 
-    /**
-     * Builds the whole routine. Called once during {@link #init()}, after hardware exists; build every path here so a
-     * bad pose fails at init, not mid-match.
-     */
+    /** Builds the whole routine once at init; build every path here so a bad pose fails early. **/
     protected abstract Step buildRoute(AutoContext ctx);
 
     private Robot robot;

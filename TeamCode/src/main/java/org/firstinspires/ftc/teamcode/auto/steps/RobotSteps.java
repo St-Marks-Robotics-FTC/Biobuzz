@@ -13,13 +13,7 @@ import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.auto.core.Step;
 import org.firstinspires.ftc.teamcode.auto.paths.AutoPaths.FlowerSite;
 
-/**
- * This robot's autonomous vocabulary: drive, shoot, collect a flower, refuel, park. Each method returns a reusable
- * {@link Step}; routes are built by sequencing them.
- *
- * <p>Every hardware action of an autonomous lives here, once. If a flower pickup should behave differently, change it
- * in {@link #collectFlower} and every route follows.
- */
+/** This robot's autonomous vocabulary: drive, shoot, collect a flower, refuel, park. Every hardware action lives here once. **/
 public final class RobotSteps {
     private final AutoContext ctx;
     private final Robot robot;
@@ -31,12 +25,12 @@ public final class RobotSteps {
 
     // ======================================================================== primitives
 
-    /** Follows {@code path}; finishes when the follower is no longer busy (which includes the heading settling). **/
+    /** Follows {@code path}; done when the follower is no longer busy. **/
     public Step drive(String label, Path path) {
         return new DriveStep(label, ctx, path);
     }
 
-    /** {@link #drive} that also gives up after {@link Tunables#maxTravelToRefuelTime} (stuck on a ball or the wall). **/
+    /** {@link #drive} that gives up after {@link Tunables#maxTravelToRefuelTime} (stuck on a ball). **/
     public Step creep(String label, Path path) {
         return timeout(ctx.clockMillis, () -> Tunables.maxTravelToRefuelTime, drive(label, path));
     }
@@ -46,7 +40,7 @@ public final class RobotSteps {
         return instant("spin up flywheel", ctx::spinUpFlywheel);
     }
 
-    /** Waits until the flywheel is within margin, launches, and finishes when the launch sequence ends. **/
+    /** Waits for flywheel speed, launches, done when the launch ends. **/
     public Step shoot() {
         return sequence("shoot",
                 waitUntil("wait for flywheel", ctx::isFlywheelWithinMargin), // never feed balls below speed
@@ -59,11 +53,7 @@ public final class RobotSteps {
         return instant("flower down", robot.flower::goDown);
     }
 
-    /**
-     * @return true if the Limelight currently sees MORE than {@link Tunables#tagThreshold} tags. From the audience
-     * side that means the hive is NOT tipped toward the scoring side; no tags means it is. The one comparison every
-     * branch uses, so they all decide the same way.
-     */
+    /** true if the Limelight sees more than {@link Tunables#tagThreshold} tags, i.e. the hive is NOT tipped. **/
     public boolean hiveTagsVisible() {
         return ctx.vision.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold;
     }
@@ -75,13 +65,7 @@ public final class RobotSteps {
         return sequence(label, drive("travel", path), shoot());
     }
 
-    /**
-     * Collects one flower. Flower arm down and intake on, drive {@code approach} to the flower's intermediate pose,
-     * creep in, shake while sitting on the flower for {@link Tunables#flowerRefuelDurationMillis}, back out to the
-     * intermediate pose with the shake still running, then arm up.
-     *
-     * @param approach path from wherever we are to {@code site.intermediatePose}; it differs per call site
-     */
+    /** Arm down + intake, approach, creep in, shake and wait, back out, arm up. {@code approach} ends at the site's intermediate pose. **/
     public Step collectFlower(FlowerSite site, Path approach) {
         return sequence("collect " + site.name,
                 instant("intake on, flower down", () -> {
@@ -96,7 +80,7 @@ public final class RobotSteps {
                 instant("flower up", robot.flower::goUp));
     }
 
-    /** Creeps along {@code path} onto the refuel pose, then intakes for {@link Tunables#refuelDurationMillis}. **/
+    /** Creeps onto the refuel pose, then intakes for {@link Tunables#refuelDurationMillis}. **/
     public Step refuel(Path path) {
         return sequence("refuel",
                 creep("creep to refuel pose", path),
@@ -104,7 +88,7 @@ public final class RobotSteps {
                 waitMillis(ctx.clockMillis, () -> Tunables.refuelDurationMillis));
     }
 
-    /** Everything off, then drive {@code path} to the park pose. **/
+    /** Everything off, then drive to the park pose. **/
     public Step park(Path path) {
         return sequence("park",
                 instant("shut off", ctx::shutOff),
