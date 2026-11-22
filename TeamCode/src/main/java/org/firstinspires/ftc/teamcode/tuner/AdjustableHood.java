@@ -5,11 +5,13 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.Tunables;
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
+import org.firstinspires.ftc.teamcode.io.HubDevice;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ReadPeriod;
+import org.firstinspires.ftc.teamcode.io.ServoDevice;
+import org.firstinspires.ftc.teamcode.io.WritePolicy;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 
 @Configurable
@@ -25,36 +27,39 @@ public class AdjustableHood extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        HWScheduler scheduler = new HWScheduler(hardwareMap);
-        Flywheel flywheel = new Flywheel(scheduler);
-        VoltageSensor batteryVoltage = hardwareMap.voltageSensor.iterator().next();
-        Servo hood = hardwareMap.get(Servo.class, "hoodServo");
+        IoThread io = new IoThread(hardwareMap);
+        Flywheel flywheel = new Flywheel(io);
+        HubDevice expansionHub = new HubDevice(io, "Expansion Hub 2", ReadPeriod.millis(100)); // battery voltage
+        ServoDevice hood = new ServoDevice(io, "hoodServo", Tunables.nectarPos, WritePolicy.DEFAULT); // starts on FLOWER
+        io.start();
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
         Ball ball = Ball.FLOWER;
 
-        waitForStart();
+        try {
+            waitForStart();
 
-        while (opModeIsActive()) {
-            if (gamepad1.leftBumperWasPressed()) ball = Ball.FLOWER;
-            if (gamepad1.rightBumperWasPressed()) ball = Ball.POLLEN;
+            while (opModeIsActive()) {
+                io.awaitNewCycle();
 
-            double targetRpm = ball == Ball.FLOWER ? flowerRpm : pollenRpm;
-            hood.setPosition(ball == Ball.FLOWER ? Tunables.nectarPos : Tunables.pollenPos);
-            flywheel.update(targetRpm, batteryVoltage.getVoltage());
-            scheduler.update(0); // write flywheel power
+                if (gamepad1.leftBumperWasPressed()) ball = Ball.FLOWER;
+                if (gamepad1.rightBumperWasPressed()) ball = Ball.POLLEN;
 
-            telemetryM.addLine("left bumper: FLOWER, right bumper: POLLEN");
-            telemetryM.addData("mode", ball);
-            telemetryM.addData("target RPM", targetRpm);
-            telemetryM.addData("current RPM", flywheel.getRPM());
-            telemetryM.addData("hood pos", hood.getPosition());
-            telemetryM.update(telemetry);
+                double targetRpm = ball == Ball.FLOWER ? flowerRpm : pollenRpm;
+                hood.setPosition(ball == Ball.FLOWER ? Tunables.nectarPos : Tunables.pollenPos);
+                flywheel.update(targetRpm, expansionHub.inputVoltage().value());
 
-            idle();
+                telemetryM.addLine("left bumper: FLOWER, right bumper: POLLEN");
+                telemetryM.addData("mode", ball);
+                telemetryM.addData("target RPM", targetRpm);
+                telemetryM.addData("current RPM", flywheel.getRPM());
+                telemetryM.addData("hood pos", hood.commandedPosition());
+                telemetryM.update(telemetry);
+            }
+
+            flywheel.update(0, expansionHub.inputVoltage().value());
+        } finally {
+            io.stop(); // flushes the zero-RPM command above
         }
-
-        flywheel.update(0, batteryVoltage.getVoltage());
-        scheduler.update(0);
     }
 }

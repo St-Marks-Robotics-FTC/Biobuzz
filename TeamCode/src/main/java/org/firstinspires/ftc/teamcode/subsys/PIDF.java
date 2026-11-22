@@ -10,7 +10,7 @@ public class PIDF {
     // State variables
     private double sumError = 0;
     private double lastError = 0;
-    private double lastTime = 0;
+    private long lastTimeNanos = 0; // 0: no measurement yet
 
     public PIDF(double kP, double kI, double kD, double kF) {
         this.kP = kP;
@@ -22,7 +22,7 @@ public class PIDF {
     public void reset() {
         sumError = 0;
         lastError = 0;
-        lastTime = 0;
+        lastTimeNanos = 0;
     }
 
     public void updateTerms(double kP, double kI, double kD, double kF) {
@@ -32,9 +32,12 @@ public class PIDF {
         this.kF = kF;
     }
 
-    public double calc(double target, double current) {
-        double currentTime = System.nanoTime() / 1e9;
-        double deltaTime = (lastTime == 0) ? 0 : (currentTime - lastTime);
+    /**
+     * @param measuredAtNanos {@link System#nanoTime()} when {@code current} was measured; I and D only advance when
+     *                        this moves forward, so re-running on the same measurement never divides by zero
+     */
+    public double calc(double target, double current, long measuredAtNanos) {
+        double deltaTime = (lastTimeNanos == 0) ? 0 : (measuredAtNanos - lastTimeNanos) / 1e9;
 
         double error = target - current;
 
@@ -56,7 +59,7 @@ public class PIDF {
 
         // Store for next loop
         lastError = error;
-        lastTime = currentTime;
+        lastTimeNanos = measuredAtNanos;
 
         // Total output
         return P + I + D + F;

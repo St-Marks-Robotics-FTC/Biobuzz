@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.io.IoThread;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
@@ -41,6 +42,7 @@ public abstract class BozoAuto extends OpMode {
 
     /** @return true if this OpMode runs on the blue alliance, false for red; selects the Limelight pipeline. **/
     protected abstract boolean isBlueTeam();
+    private IoThread io;
     private Robot robot;
     private Vision vision;
     private Follower follower;
@@ -625,13 +627,13 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void loop() {
+        io.awaitNewCycle(); // fresh readings; the loop runs at the I/O cycle rate
         loopTimer.reset();
         vision.update();
         follower.update();
         robot.flywheel.update(targetRPM, robot.getExpansionHubVoltage()); // re-run PIDF every loop so RPM actually converges on target also dih
         robot.update(); // advances the shooting state machine and intake power-save
         autoUpdate();
-        robot.scheduler.update(loopTimer.nanoseconds()); // write hardware first: skipping this budget starves every device
         updateHandoff();
         if (autoTimer.milliseconds() > 29_750) {
             setState(State.SHIT);
@@ -641,6 +643,7 @@ public abstract class BozoAuto extends OpMode {
             sendTelemetry(false);
         }
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
+        telemetryM.addData("I/O cycle (ms)", io.lastCycleMillis());
         telemetryM.addData("target RPM", targetRPM);
         telemetryM.addData("RPM", robot.flywheel.getRPM());
         telemetryM.update(telemetry);
@@ -654,15 +657,16 @@ public abstract class BozoAuto extends OpMode {
         telemetryTimer = new Timer();
         autoTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-        robot = new Robot(hardwareMap);
-        robot.scheduler.setAutoLoopLength(); // make sure we use the longer auto loops
+        io = new IoThread(hardwareMap);
+        robot = new Robot(io);
         vision = new Vision(hardwareMap, isBlueTeam());
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
-        follower = Constants.create(hardwareMap);
+        follower = Constants.create(io);
         startPose = config.startPose;
         shootPose = config.shootPose;
         follower.setPose(startPose);
+        io.start();
         buildPaths();
         sendTelemetry(true);
         telemetryM.update(telemetry);
@@ -690,6 +694,7 @@ public abstract class BozoAuto extends OpMode {
             shutOff();
             robot.flywheel.update(0, robot.getExpansionHubVoltage());
         }
+        if (io != null) io.stop(); // stop the I/O thread, then flush the shut-off commands above
         updateHandoff();
     }
     public void updateHandoff() {

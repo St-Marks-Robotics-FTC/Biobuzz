@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.io.IoThread;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
@@ -23,8 +24,10 @@ public class VisionTuner extends LinearOpMode {
     public void runOpMode() {
         Vision vision = new Vision(hardwareMap, true);
         TelemetryManager telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-        Follower follower = Constants.create(hardwareMap);
+        IoThread io = new IoThread(hardwareMap);
+        Follower follower = Constants.create(io);
         follower.setPose(new Pose(72, 72, Math.toRadians(90))); // start in center of field
+        io.start();
 
         TuneMode mode = TuneMode.BLUE;
         boolean isCapturing = false;
@@ -34,6 +37,7 @@ public class VisionTuner extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
+            io.awaitNewCycle();
             follower.update();
 
             if (gamepad1.rightBumperWasPressed()) {
@@ -83,8 +87,8 @@ public class VisionTuner extends LinearOpMode {
             telemetryM.addData("last hive state", vision.getLastHiveState());
 
             telemetryM.update(telemetry);
-
-            idle();
         }
+
+        io.stop(); // a crash skips this; the I/O thread's OpMode-stop listener halts it then
     }
 }

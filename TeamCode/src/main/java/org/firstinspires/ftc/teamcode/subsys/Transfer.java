@@ -1,15 +1,14 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
 import org.firstinspires.ftc.teamcode.Tunables;
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ServoDevice;
+import org.firstinspires.ftc.teamcode.io.WritePolicy;
 
 public class Transfer {
     private static final double PRIORITY_MULTIPLIER = 1; // open/close is a small position change, but VITAL
 
-    private SServo servo;
+    private final ServoDevice servo;
 
     private enum State {
         OPEN,
@@ -18,12 +17,9 @@ public class Transfer {
 
     private State state = State.CLOSED;
 
-    public Transfer(HWScheduler scheduler) {
-        servo = new SServo("transferServo", PRIORITY_MULTIPLIER, scheduler.hw());
-        scheduler.addDevice(servo);
-
-        servo.setPosition(Tunables.transferClosed); // start closed
-        servo.forceUpdate(); // write now so the servo moves during init instead of waiting for the first loop
+    public Transfer(IoThread io) {
+        // starts closed; the I/O thread writes it when it starts, so the servo moves during init
+        servo = new ServoDevice(io, "transferServo", Tunables.transferClosed, new WritePolicy(PRIORITY_MULTIPLIER, 100));
     }
 
     public void toggle() {
