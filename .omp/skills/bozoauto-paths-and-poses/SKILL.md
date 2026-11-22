@@ -3,13 +3,13 @@ name: bozoauto-paths-and-poses
 description: "Adding a new pose, bezier control point, or path/state branch to BozoAuto (AutoConfig, BlueAuto, RedAuto); mirror rule, tipped-hive branch, compile check."
 ---
 
-Files: `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/auto/` — `AutoConfig.java`, `BlueAuto.java`, `RedAuto.java`, `BozoAuto.java`. `BlueCloseAuto`/`RedCloseAuto` are empty subclasses, no change needed.
+Files: `TeamCode/src/main/java/org/firstinspires/ftc/teamcode/auto/` — `AutoConfig.java`, `BlueAuto.java`, `RedAuto.java`, `BozoAuto.java` (thin: config -> paths -> route), `AutoOpMode.java` (generic lifecycle, 30 s cutoff, telemetry, handoff; partner-robot autos extend this), `core/` (pure-Java `Step`, `Sequencer`, `Steps` combinators; unit tested in `TeamCode/src/test`), `steps/` (`AutoContext`, `RobotSteps` = drive/shoot/collectFlower/refuel/park, `HiveView`), `paths/` (`AutoPaths`, `FlowerSite`, `PathHelpers`), `routes/HiveRoute.java` (the sequence + branches as data). There is no state enum any more. `BlueCloseAuto`/`RedCloseAuto` are empty subclasses, no change needed.
 
 ## Procedure for each new pose
 
 1. **AutoConfig**: add public field + constructor param + assignment. Constructor is POSITIONAL and every param is a `Pose`, so wrong order compiles and silently swaps poses. Keep field order, constructor order, and `buildConfig()` order identical, in path order (start, shoot, refuel, tipped, flower 1, flower 2, park). Read `AutoConfig.java` first — the field set evolves; never assume it.
 2. **BlueAuto and RedAuto**: add `public static Pose X` (`@Configurable`, tunable in Panels) and pass it in `buildConfig()` in the same order. Mark untuned values `DUMMY coords, replace with tuned values` once per group. Keep comments minimal: group headings only.
-3. **BozoAuto**: add `Path` field, build in `buildPaths()` (`curve(start, control..., end).linear(start, end)` or `line(a, b).linear(a, b)`; control heading is ignored), add `State` enum entries, add switch cases in `autoUpdate()`, call `follower.follow(path)` + `setState(...)` at the transition. Update the class javadoc sequence AND prose plus path-field comments (they go stale easily).
+3. **AutoPaths + HiveRoute**: add a `public final Path` field in `paths/AutoPaths.java` and build it in its constructor (`curve(start, control..., end).linear(start, end)` or `line(a, b).linear(a, b)`; control heading is ignored; helpers in `PathHelpers`), then add it to the sequence in `routes/HiveRoute.java` with `s.drive(label, path)` / `s.travelShoot(label, path)` / `s.collectFlower(site, approachPath)` / `s.park(path)`; wrap decisions in `branch(label, hive::tagsVisible, whenTrue, whenFalse)`. Reused fragments are local variables so cases cannot drift. Update the `HiveRoute` class javadoc. Any new hardware action belongs in `RobotSteps` once, never inline in a route. `Steps.describe(route)` prints the full plan (both branch arms) at init in telemetry/logcat.
 4. Multiple control points: Pedro 3.0 `Paths.curve(Pose...)` is varargs — extra control points go between start and end.
 
 ## Mirror rule
@@ -20,7 +20,7 @@ Tipped (scoring-side) shoot pose = untipped shootPose with same x and y -> 144 -
 
 ## Tipped-hive branch
 
-Lives in `TRAVEL_TO_SHOOT` (Limelight botpose tag count vs `Tunables.tagThreshold`); not tipped = TEMP_FAILED. Tipped sequence: TRAVEL_TO_TIPPED_SHOOT -> SPEED_UP_SECOND_SHOOT -> FEED_SECOND_SHOOT -> per flower [TRAVEL_TO_FLOWER(_2)_INTERMEDIATE -> TRAVEL_TO_FLOWER(_2) -> COLLECT_FLOWER(_2) -> TRAVEL_FROM_FLOWER(_2)_TO_INTERMEDIATE -> TRAVEL_TO_SHOOT_2/3 -> SPEED_UP_SHOOT_2/3 -> FEED_SHOOT_2/3] -> TRAVEL_TO_PARK. Flywheel stays on until FEED_SHOOT_3 (`shutOff()` only there). Flower legs: approach to intermediate at full speed (flower 1 line, flower 2 curve w/ 1 control pt), intermediate->flower line capped via `Constants.foresightConfig.maxPathSpeed.at(FLOWER_APPROACH_SPEED=0.3)`, then back out to intermediate, then line to tippedShootPose.
+Lives in `HiveRoute` (`HiveView.tagsVisible()` = Limelight botpose tag count `> Tunables.tagThreshold`, one comparison for every branch; tags visible = hive NOT tipped at the first judgement, and at the CASE1/CASE2 checkpoints visible means CASE1A/CASE2B). Flower pickup is `RobotSteps.collectFlower`: intake on + arm down, approach, creep in (`flowerApproachSpeed`, `maxTravelToRefuelTime` timeout), shake, wait `flowerRefuelDurationMillis`, back out at `flowerIntakeSpeed` WITH the shake still running, arm up. `park` calls `shutOff()` first.
 
 ## API / prefs
 
