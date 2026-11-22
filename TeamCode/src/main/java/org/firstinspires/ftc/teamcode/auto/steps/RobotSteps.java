@@ -11,7 +11,7 @@ import com.pedropathing.paths.Path;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.auto.BozoAuto;
 import org.firstinspires.ftc.teamcode.auto.core.Step;
-import org.firstinspires.ftc.teamcode.auto.paths.FlowerSite;
+import org.firstinspires.ftc.teamcode.auto.paths.AutoPaths.FlowerSite;
 
 /**
  * This robot's autonomous vocabulary: drive, shoot, collect a flower, refuel, park. Each method returns a reusable
@@ -57,6 +57,15 @@ public final class RobotSteps {
     /** Lowers the flower arm. **/
     public Step flowerDown() {
         return instant("flower down", robot.flower::goDown);
+    }
+
+    /**
+     * @return true if the Limelight currently sees MORE than {@link Tunables#tagThreshold} tags. From the audience
+     * side that means the hive is NOT tipped toward the scoring side; no tags means it is. The one comparison every
+     * branch uses, so they all decide the same way.
+     */
+    public boolean hiveTagsVisible() {
+        return ctx.vision.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold;
     }
 
     // ======================================================================== macros
