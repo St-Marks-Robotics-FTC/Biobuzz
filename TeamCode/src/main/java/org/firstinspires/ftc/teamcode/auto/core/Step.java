@@ -21,7 +21,7 @@ import java.util.List;
  * </ol>
  */
 public interface Step {
-    /** Static, human readable name of this step ("" for anonymous composites). Never null. **/
+    /** Static, human-readable name of this step ("" for anonymous composites). Never null. **/
     String label();
 
     /**
