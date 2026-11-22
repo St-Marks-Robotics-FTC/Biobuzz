@@ -8,8 +8,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 @Configurable
 @Autonomous(name = "BlueAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
 public class BlueAuto extends BozoAuto {
-    // LAST MIRRORED: 2026-11-21
-
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(84, 137.246, Math.toRadians(270));
     public static Pose shootPose = new Pose(84, 134, Math.toRadians(270));
