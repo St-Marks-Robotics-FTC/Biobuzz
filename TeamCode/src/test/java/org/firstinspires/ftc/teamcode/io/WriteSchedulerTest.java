@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class WriteSchedulerTest {
@@ -79,7 +80,7 @@ public class WriteSchedulerTest {
         device("slow", WritePolicy.DEFAULT, 8 * MS, 0.9);
         device("fast", WritePolicy.DEFAULT, 1 * MS, 0.1);
         scheduler().runBudgeted(5 * MS, 1, false);
-        assertEquals(Arrays.asList("fast"), writes);
+        assertEquals(Collections.singletonList("fast"), writes);
     }
 
     // If this fails: IMMEDIATE devices (drivetrain, Pinpoint pose) can be starved by the budget
@@ -87,7 +88,7 @@ public class WriteSchedulerTest {
     public void softSchedulingWritesOverdueDeviceEvenWithNoBudget() {
         device("drive", WritePolicy.IMMEDIATE, 8 * MS, 0.01);
         scheduler().runBudgeted(0, 1, true);
-        assertEquals(Arrays.asList("drive"), writes);
+        assertEquals(Collections.singletonList("drive"), writes);
     }
 
     // If this fails: turning soft scheduling off no longer makes the budget a hard limit
@@ -116,7 +117,7 @@ public class WriteSchedulerTest {
         device("fresh", new WritePolicy(1, 10_000), 2 * MS, 1.0); // score 1.0 * (1 + 0) = 1.0
         WriteScheduler rebuilt = new WriteScheduler(devices, () -> clock.nanos);
         rebuilt.runBudgeted(2 * MS, 1, false);
-        assertEquals(Arrays.asList("old"), writes);
+        assertEquals(Collections.singletonList("old"), writes);
         assertEquals(0, old.change, 0);
     }
 
