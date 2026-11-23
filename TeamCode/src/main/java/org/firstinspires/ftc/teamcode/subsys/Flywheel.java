@@ -99,11 +99,11 @@ public class Flywheel {
 
     public double TPSToRPM(double TPS) {
         double ticksPerOutputRev = getMotorTicksPerOutputRev();
-        return (TPS / ticksPerOutputRev) * 60; // output RPM
+        return TPS * 60.0 / ticksPerOutputRev;
     }
 
     public double RPMToTPS(double outputRPM) {
         double ticksPerOutputRev = getMotorTicksPerOutputRev();
-        return (outputRPM / 60) * ticksPerOutputRev; // motor TPS
+        return outputRPM * ticksPerOutputRev / 60.0;
     }
 }
