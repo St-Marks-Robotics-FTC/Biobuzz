@@ -10,12 +10,12 @@ import org.firstinspires.ftc.teamcode.Tunables;
 @Configurable
 @Autonomous(name = "BlueAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
 public class BlueAuto extends BozoAuto {
-    // LAST MIRRORED: 2026-11-20
+    // LAST MIRRORED: 2026-11-21
 
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(84, 137.246, Math.toRadians(270));
     public static Pose shootPose = new Pose(84, 134, Math.toRadians(270));
-    public static Pose intermediatePose = new Pose(122, 132.25, Math.toRadians(30));
+    public static Pose intermediatePose = new Pose(122, 132.2, Math.toRadians(30));
     public static Pose refuelPose = new Pose(134, 137.246, Math.toRadians(0));
 
     // ---------------------------------------------------------------- SCORING SIDE (shootPose mirrored over y = 72)
@@ -30,10 +30,10 @@ public class BlueAuto extends BozoAuto {
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(126, 64, Math.toRadians(0));
     public static Pose audienceFlowerIntermediatePose = new Pose(120, 96, Math.toRadians(0));
-    public static Pose audienceFlowerPose = new Pose(144 - Tunables.flowerDistance, 96, Math.toRadians(0));
+    public static Pose audienceFlowerPose = new Pose(144 - Tunables.flowerDistance + 1, 96, Math.toRadians(0));
     public static Pose audienceCheckpointPose = new Pose(84, 130, Math.toRadians(270));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(132, 134, Math.toRadians(270));
-    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(132, 74, Math.toRadians(270));
+    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(136, 74, Math.toRadians(270));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(132, 132, Math.toRadians(180));
     public static Pose shootToScoringFlowerControlPose2 = new Pose(132, 64, Math.toRadians(180));
 

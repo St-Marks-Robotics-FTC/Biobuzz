@@ -89,7 +89,7 @@ public abstract class BozoTeleOp extends OpMode {
 
 
         if (gamepad1.backWasPressed()) { // reset field centric heading
-            follower.setPose(follower.pose().withHeading(Math.toRadians(90)));
+            relocalizeOdo();
         }
 
         robot.scheduler.update(loopTimer.nanoseconds()); // write subsystem hardware with whatever time is left in the loop
@@ -147,6 +147,15 @@ public abstract class BozoTeleOp extends OpMode {
         isTurning = true;
     }
 
+    private void relocalizeOdo() {
+        if (isBlueTeam()) {
+            follower.setPose(new Pose(144 - Tunables.robotWidthToCenter, Tunables.robotLengthToCenter, Math.toRadians(90)));
+        } else {
+            follower.setPose(new Pose(Tunables.robotWidthToCenter, Tunables.robotLengthToCenter, Math.toRadians(90)));
+        }
+
+    }
+
     private void handleFlywheel() {
         if (gamepad1.bWasPressed()) flywheelOn = !flywheelOn;
         if (gamepad1.yWasPressed()) isManualRPM = !isManualRPM;
@@ -171,8 +180,14 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void handleFlower() {
-        if (gamepad1.right_trigger_pressed) robot.flower.startShake();
-        else robot.flower.goUp();
+        double trig = gamepad1.right_trigger;
+        if (trig <= 0.1) {
+            robot.flower.goUp();
+        } else if (trig <= .8) {
+            robot.flower.startShake();
+        } else {
+            robot.flower.goDown();
+        }
     }
 
     private void handleIntake() {

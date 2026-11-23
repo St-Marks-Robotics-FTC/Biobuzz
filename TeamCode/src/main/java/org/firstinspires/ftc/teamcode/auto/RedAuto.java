@@ -13,7 +13,7 @@ public class RedAuto extends BozoAuto {
     // ---------------------------------------------------------------- SHARED (before the hive is judged)
     public static Pose startPose = new Pose(60, 6.754, Math.toRadians(90));
     public static Pose shootPose = new Pose(60, 10, Math.toRadians(90));
-    public static Pose intermediatePose = new Pose(22, 11.75, Math.toRadians(210));
+    public static Pose intermediatePose = new Pose(22, 11.8, Math.toRadians(210));
     public static Pose refuelPose = new Pose(10, 6.754, Math.toRadians(180));
 
     // ---------------------------------------------------------------- SCORING SIDE (shootPose mirrored over y = 72)
@@ -28,10 +28,10 @@ public class RedAuto extends BozoAuto {
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(18, 80, Math.toRadians(180));
     public static Pose audienceFlowerIntermediatePose = new Pose(24, 48, Math.toRadians(180));
-    public static Pose audienceFlowerPose = new Pose(Tunables.flowerDistance, 48, Math.toRadians(180));
+    public static Pose audienceFlowerPose = new Pose(Tunables.flowerDistance - 1, 48, Math.toRadians(180));
     public static Pose audienceCheckpointPose = new Pose(60, 14, Math.toRadians(90));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(12, 10, Math.toRadians(90));
-    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(12, 70, Math.toRadians(90));
+    public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(8, 70, Math.toRadians(90));
     public static Pose shootToScoringFlowerControlPose1 = new Pose(12, 12, Math.toRadians(0));
     public static Pose shootToScoringFlowerControlPose2 = new Pose(12, 80, Math.toRadians(0));
 

@@ -16,10 +16,15 @@ public class Tunables {
 
     /** BozoTeleOp tunables (used in BozoTeleOp.java) **/
 
-    public static double manualStartingRPM = 3150;
+    public static double manualStartingRPM = 3050;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(1);
     public static boolean teleBrake = true;
+
+    /** Robot Dimensions **/
+
+    public static double robotWidthToCenter = 6.72;
+    public static double robotLengthToCenter = 6.754;
 
     /** Adjustable Hood tunables (will be used in Hood.java) **/
 
@@ -32,7 +37,7 @@ public class Tunables {
     /** flywheel tunables (used in Flywheel.java) **/
 
     // PIDF tuned 9-28-2026
-    public static double flywheelP = 0.008;
+    public static double flywheelP = 0.006;
     public static double flywheelI = 0;
     public static double flywheelD = 0;
     public static double flywheelF = 0.0004;
@@ -40,6 +45,7 @@ public class Tunables {
     public static double flywheelVoltageStart = 12.0; // start voltage of compensation scale
     public static double flywheelVoltageEnd = 13.5;   // end voltage of compensation scale
     public static double flywheelCompensationMax = 1.2; // max amount to scale voltage
+    public static boolean flywheelUsingVoltageCompensation = false;
 
     /** intake tunables (used in Intake.java) **/
 
@@ -56,26 +62,28 @@ public class Tunables {
     public static double transferClosed = 0.108;
 
     public static int    shakeMillis = 80; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
-    public static double flowerDown = .77;
-    public static double flowerUp = .24;
+    public static double flowerDown = 0.52;
+    public static double flowerUp = 0.008;
     public static double flowerShake = 0.08; // flower shake: servo position amplitude (NOT a time) around flowerDown
-    public static double flowerDistance = 13.78; // how far from the edge of the field where the flower is should we refuel
+    public static double flowerDistance = 13.500; // how far from the edge of the field where the flower is should we refuel
 
     /** robot tunables (used in Robot.java) **/
 
     public static double launchIntakeStopTime = 80; // time to wait for intake to stop before opening transfer
     public static double launchTransferOpeningTime = 150;
-    public static double launchShootingTime = 555;
+    public static double launchShootingTime = 650;
 
     /** auto shooting sequence tunables (used in auto/BozoAuto.java) **/
 
-    public static double tagThreshold = 3; // amount of tags we need at least
-    public static double shootRPM = 3038; // target flywheel RPM while lined up to shoot
+    public static double tagThreshold = 2; // amount of tags we need at least
+    public static double shootRPM = 3100; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
-    public static long flowerRefuelDurationMillis = 550; // how long to intake while driving through the refuel line
-    public static long refuelDurationMillis = 200; // how long to intake while driving through the refuel line
+    public static long flowerRefuelDurationMillis = 625; // how long to intake while driving through the refuel line
+    public static long refuelDurationMillis = 150; // how long to intake while driving through the refuel line
+    public static double flowerIntakeSpeed = 0.3; // 0-1 speed to intake flower (lower=slower)
     public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
     public static double crossFieldHoldUntil = 0.8; // fraction (0-1] of a cross-field path spent holding 90/270 heading before turning to the final heading; read when paths are built at init
+    public static double flowerApproachSpeed = .25;
 
     /** vision tunables (used in subsys/Vision.java) **/
 
