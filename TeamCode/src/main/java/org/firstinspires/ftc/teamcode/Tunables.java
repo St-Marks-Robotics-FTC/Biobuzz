@@ -163,8 +163,8 @@ public class Tunables {
     public static double autoRPMSwitchoffAngle = 0.965251;
 
     public static double maxScoringAbsRelativeX = 36;
-    public static double maxScoringRelativeY = 48;
-    public static double minScoringRelativeY = 10;
+    public static double maxScoringRelativeY = 54;
+    public static double minScoringRelativeY = 30;
 
     /** I/O thread tunables (used in io/IoThread.java) **/
 
@@ -172,5 +172,5 @@ public class Tunables {
     public static long ioStallTimeoutMs = 500; // crash the OpMode if the I/O thread finishes no cycle for this long
 
     public static double stalenessReduction = 1; // ms of waiting that doubles a pending write's score; higher values make waiting matter less
-    public static boolean softScheduling = true; // if true: write a device past its max staleness even when the write budget is spent
+    public static boolean softScheduling = false; // if true: write a device past its max staleness even when the write budget is spent
 }
