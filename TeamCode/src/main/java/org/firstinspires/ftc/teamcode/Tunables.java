@@ -77,10 +77,10 @@ public class Tunables {
     public static double tagThreshold = 2; // amount of tags we need at least
     public static double shootRPM = 3100; // target flywheel RPM while lined up to shoot
     public static double flywheelRPMMargin = 75; // how close to shootRPM we must be before feeding balls
-    public static long flowerRefuelDurationMillis = 450; // how long to intake while driving through the refuel line
+    public static long flowerRefuelDurationMillis = 550; // how long to intake while driving through the refuel line
     public static long refuelDurationMillis = 150; // how long to intake while driving through the refuel line
     public static double flowerIntakeSpeed = 0.3; // 0-1 speed to intake flower (lower=slower)
-    public static double maxTravelToRefuelTime = 750; // timeout for travel to picking up balls (if it gets stuck on a ball)
+    public static double maxTravelToRefuelTime = 1000; // timeout for travel to picking up balls (if it gets stuck on a ball)
     public static double crossFieldHoldFrom = 0.05; // fraction (0-1) of a cross-field path spent holding the initial heading before turning to the 90/270 heading
     public static double crossFieldTurnDone = 0.2; // fraction of a cross-field path at which the turn to 90/270 finishes; must be > crossFieldHoldFrom and < crossFieldHoldUntil
     public static double crossFieldHoldUntil = 0.8; // fraction (0-1) of a cross-field path at which the 90/270 hold ends and the turn to the final heading begins; read when paths are built at init
