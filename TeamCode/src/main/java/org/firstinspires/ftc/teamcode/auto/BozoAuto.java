@@ -35,10 +35,10 @@ public abstract class BozoAuto extends AutoOpMode {
     public static double TAG_THRESHOLD = 2; // amount of tags we need at least
     public static double SHOOT_RPM = 3100; // target flywheel RPM while lined up to shoot
     public static double FLYWHEEL_RPM_MARGIN = 75; // how close to shootRPM we must be before feeding balls
-    public static long FLOWER_REFUEL_DURATION_MILLIS = 450; // how long to intake while driving through the refuel line
+    public static long FLOWER_REFUEL_DURATION_MILLIS = 550; // how long to intake while driving through the refuel line
     public static long REFUEL_DURATION_MILLIS = 150; // how long to intake while driving through the refuel line
     public static double FLOWER_INTAKE_SPEED = 0.3; // 0-1 speed to intake flower (lower=slower)
-    public static double MAX_TRAVEL_TO_REFUEL_TIME = 750; // timeout for travel to picking up balls (if it gets stuck on a ball)
+    public static double MAX_TRAVEL_TO_REFUEL_TIME = 1000; // timeout for travel to picking up balls (if it gets stuck on a ball)
     public static double CROSS_FIELD_HOLD_FROM = 0.05; // fraction (0-1) of a cross-field path spent holding the initial heading before turning to the 90/270 heading
     public static double CROSS_FIELD_TURN_DONE = 0.2; // fraction of a cross-field path at which the turn to 90/270 finishes; must be > CROSS_FIELD_HOLD_FROM and < CROSS_FIELD_HOLD_UNTIL
     public static double CROSS_FIELD_HOLD_UNTIL = 0.8; // fraction (0-1] of a cross-field path spent holding 90/270 heading before turning to the final heading; read when paths are built at init
