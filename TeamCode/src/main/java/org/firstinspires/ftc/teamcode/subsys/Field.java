@@ -1,12 +1,31 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.Tunables;
 
+@Configurable
 public class Field {
+    /** configurables **/
+
+    // auto RPM
+    public static double AUTO_RPM_ADDITION = 0; // add this many RPMs to auto RPM output
+    public static double AUTO_RPM_MULTIPLIER = 1; // multiply auto RPM output by this
+
+    public static double CENTER_THRESHOLD = 20;
+
+    public static double AUDIENCE_Y = 64;
+
+    public static double SCORING_Y = 80;
+    public static double AUTO_RPM_SWITCHOFF_ANGLE = 0.965251;
+
+    public static double MAX_SCORING_ABS_RELATIVE_X = 36;
+    public static double MAX_SCORING_RELATIVE_Y = 48;
+    public static double MIN_SCORING_RELATIVE_Y = 10;
+
+    /** end configurables **/
 
     private boolean isBlueTeam;
 
@@ -38,9 +57,9 @@ public class Field {
 
         Pose aimPost;
 
-        if (robotX - centerX >= Tunables.centerThreshold) {
+        if (robotX - centerX >= CENTER_THRESHOLD) {
             aimPost = target.getLeftPose(); // robot is to the right, aim at the far (left) post
-        } else if (centerX - robotX >= Tunables.centerThreshold) {
+        } else if (centerX - robotX >= CENTER_THRESHOLD) {
             aimPost = target.getRightPose(); // robot is to the left, aim at the far (right) post
         } else { // robot is close enough to the center
             aimPost = target.getCenterPose();
@@ -56,9 +75,9 @@ public class Field {
 
         // robot must be on its shooting side of the goal (in front of it, not behind the backboard)
         double centerDistInFront = behindY * (target.getCenterPose().y() - robotY);
-        boolean canScore = (Math.abs(centerX - robotX) <= Tunables.maxScoringAbsRelativeX) &&
-                (centerDistInFront >= Tunables.minScoringRelativeY) &&
-                (centerDistInFront <= Tunables.maxScoringRelativeY);
+        boolean canScore = (Math.abs(centerX - robotX) <= MAX_SCORING_ABS_RELATIVE_X) &&
+                (centerDistInFront >= MIN_SCORING_RELATIVE_Y) &&
+                (centerDistInFront <= MAX_SCORING_RELATIVE_Y);
 
         double pollenIdealRPM = getPollenRPM(robotPose, aimPost);
         double nectarIdealRPM = getNectarRPM(robotPose, aimPost);
@@ -69,7 +88,7 @@ public class Field {
     }
 
     private Goal getGoal(boolean isAudienceUp) {
-        double baseY = isAudienceUp ? Tunables.audienceY : Tunables.scoringY;
+        double baseY = isAudienceUp ? AUDIENCE_Y : SCORING_Y;
         double behindY = isAudienceUp ? 1 : -1; // +y is behind the audience goal, -y behind the scoring goal
         if (isBlueTeam) {
             // both goals for blue team share the same x values
@@ -95,7 +114,7 @@ public class Field {
 
         double mathRPM;
         // select our dataset
-        if (angleToGoal > Tunables.autoRPMSwitchoffAngle) {
+        if (angleToGoal > AUTO_RPM_SWITCHOFF_ANGLE) {
             // shooting pretty directly
             mathRPM = 1.02203 * d * d - 95.34311 * d + 5278.09381;
             // keep it within the regression outputs
@@ -107,7 +126,7 @@ public class Field {
             mathRPM = Range.clip(mathRPM, 2900, 3500);
         }
 
-        return mathRPM * Tunables.autoRPMMultiplier + Tunables.autoRPMAddition;
+        return mathRPM * AUTO_RPM_MULTIPLIER + AUTO_RPM_ADDITION;
     }
 
     public double getNectarRPM(Pose robotPose, Pose goalPose) {

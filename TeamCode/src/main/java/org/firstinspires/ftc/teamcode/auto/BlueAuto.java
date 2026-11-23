@@ -4,8 +4,6 @@ import com.pedropathing.math.Pose;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-import org.firstinspires.ftc.teamcode.Tunables;
-
 /** Blue-alliance poses. See {@link AutoConfig} for what each pose means and the route that uses it. **/
 @Configurable
 @Autonomous(name = "BlueAuto", group = "Blue", preselectTeleOp = "BlueTeleOp")
@@ -25,12 +23,12 @@ public class BlueAuto extends BozoAuto {
 
     // ---------------------------------------------------------------- SCORING SIDE: the scoring flower
     public static Pose scoringFlowerIntermediatePose = new Pose(96, 24, Math.toRadians(270));
-    public static Pose scoringFlowerPose = new Pose(96, Tunables.flowerDistance, Math.toRadians(270));
+    public static Pose scoringFlowerPose = new Pose(96, FLOWER_DISTANCE, Math.toRadians(270));
 
     // ---------------------------------------------------------------- AUDIENCE SIDE: the audience flower + checkpoint
     public static Pose tippedShootToAudienceFlowerControlPose = new Pose(126, 64, Math.toRadians(0));
     public static Pose audienceFlowerIntermediatePose = new Pose(120, 96, Math.toRadians(0));
-    public static Pose audienceFlowerPose = new Pose(144 - Tunables.flowerDistance + 1, 96, Math.toRadians(0));
+    public static Pose audienceFlowerPose = new Pose(144 - FLOWER_DISTANCE + 1, 96, Math.toRadians(0));
     public static Pose audienceCheckpointPose = new Pose(84, 130, Math.toRadians(270));
     public static Pose audienceCheckpointToTippedShootControlPose1 = new Pose(132, 134, Math.toRadians(270));
     public static Pose audienceCheckpointToTippedShootControlPose2 = new Pose(136, 74, Math.toRadians(270));

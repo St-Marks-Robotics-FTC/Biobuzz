@@ -1,11 +1,16 @@
 package org.firstinspires.ftc.teamcode.subsys.launch;
 
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
 
 public class Transfer {
-    private static final double PRIORITY_MULTIPLIER = 1; // open/close is a small position change, but VITAL
+    /** configurables **/
+
+    public static double PRIORITY_MULTIPLIER = 1; // open/close is a small position change, but VITAL
+    public static double POS_OPEN = 0.41;
+    public static double POS_CLOSED = 0.108;
+
+    /** end configurables **/
 
     private SServo servo;
 
@@ -20,7 +25,7 @@ public class Transfer {
         servo = new SServo(ballType + "TransferServo", PRIORITY_MULTIPLIER, scheduler.hw());
         scheduler.addDevice(servo);
 
-        servo.setPosition(Tunables.transferClosed); // start closed
+        servo.setPosition(POS_CLOSED); // start closed
         servo.forceUpdate(); // write now so the servo moves during init instead of waiting for the first loop
     }
 
@@ -31,14 +36,14 @@ public class Transfer {
 
     public void open() {
         if (state != State.OPEN) {
-            servo.setPosition(Tunables.transferOpen);
+            servo.setPosition(POS_OPEN);
             state = State.OPEN;
         }
     }
 
     public void close() {
         if (state != State.CLOSED) {
-            servo.setPosition(Tunables.transferClosed);
+            servo.setPosition(POS_CLOSED);
             state = State.CLOSED;
         }
     }

@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.Tunables;
 
 @TeleOp(name="FlywheelTuner", group="Tuner")
 public class FlywheelTuner extends LinearOpMode {

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.drivetrain.DrivePowers;
@@ -11,7 +12,6 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Drive;
 import org.firstinspires.ftc.teamcode.subsys.Field;
@@ -20,7 +20,19 @@ import org.firstinspires.ftc.teamcode.subsys.Vision;
 import java.util.concurrent.TimeUnit;
 
 
+@Configurable
 public abstract class BozoTeleOp extends OpMode {
+    /** configurables **/
+
+    public static boolean IS_DEBUGGING = false;
+    public static double TURN_RATE_MULTIPLIER = -1.75; // reduce turn speed in TeleOp to 75%
+    public static double MANUAL_STARTING_RPM = 3049;
+    public static double ADJUST_RPM = 49;
+    public static double ROBOT_WIDTH_TO_CENTER = 6.72;
+    public static double ROBOT_LENGTH_TO_CENTER  = 6.754;
+
+    /** end configurables **/
+
     protected abstract boolean isBlueTeam();
     private Robot robot;
     private Drive drive;
@@ -30,7 +42,7 @@ public abstract class BozoTeleOp extends OpMode {
     private Timer loopTimer; // measures our control loop time
     private TelemetryManager telemetryM;
     private boolean isRobotCentric = true; // start in robot-centric mode
-    private double setRPM = Tunables.manualStartingRPM;
+    private double setRPM = MANUAL_STARTING_RPM;
     private boolean flywheelOn = true;
     private boolean isHolding = false;
     private boolean isManualRPM = false;
@@ -100,7 +112,7 @@ public abstract class BozoTeleOp extends OpMode {
         if (!isHolding) {
             double forward = -gamepad1.left_stick_y;
             double strafe = -gamepad1.left_stick_x;
-            double turn = -gamepad1.right_stick_x * Tunables.turnRateMultiplier; // reduce speed by our turn rate
+            double turn = -gamepad1.right_stick_x * TURN_RATE_MULTIPLIER; // reduce speed by our turn rate
 
             if (gamepad1.left_bumper) {
                 // auto aim without hold
@@ -151,9 +163,9 @@ public abstract class BozoTeleOp extends OpMode {
 
     private void relocalizeOdo() {
         if (isBlueTeam()) {
-            follower.setPose(new Pose(144 - Tunables.robotWidthToCenter, Tunables.robotLengthToCenter, Math.toRadians(90)));
+            follower.setPose(new Pose(144 - ROBOT_WIDTH_TO_CENTER, ROBOT_LENGTH_TO_CENTER, Math.toRadians(90)));
         } else {
-            follower.setPose(new Pose(Tunables.robotWidthToCenter, Tunables.robotLengthToCenter, Math.toRadians(90)));
+            follower.setPose(new Pose(ROBOT_WIDTH_TO_CENTER, ROBOT_LENGTH_TO_CENTER, Math.toRadians(90)));
         }
 
     }
@@ -162,10 +174,10 @@ public abstract class BozoTeleOp extends OpMode {
         if (gamepad1.bWasPressed()) flywheelOn = !flywheelOn;
         if (gamepad1.yWasPressed()) isManualRPM = !isManualRPM;
 
-        if (gamepad1.dpadUpWasPressed()) setRPM += Tunables.adjustRPM; // increment by adjustRPM
-        if (gamepad1.dpadDownWasPressed()) setRPM -= Tunables.adjustRPM; // decrement by adjustRPM
-        if (gamepad1.dpadLeftWasPressed()) setRPM -= (Tunables.adjustRPM / 2.0); // decrement by half of adjustRPM
-        if (gamepad1.dpadRightWasPressed()) setRPM += (Tunables.adjustRPM / 2.0); // increment by half of adjustRPM
+        if (gamepad1.dpadUpWasPressed()) setRPM += ADJUST_RPM;
+        if (gamepad1.dpadDownWasPressed()) setRPM -= ADJUST_RPM;
+        if (gamepad1.dpadLeftWasPressed()) setRPM -= (ADJUST_RPM / 2.0);
+        if (gamepad1.dpadRightWasPressed()) setRPM += (ADJUST_RPM/ 2.0);
 
         if (setRPM < 0) setRPM = 0;
 
@@ -235,8 +247,8 @@ public abstract class BozoTeleOp extends OpMode {
     }
 
     private void updateTelemetry() {
-        // super secret isDebugging toggle
-        if (gamepad1.left_stick_button && gamepad1.right_stick_button) Tunables.isDebugging = !Tunables.isDebugging;
+        // super secret toggle
+        if (gamepad1.left_stick_button && gamepad1.right_stick_button) IS_DEBUGGING= !IS_DEBUGGING;
 
         double loopTime = loopTimer.get(TimeUnit.MILLISECONDS);
 
@@ -246,7 +258,7 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.addLine("wils is a bum");
 
         // only output debug values if we're debugging - these kill our loop times
-        if (Tunables.isDebugging) {
+        if (IS_DEBUGGING) {
             // intake
             telemetryM.addData("power save", robot.intake.getPowerSaveTrigger());
             // flywheel
@@ -273,4 +285,3 @@ public abstract class BozoTeleOp extends OpMode {
         telemetryM.update(telemetry);
     }
 }
-

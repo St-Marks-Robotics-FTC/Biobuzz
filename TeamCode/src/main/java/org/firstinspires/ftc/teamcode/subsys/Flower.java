@@ -1,14 +1,23 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.utils.Timer;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
 
+@Configurable
 public class Flower {
+    /** configurables **/
+
+    public static double PRIORITY_MULTIPLIER = 1.0;
+    public static int    SHAKE_MILLIS = 80; // flower shake: time between flips, in ms (real period is rounded up to the loop length)
+    public static double POS_DOWN = 0.52;
+    public static double POS_UP = 0.008;
+    public static double SHAKE_AMOUNT = 0.08; // flower shake: servo position amplitude (NOT a time) around flowerDown
+
+    /** end configurables **/
+
     private SServo flowerServo;
 
     private enum State {
@@ -23,23 +32,18 @@ public class Flower {
     private Timer shakeTimer;
 
     public Flower(HWScheduler scheduler) {
-        flowerServo = new SServo("flowerServo", 1, scheduler.hw());
+        flowerServo = new SServo("flowerServo", PRIORITY_MULTIPLIER, scheduler.hw());
         scheduler.addDevice(flowerServo);
 
         shakeTimer = new Timer();
 
-        flowerServo.setPosition(Tunables.flowerUp); // start up
+        flowerServo.setPosition(POS_UP); // start up
         flowerServo.forceUpdate(); // move on init
-    }
-
-    public void toggle() {
-        if (isUp()) goDown();
-        else goUp();
     }
 
     public void goUp() {
         if (state != Flower.State.UP) {
-            flowerServo.setPosition(Tunables.flowerUp);
+            flowerServo.setPosition(POS_UP);
             state = Flower.State.UP;
         }
     }
@@ -54,12 +58,12 @@ public class Flower {
     }
 
     public void update() { // shake n bake
-        if (state == State.SHAKE_HIGH && shakeTimer.milliseconds() > Tunables.shakeMillis) {
-            flowerServo.setPosition(Tunables.flowerDown);
+        if (state == State.SHAKE_HIGH && shakeTimer.milliseconds() > SHAKE_MILLIS) {
+            flowerServo.setPosition(POS_DOWN);
             state = State.SHAKE_LOW;
 
             shakeTimer.reset();
-        } else if (state == State.SHAKE_LOW && shakeTimer.milliseconds() > Tunables.shakeMillis) {
+        } else if (state == State.SHAKE_LOW && shakeTimer.milliseconds() > SHAKE_MILLIS) {
             flowerServo.setPosition(shakeHighPosition());
             state = State.SHAKE_HIGH;
 
@@ -67,14 +71,13 @@ public class Flower {
         }
     }
 
-    /** servo position of the far end of the shake; {@link Tunables#flowerShake} is a servo position, not a time **/
     private static double shakeHighPosition() {
-        return Tunables.flowerDown - (Tunables.flowerShake);
+        return POS_DOWN - (SHAKE_AMOUNT);
     }
 
     public void goDown() {
         if (state != Flower.State.DOWN) {
-            flowerServo.setPosition(Tunables.flowerDown);
+            flowerServo.setPosition(POS_DOWN);
             state = Flower.State.DOWN;
         }
     }

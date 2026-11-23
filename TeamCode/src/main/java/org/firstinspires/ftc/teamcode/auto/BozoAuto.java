@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.auto;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
@@ -12,7 +13,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.HandoffState;
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
@@ -35,7 +35,24 @@ import java.util.concurrent.TimeUnit;
  *     still not       -> CASE2B: original shoot pose, shoot, scoring flower, park
  * </pre>
  */
+
+@Configurable
 public abstract class BozoAuto extends OpMode {
+    /** configurables **/
+
+    public static boolean IS_DEBUGGING = false;
+    public static double FLOWER_DISTANCE = 13.500; // how far from the edge of the field where the flower is should we refuel
+    public static double TAG_THRESHOLD = 2; // amount of tags we need at least
+    public static double SHOOT_RPM = 3100; // target flywheel RPM while lined up to shoot
+    public static double FLYWHEEL_RPM_MARGIN = 75; // how close to shootRPM we must be before feeding balls
+    public static long FLOWER_REFUEL_DURATION_MILLIS = 625; // how long to intake while driving through the refuel line
+    public static long REFUEL_DURATION_MILLIS = 150; // how long to intake while driving through the refuel line
+    public static double FLOWER_INTAKE_SPEED = 0.3; // 0-1 speed to intake flower (lower=slower)
+    public static double MAX_TRAVEL_TO_REFUEL_TIME = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
+    public static double CROSS_FIELD_HOLD_UNTIL = 0.8; // fraction (0-1] of a cross-field path spent holding 90/270 heading before turning to the final heading; read when paths are built at init
+    public static double FLOWER_APPROACH_SPEED = .25;
+
+    /** end configurables **/
     protected AutoConfig config;
     protected abstract AutoConfig buildConfig();
 
@@ -52,9 +69,8 @@ public abstract class BozoAuto extends OpMode {
     /** RPM we are currently commanding the flywheel to hold; 0 means the flywheel is off **/
     private double targetRPM = 0;
 
-    /** true once the flywheel is within {@link Tunables#flywheelRPMMargin} of a nonzero target RPM **/
     private boolean isFlywheelWithinMargin() {
-        return targetRPM > 0 && Math.abs(robot.flywheel.getRPM() - targetRPM) <= Tunables.flywheelRPMMargin;
+        return targetRPM > 0 && Math.abs(robot.flywheel.getRPM() - targetRPM) <= FLYWHEEL_RPM_MARGIN;
     }
 
     /**
@@ -181,7 +197,7 @@ public abstract class BozoAuto extends OpMode {
 
     /**
      * Heading override for a path that crosses the field midline: face 90 deg (+y) when driving toward +y, 270 deg
-     * (-y) when driving toward -y, hold it until {@link Tunables#crossFieldHoldUntil}, then turn to {@code to}'s heading.
+     * (-y) when driving toward -y, hold it until {@link CROSS_FIELD_HOLD_UNTIL}, then turn to {@code to}'s heading.
      * Red audience->scoring is +y so 90; Blue is the point reflection so its audience->scoring is -y so 270, which
      * matches the mirror rule with no per-alliance code.
      * Precondition: {@code from.y() != to.y()}.
@@ -190,7 +206,7 @@ public abstract class BozoAuto extends OpMode {
         double hold = Math.toRadians(to.y() > from.y() ? 90 : 270);
         Pose holdPose = new Pose(from.x(), from.y(), hold);
         return path.heading(Interpolator.piecewise()
-                .until(Tunables.crossFieldHoldUntil, Interpolator.constant(holdPose))
+                .until(CROSS_FIELD_HOLD_UNTIL, Interpolator.constant(holdPose))
                 .until(1.0, Interpolator.linear(holdPose, to)));
     }
 
@@ -200,7 +216,7 @@ public abstract class BozoAuto extends OpMode {
     }
 
     private static Path creepLine(Pose from, Pose to) {
-        return plainLine(from, to).with(Constants.foresightConfig.maxPathSpeed.at(Tunables.flowerApproachSpeed));
+        return plainLine(from, to).with(Constants.foresightConfig.maxPathSpeed.at(FLOWER_APPROACH_SPEED));
     }
 
     /**
@@ -216,7 +232,7 @@ public abstract class BozoAuto extends OpMode {
                         .until(REFUEL_ROTATE_START, Interpolator.constant(config.intermediatePose))
                         .until(1.0, Interpolator.linear(config.intermediatePose, config.refuelPose)))
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(Tunables.flowerIntakeSpeed)
+                        Constants.foresightConfig.maxPathSpeed.at(FLOWER_INTAKE_SPEED)
                 );
         refuelToShootPath = plainLine(config.refuelPose, shootPose);
 
@@ -230,7 +246,7 @@ public abstract class BozoAuto extends OpMode {
         scoringFlowerIntermediateToScoringFlowerPath = creepLine(config.scoringFlowerIntermediatePose, config.scoringFlowerPose);
         scoringFlowerToScoringFlowerIntermediatePath = plainLine(config.scoringFlowerPose, config.scoringFlowerIntermediatePose)
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(Tunables.flowerIntakeSpeed)
+                        Constants.foresightConfig.maxPathSpeed.at(FLOWER_INTAKE_SPEED)
                 );;
         scoringFlowerIntermediateToTippedShootPath = plainLine(config.scoringFlowerIntermediatePose, config.tippedShootPose);
         // audience flower: like the scoring flower but the full-speed approach is a curve (1 control point); then on to the checkpoint
@@ -240,7 +256,7 @@ public abstract class BozoAuto extends OpMode {
         audienceFlowerIntermediateToAudienceFlowerPath = creepLine(config.audienceFlowerIntermediatePose, config.audienceFlowerPose);
         audienceFlowerToAudienceFlowerIntermediatePath = plainLine(config.audienceFlowerPose, config.audienceFlowerIntermediatePose)
                 .with(
-                        Constants.foresightConfig.maxPathSpeed.at(Tunables.flowerIntakeSpeed)
+                        Constants.foresightConfig.maxPathSpeed.at(FLOWER_INTAKE_SPEED)
                 );;
         audienceFlowerIntermediateToAudienceCheckpointPath = plainLine(config.audienceFlowerIntermediatePose, config.audienceCheckpointPose);
         // CASE1A: audienceCheckpoint -> ORIGINAL shoot pose (plain line, shared with CASE2B) -> park (curve, 1 control point)
@@ -268,14 +284,14 @@ public abstract class BozoAuto extends OpMode {
                 .linear(config.scoringFlowerIntermediatePose, config.parkPose);
     }
 
-    /** @return true once a path has finished, or {@link Tunables#maxTravelToRefuelTime} passed (stuck on a ball). **/
+    /** @return true once a path has finished, or {@link MAX_TRAVEL_TO_REFUEL_TIME} passed (stuck on a ball). **/
     private boolean finishedCreepingIntoFlower() {
-        return !follower.isBusy() || stateTimer.milliseconds() >= Tunables.maxTravelToRefuelTime;
+        return !follower.isBusy() || stateTimer.milliseconds() >= MAX_TRAVEL_TO_REFUEL_TIME;
     }
 
-    /** @return true once we have sat on a flower with the intake running for {@link Tunables#flowerRefuelDurationMillis}. **/
+    /** @return true once we have sat on a flower with the intake running for {@link FLOWER_REFUEL_DURATION_MILLIS}. **/
     private boolean finishedCollecting() {
-        return stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.flowerRefuelDurationMillis;
+        return stateTimer.get(TimeUnit.MILLISECONDS) >= FLOWER_REFUEL_DURATION_MILLIS;
     }
 
     /** Starts driving {@code path} and switches to {@code next}; the one place a state change starts a path. **/
@@ -314,7 +330,7 @@ public abstract class BozoAuto extends OpMode {
                 }
                 break;
             case REFUEL:
-                if (stateTimer.get(TimeUnit.MILLISECONDS) >= Tunables.refuelDurationMillis) {
+                if (stateTimer.get(TimeUnit.MILLISECONDS) >= REFUEL_DURATION_MILLIS) {
                     driveThen(refuelToShootPath, State.TRAVEL_TO_SHOOT);
                 }
                 break;
@@ -322,7 +338,7 @@ public abstract class BozoAuto extends OpMode {
                 if (!follower.isBusy()) {
                     robot.flower.goDown();
                     // Limelight sees the tags => the hive did NOT flip => CASE2; otherwise it tipped => CASE1
-                    if (Vision.limelight.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold) {
+                    if (Vision.limelight.getLatestResult().getBotposeTagCount() > TAG_THRESHOLD) {
                         setState(State.CASE2_SPEED_UP_SHOOT_2); // already at the shoot pose, no travel
                     } else {
                         driveThen(shootToTippedShootPath, State.CASE1_TRAVEL_TO_SHOOT_2);
@@ -417,7 +433,7 @@ public abstract class BozoAuto extends OpMode {
                     }
                     */
 
-                    if (Vision.limelight.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
+                    if (Vision.limelight.getLatestResult().getBotposeTagCount() > TAG_THRESHOLD) driveThen(audienceCheckpointToShootPath, State.CASE1A_TRAVEL_TO_SHOOT_4);
                     else driveThen(audienceCheckpointToTippedShootPath, State.CASE1B_TRAVEL_TO_SHOOT_4);
                 }
                 break;
@@ -504,7 +520,7 @@ public abstract class BozoAuto extends OpMode {
                     }
                     */
 
-                    if (Vision.limelight.getLatestResult().getBotposeTagCount() < Tunables.tagThreshold) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
+                    if (Vision.limelight.getLatestResult().getBotposeTagCount() < TAG_THRESHOLD) driveThen(audienceCheckpointToTippedShootPath, State.CASE2A_TRAVEL_TO_SHOOT_3);
                     else driveThen(audienceCheckpointToShootPath, State.CASE2B_TRAVEL_TO_SHOOT_3);
                 }
                 break;
@@ -637,7 +653,7 @@ public abstract class BozoAuto extends OpMode {
             setState(State.SHIT);
         }
 
-        if (Tunables.isDebugging) {
+        if (IS_DEBUGGING) {
             sendTelemetry(false);
         }
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
@@ -676,7 +692,7 @@ public abstract class BozoAuto extends OpMode {
 
     @Override
     public void start() {
-        targetRPM = Tunables.shootRPM; // begin spinning up immediately
+        targetRPM = SHOOT_RPM; // begin spinning up immediately
         telemetryTimer.reset();
         loopTimer.reset(); // so the first loop() doesn't report init time as loop time
         autoTimer.reset();

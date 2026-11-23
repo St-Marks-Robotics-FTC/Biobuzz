@@ -1,15 +1,26 @@
 package org.firstinspires.ftc.teamcode.subsys.launch;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
 
+@Configurable
 public class Intake {
-    private static final double PRIORITY_MULTIPLIER = 1;
+    /** configurables **/
+
+    public static double PRIORITY_MULTIPLIER = 1;
+    public static boolean USE_POWER_SAVE = true;
+    public static int POWER_SAVE_WAIT_INTERVAL = 30; // how often to check for a stalled intake while running
+    public static int POWER_SAVE_CHECK_INTERVAL = 30; // how often to update intake power/velocity check in millis
+    public static double POWER_SAVE_TRIGGER_AMPS = 6; // if we are drawing more amps than this, trigger power save
+    public static double POWER_SAVE_TRIGGER_VELOCITY = 0; // if we have a tps less than this, trigger power save
+    public static double HOLD_POWER = 0.0; // minimum power for balls to not fall out of intake
+
+    /** end configurables **/
 
     public enum State {
         OFF, // intake completely unpowered
@@ -29,7 +40,7 @@ public class Intake {
     private Timer powerSaveWaitTimer;
     private Timer powerSaveCheckTimer;
     private PowerSaveTrigger powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
-    double lastIntakeHoldPower = Tunables.intakeHoldPower;
+    double lastIntakeHoldPower = HOLD_POWER;
 
     private SMotor motor; // writes go through the scheduler, reads go straight to motor.m
 
@@ -52,8 +63,8 @@ public class Intake {
                 break;
             case FORWARD:
                 forward();
-                if (Tunables.intakeUsePowerSave && !overridePowerSave) {
-                    if (powerSaveCheckTimer.milliseconds() >= Tunables.intakePowerSaveCheckInterval) {
+                if (USE_POWER_SAVE && !overridePowerSave) {
+                    if (powerSaveCheckTimer.milliseconds() >= POWER_SAVE_CHECK_INTERVAL) {
                         // now we check which of our power save triggers hit
                         // we should ideally do this in order of what reads are the quickest / most accurate
                         if (isCurrentTrigger()) {
@@ -75,16 +86,16 @@ public class Intake {
                 break;
             case POWER_SAVE:
                 // waiting with intake off and then after a while going back to on
-                if (powerSaveWaitTimer.milliseconds() >= Tunables.intakePowerSaveWaitInterval || overridePowerSave) {
+                if (powerSaveWaitTimer.milliseconds() >= POWER_SAVE_WAIT_INTERVAL || overridePowerSave) {
                     // we've waiting long enough, turn intake back on
                     forward();
                 }
                 break;
             case HOLD:
                 hold();
-                if (Tunables.intakeHoldPower != lastIntakeHoldPower) {
-                    motor.setPower(Tunables.intakeHoldPower);
-                    lastIntakeHoldPower = Tunables.intakeHoldPower;
+                if (HOLD_POWER != lastIntakeHoldPower) {
+                    motor.setPower(HOLD_POWER);
+                    lastIntakeHoldPower = HOLD_POWER;
                 }
                 break;
             case REVERSE:
@@ -121,7 +132,7 @@ public class Intake {
 
     public void hold() {
         if (state != State.HOLD) {
-            motor.setPower(Tunables.intakeHoldPower);
+            motor.setPower(HOLD_POWER);
             state = State.HOLD;
         }
     }
@@ -142,15 +153,15 @@ public class Intake {
     }
 
     public boolean isCurrentTrigger() { // whether our current amps is over our trigger amps
-        return getCurrent() >= Tunables.intakePowerSaveTriggerAmps;
+        return getCurrent() >= POWER_SAVE_TRIGGER_AMPS;
     }
     public boolean isVelocityTrigger() { // whether our current velocity is under our trigger velocity
-        return getVelocity() <= Tunables.intakePowerSaveTriggerVelocity;
+        return getVelocity() <= POWER_SAVE_TRIGGER_VELOCITY;
     }
     private void enablePowerSave() {
         state = State.POWER_SAVE;
         powerSaveWaitTimer.reset();
-        motor.setPower(Tunables.intakeHoldPower); // save power
+        motor.setPower(HOLD_POWER); // save power
     }
 
     /** getter methods **/

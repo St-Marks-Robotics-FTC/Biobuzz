@@ -10,6 +10,12 @@ import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
 
 public class Light {
+    /** configurables **/
+
+    public static double PRIORITY_MULTIPLIER = 0.5;
+
+    /** end configurables **/
+
     // from: https://www.gobilda.com/rgb-indicator-light-pwm-controlled/
     double OFF = 0.0;
     double RED = 0.279;
@@ -23,7 +29,7 @@ public class Light {
     private SServo light;
 
     public Light(HWScheduler hwScheduler) {
-        light = new SServo("light", 0.5, hwScheduler.hw());
+        light = new SServo("light", PRIORITY_MULTIPLIER, hwScheduler.hw());
         hwScheduler.addDevice(light);
 
         off(); // start with light off

@@ -2,11 +2,16 @@ package org.firstinspires.ftc.teamcode.subsys.launch;
 
 import com.pedropathing.utils.Timer;
 
-import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 
 public class Launch {
+    /** configurables **/
+
+    public static double INTAKE_STOP_TIME = 80; // time to wait for intake to stop before opening transfer
+    public static double TRANSFER_OPENING_TIME = 150;
+    public static double SHOOTING_TIME = 650;
+
+    /** end configurables **/
 
     private enum LaunchState {
         LOCKED,
@@ -45,7 +50,7 @@ public class Launch {
                 intake.off();
                 launchState = LaunchState.STOPPING_INTAKE;
             case STOPPING_INTAKE:
-                if (launchTimer.milliseconds() >= Tunables.launchIntakeStopTime) {
+                if (launchTimer.milliseconds() >= INTAKE_STOP_TIME) {
                     // we've waited for intake to slow down so we can now open transfer without killing the servo
                     transfer.open();
                     launchState = LaunchState.OPENING_TRANSFER;
@@ -53,7 +58,7 @@ public class Launch {
                 }
                 break;
             case OPENING_TRANSFER:
-                if (launchTimer.milliseconds() >= Tunables.launchTransferOpeningTime) {
+                if (launchTimer.milliseconds() >= TRANSFER_OPENING_TIME) {
                     // we've waited for transfer to open so we can now start our intake at launching power
                     intake.forward();
                     launchState = LaunchState.SHOOTING;
@@ -61,7 +66,7 @@ public class Launch {
                 }
                 break;
             case SHOOTING:
-                if (launchTimer.milliseconds() >= Tunables.launchShootingTime) {
+                if (launchTimer.milliseconds() >= SHOOTING_TIME) {
                     // we've waited for all the balls to come through
                     stopLaunch();
                 }

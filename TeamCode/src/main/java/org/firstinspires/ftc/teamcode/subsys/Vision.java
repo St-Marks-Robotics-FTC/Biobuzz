@@ -10,6 +10,7 @@
 
 package org.firstinspires.ftc.teamcode.subsys;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -20,11 +21,36 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.teamcode.Tunables;
 
 import java.util.Arrays;
 
+@Configurable
 public class Vision {
+    /** configurables **/
+
+    // HIVE correction; fit with limelight/fit_hive.py (h, pivot_y, z_offset, z_per_dist)
+    public static double HIVE_PIVOT_HEIGHT= 43.95; // in
+    public static double HIVE_PIVOT_Y = 72; // in, pedro y
+    public static double Z_OFFSET = 0; // in, subtracted from raw z
+    public static double Z_PER_DIST = 0; // in/in of avg tag distance, subtracted from raw z
+
+    // camera offset
+    public static double CAMERA_ERROR_FORWARD = 0.446;
+    public static double CAMERA_ERROR_LEFT = -4.165;
+    public static double BLUE_BIAS_X = -4.001;
+    public static double BLUE_BIAS_Y = -0.267;
+    public static double RED_BIAS_X = -1.392;
+    public static double RED_BIAS_Y = 0.006;
+
+    public static double MIN_GOAL_DIST = 35; // in, ignore vision closer than this to the hive
+    public static double MAX_Z_SENSITIVITY = 1.4; // reject if hive math amplifies z error this much
+    public static double SENSITIVITY_REF = 1.2; // sensitivity above this inflates std dev
+    public static double JUMP_MAX = 8; // in, reject frames this far from the 9-frame median
+
+    public static int MIN_TAG_COUNT = 2; // minimum amount of tags seen in a frame necessary to update our botpose
+
+    /** end configurables **/
+
     private static final double HIVE_MAX_TILT = Math.toRadians(35); // tilt past this is impossible
     private static final double HIVE_CENTER_X = 72; // hive center, pedro x
     private static final double METERS_TO_INCHES = 39.3701;
@@ -155,12 +181,12 @@ public class Vision {
         lastRawFrameStamp = result.getControlHubTimeStamp();
 
         double avgTagDistance = result.getBotposeAvgDist() * METERS_TO_INCHES;
-        double pivotHeight = Tunables.visionHivePivotHeight;
+        double pivotHeight = HIVE_PIVOT_HEIGHT;
 
         double x = botpose.x;
-        double z = botpose.z - Tunables.visionZOffset - Tunables.visionZPerDist * avgTagDistance;
+        double z = botpose.z - Z_OFFSET - Z_PER_DIST * avgTagDistance;
 
-        double relativeY = botpose.y - Tunables.visionHivePivotY;
+        double relativeY = botpose.y - HIVE_PIVOT_Y;
         double relativeZ = z - pivotHeight;
 
         double dToHive = Math.sqrt(Math.pow(relativeY, 2) + Math.pow(relativeZ, 2));
@@ -186,7 +212,7 @@ public class Vision {
 
         if (trueRelativeY == 0) return; // directly under the pivot; the std dev math below would divide by zero
 
-        double realY = Tunables.visionHivePivotY + trueRelativeY;
+        double realY = HIVE_PIVOT_Y + trueRelativeY;
 
         // limelight heading, same frame as the pose, in pedro convention
         double heading = AngleUnit.normalizeRadians(rawPose.getOrientation().getYaw(AngleUnit.RADIANS) - Math.PI / 2);
@@ -195,11 +221,11 @@ public class Vision {
         double cos = Math.cos(heading);
         double sin = Math.sin(heading);
 
-        double forward = Tunables.visionCameraErrorForward;
-        double left = Tunables.visionCameraErrorLeft;
+        double forward = CAMERA_ERROR_FORWARD;
+        double left = CAMERA_ERROR_LEFT;
 
-        double biasX = isBlueTeam ? Tunables.visionBlueBiasX : Tunables.visionRedBiasX;
-        double biasY = isBlueTeam ? Tunables.visionBlueBiasY : Tunables.visionRedBiasY;
+        double biasX = isBlueTeam ? BLUE_BIAS_X : RED_BIAS_X;
+        double biasY = isBlueTeam ? BLUE_BIAS_Y: RED_BIAS_Y;
 
         double correctedX = x - (forward * cos - left * sin + biasX); //Equation claude came up with
         double correctedY = realY - (forward * sin + left * cos + biasY);
@@ -210,18 +236,18 @@ public class Vision {
 
         // hive math multiplies z error by this: high means unusable => bad data
         double zSensitivity = Math.abs(relativeZ / trueRelativeY);
-        if (zSensitivity > Tunables.visionMaxZSensitivity) return;
+        if (zSensitivity > MAX_Z_SENSITIVITY) return;
 
         // too close to the hive, position error makes robot teleport
-        double goalDist = Math.hypot(correctedX - HIVE_CENTER_X, correctedY - Tunables.visionHivePivotY);
+        double goalDist = Math.hypot(correctedX - HIVE_CENTER_X, correctedY - HIVE_PIVOT_Y);
 
-        if (goalDist < Tunables.visionMinGoalDist) return;
+        if (goalDist < MIN_GOAL_DIST) return;
 
         if (isJump(correctedX, correctedY)) return; // far from recent frames
 
         double[] stdDev = getPedroStdDev(result, relativeY, relativeZ, trueRelativeY);
         int bin = goalDist < DIST_EDGES[0] ? 0 : goalDist < DIST_EDGES[1] ? 1 : 2;
-        double inflate = Math.max(1, zSensitivity / Tunables.visionSensitivityRef); // trust shaky z less
+        double inflate = Math.max(1, zSensitivity / SENSITIVITY_REF); // trust shaky z less
         stdDev[0] = Math.max(stdDev[0], SIGMA_X[bin]);
         stdDev[1] = Math.max(stdDev[1], SIGMA_Y[bin] * inflate);
 
@@ -231,7 +257,7 @@ public class Vision {
     // true if frame is far from the rolling median; always records the frame
     private boolean isJump(double x, double y) {
         boolean jump = recentCount >= JUMP_MIN_FRAMES
-                && Math.hypot(x - median(recentX), y - median(recentY)) > Tunables.visionJumpMax;
+                && Math.hypot(x - median(recentX), y - median(recentY)) > JUMP_MAX;
 
         recentX[recentNext] = x;
         recentY[recentNext] = y;
@@ -285,7 +311,7 @@ public class Vision {
 
         lastTagCount = result.getBotposeTagCount();
 
-        return result.isValid() && lastTagCount >= Tunables.minTagCount;
+        return result.isValid() && lastTagCount >= MIN_TAG_COUNT;
     }
 
 

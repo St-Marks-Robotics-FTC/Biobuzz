@@ -2,14 +2,23 @@
 
 package org.firstinspires.ftc.teamcode.hwScheduler;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.Tunables;
-
 import java.util.ArrayList;
 
+@Configurable
 public class HWScheduler {
+    /** configurables **/
+
+    public static long TELE_TARGET_LOOP_LENGTH = 20; // target loop length in ms
+    public static long AUTO_TARGET_LOOP_LENGTH = 25; // autos generally have longer loops
+
+    public static double STALENESS_REDUCTION = 1; // how important staleness is. higher values are less important
+    public static boolean SOFT_SCHEDULING = true; // if true (or isDebugging is true): update device once max staleness has been exceeded
+
+    /** end configurables **/
     private HardwareMap hardwareMap;
     private ArrayList<Device> deviceList = new ArrayList<>();
     private Timer updateTimer;
@@ -48,13 +57,13 @@ public class HWScheduler {
 
         // snapshot priority, staleness and score for every device (also resets isUpdated)
         for (Device device : deviceList) {
-            device.refresh(Tunables.stalenessReduction);
+            device.refresh(STALENESS_REDUCTION);
         }
 
         // sort device list by score, highest first
         deviceList.sort((d1, d2) -> Double.compare(d2.score, d1.score));
 
-        if (Tunables.softScheduling || isAuto) { // force soft scheduling in auto to increase consistency
+        if (SOFT_SCHEDULING || isAuto) { // force soft scheduling in auto to increase consistency
             // first update any devices that are past their max stale time
             // this ignores our time budget - otherwise a slow loop would let devices go stale forever
             for (Device device : deviceList) {
@@ -68,9 +77,9 @@ public class HWScheduler {
         for (Device device : deviceList) {
             long target; // target loop length
             if (isAuto) {
-                target = Tunables.autoTargetLoopLength * 1000000; // convert millis to nanoseconds
+                target = AUTO_TARGET_LOOP_LENGTH * 1000000; // convert millis to nanoseconds
             } else {
-                target = Tunables.teleTargetLoopLength * 1000000; // convert millis to nanoseconds
+                target = TELE_TARGET_LOOP_LENGTH * 1000000; // convert millis to nanoseconds
             }
 
             long remainingLoopTime = target - elapsedTime - updateTimer.nanoseconds();

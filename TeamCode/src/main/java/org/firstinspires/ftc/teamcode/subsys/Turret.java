@@ -8,13 +8,17 @@ import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
 
 @Configurable
 public class Turret {
+    /** configurables **/
+
     // servo amounts
-    public static double servoMaxLeft = 0;
-    public static double servoMaxRight = 0;
+    public static double SERVO_MAX_LEFT = 0;
+    public static double SERVO_MAX_RIGHT  = 0;
 
     // turret angles (radians)
-    public static double turretMaxLeft = 0;
-    public static double turretMaxRight = 0;
+    public static double TURRET_MAX_LEFT = 0;
+    public static double TURRET_MAX_RIGHT = 0;
+
+    /** end configurables **/
 
     private SServo servo;
     private double lastAngle;
@@ -27,7 +31,7 @@ public class Turret {
     }
 
     public void updateAngle(double angle) {
-        double pos = Range.scale(angle , turretMaxRight, turretMaxLeft, servoMaxRight, servoMaxLeft);
+        double pos = Range.scale(angle , TURRET_MAX_RIGHT, TURRET_MAX_LEFT, SERVO_MAX_RIGHT, SERVO_MAX_LEFT);
 
         servo.setPosition(pos);
 

@@ -2,15 +2,22 @@
 
 package org.firstinspires.ftc.teamcode.subsys;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
 
+@Configurable
 public class Drive {
-    private static final double PRIORITY_MULTIPLIER = 1;
+    /** configurables **/
+
+    public static double PRIORITY_MULTIPLIER = 1;
+    public static boolean USE_BRAKE = false;
+
+    /** end configurables **/
+
 
     private SMotor frontLeft, frontRight, backLeft, backRight;
 
@@ -26,7 +33,7 @@ public class Drive {
         backRight.m.setDirection(DcMotorEx.Direction.FORWARD);
 
         for (SMotor motor : new SMotor[]{frontLeft, frontRight, backLeft, backRight}) {
-            if (Tunables.teleBrake) {
+            if (USE_BRAKE) {
                 motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
             } else {
                 motor.m.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
