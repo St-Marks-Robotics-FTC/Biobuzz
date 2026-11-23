@@ -55,7 +55,7 @@ public final class RobotSteps {
 
     /** true if the Limelight sees more than {@link BozoAuto#TAG_THRESHOLD} tags, i.e. the hive is NOT tipped. **/
     public boolean hiveTagsVisible() {
-        return ctx.vision.getLatestResult().getBotposeTagCount() > Tunables.tagThreshold;
+        return ctx.vision.getLatestResult().getBotposeTagCount() > BozoAuto.TAG_THRESHOLD;
     }
 
     // ======================================================================== macros

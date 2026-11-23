@@ -25,17 +25,17 @@ public final class AutoPaths {
         public final String name;
         public final Pose intermediatePose;
         public final Pose flowerPose;
-        /** intermediate pose -> flower at {@link Tunables#flowerApproachSpeed} **/
+        /** intermediate pose -> flower at {@link BozoAuto#FLOWER_APPROACH_SPEED} **/
         public final Path creepIn;
-        /** flower -> intermediate pose at {@link Tunables#flowerIntakeSpeed} **/
+        /** flower -> intermediate pose at {@link BozoAuto#FLOWER_INTAKE_SPEED} **/
         public final Path backOut;
 
         FlowerSite(String name, Pose intermediatePose, Pose flowerPose) {
             this.name = name;
             this.intermediatePose = intermediatePose;
             this.flowerPose = flowerPose;
-            this.creepIn = limitSpeed(plainLine(intermediatePose, flowerPose), Tunables.flowerApproachSpeed);
-            this.backOut = limitSpeed(plainLine(flowerPose, intermediatePose), Tunables.flowerIntakeSpeed);
+            this.creepIn = limitSpeed(plainLine(intermediatePose, flowerPose), BozoAuto.FLOWER_APPROACH_SPEED);
+            this.backOut = limitSpeed(plainLine(flowerPose, intermediatePose), BozoAuto.FLOWER_INTAKE_SPEED);
         }
     }
 
@@ -119,16 +119,16 @@ public final class AutoPaths {
         return path.with(Constants.foresightConfig.maxPathSpeed.at(speed));
     }
 
-    /** Holds 90 deg (driving +y) or 270 deg (-y) until {@link Tunables#crossFieldHoldUntil}, then turns to {@code to}. Needs from.y != to.y. **/
+    /** Holds 90 deg (driving +y) or 270 deg (-y) until {@link BozoAuto#CROSS_FIELD_HOLD_UNTIL}, then turns to {@code to}. Needs from.y != to.y. **/
     private static Path crossFieldHeading(Path path, Pose from, Pose to) {
         Pose startingHeading = new Pose(from.x(), from.y(), from.heading());
 
         double hold = Math.toRadians(to.y() > from.y() ? 90 : 270); // TEMP: we go backwards to avoid picking up nectar
         Pose holdPose = new Pose(from.x(), from.y(), hold);
         return path.heading(Interpolator.piecewise()
-                .until(Tunables.crossFieldHoldFrom, Interpolator.constant(startingHeading))
-                .until(Tunables.crossFieldHoldUntil, Interpolator.linear(startingHeading, holdPose))
-                .until(Tunables.crossFieldHoldUntil, Interpolator.constant(holdPose))
+                .until(BozoAuto.CROSS_FIELD_HOLD_FROM, Interpolator.constant(startingHeading))
+                .until(BozoAuto.CROSS_FIELD_HOLD_UNTIL, Interpolator.linear(startingHeading, holdPose))
+                .until(BozoAuto.CROSS_FIELD_HOLD_UNTIL, Interpolator.constant(holdPose))
                 .until(1.0, Interpolator.linear(holdPose, to)));
     }
 }
