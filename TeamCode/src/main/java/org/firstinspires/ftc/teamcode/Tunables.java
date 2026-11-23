@@ -37,8 +37,8 @@ public class Tunables {
     /** flywheel tunables (used in Flywheel.java) **/
 
     public static double flywheelP = 0.0;
-    public static double flywheelS = 0.0;
-    public static double flywheelV = 0.0;
+    public static double flywheelS = 0.033; // static friction
+    public static double flywheelV = 0.000184399; // dynamic friction
 
     /** intake tunables (used in Intake.java) **/
 
@@ -167,5 +167,5 @@ public class Tunables {
     public static boolean softScheduling = true; // if true (or isDebugging is true): update device once max staleness has been exceeded
 
     /** prescience tunables (used in Prescience.java) **/
-    public static double calibrationVoltage = 13.0; // voltage that prescience was tuned at
+    public static double calibrationVoltage = 12.4; // voltage that prescience was tuned at
 }

@@ -23,7 +23,7 @@ public class FlywheelTuner extends LinearOpMode {
 
     private static final double MAX_SET_RPM = 6000;
     private static final double CALIBRATION_STEP = 0.1;
-    private static final double CALIBRATION_SETTLE_MILLIS = 5000; // amount of time to wait for RPM to settle
+    private static final double CALIBRATION_SETTLE_MILLIS = 9000; // amount of time to wait for RPM to settle
 
     @Override
     public void runOpMode() {
@@ -58,7 +58,7 @@ public class FlywheelTuner extends LinearOpMode {
                 // start calibration
                 mode = mode3;
                 calibrationSettleTimer.reset();
-                calibrationPower = 0;
+                calibrationPower = CALIBRATION_STEP;
                 calibrationString = "";
             }
 
@@ -81,16 +81,21 @@ public class FlywheelTuner extends LinearOpMode {
                     telemetryM.addData("desired flywheel TPS", robot.flywheel.RPMToTPS(desiredFlywheelRPM));
                     break;
                 case CALIBRATION:
-                    robot.flywheel.powerUpdate(calibrationPower);
+                    if (calibrationPower <= 1.0) {
+                        robot.flywheel.powerUpdate(calibrationPower);
 
-                    if (calibrationSettleTimer.milliseconds() > CALIBRATION_SETTLE_MILLIS) {
-                        // next step
-                        calibrationString = calibrationString + calibrationPower + ", " + robot.flywheel.getRPM() + "\n";
-                        calibrationPower += CALIBRATION_STEP;
-                        calibrationSettleTimer.reset();
+                        if (calibrationSettleTimer.milliseconds() > CALIBRATION_SETTLE_MILLIS) {
+                            // next step
+                            calibrationString = calibrationString + robot.flywheel.getRPM() + ", " + calibrationPower + "\n";
+                            calibrationPower += CALIBRATION_STEP;
+                            calibrationSettleTimer.reset();
+                        }
+                    } else {
+                        // end calibration
+                        robot.flywheel.powerUpdate(0);
                     }
 
-                    telemetryM.addLine("calibration info (power, RPM)");
+                    telemetryM.addLine("calibration info (RPM, power):");
                     telemetryM.addLine(calibrationString);
 
                     break;
