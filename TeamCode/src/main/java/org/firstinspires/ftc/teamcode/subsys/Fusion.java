@@ -6,7 +6,7 @@
  *
  *   PREDICT (every loop, using TeleOp odometry):
  *     x = x + odometryDelta
- *     P = P + Q          Q grows with distance driven
+ *     P = P + Q grows with distance driven
  *
  *   UPDATE (new vision frame):
  *     K = P / (P + R)    R is the vision uncertainty for this frame
