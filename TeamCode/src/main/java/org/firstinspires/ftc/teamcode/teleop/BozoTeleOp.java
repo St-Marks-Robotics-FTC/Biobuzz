@@ -109,18 +109,18 @@ public abstract class BozoTeleOp extends OpMode {
                 if (previousNanoTime != 0L) deltaTime = (nanoTime - previousNanoTime) / 1e9;
                 previousNanoTime = nanoTime;
                 Pose turnPose = new Pose(follower.pose().x(), follower.pose().y(), lastScoringData.angle());
-                DrivePowers pedroPowers = follower.algorithm().calculateHold(follower.drivetrain, turnPose, follower.localizer.state(), false, deltaTime);
+                DrivePowers pedroPowers = follower.algorithm().calculateHold(follower.drivetrain, turnPose, follower.localizer.state(), true, deltaTime);
                 turn = pedroPowers.turn();
             }
 
             if (isRobotCentric) { // robot-centric control
-                drive.drive(forward, strafe, turn, slowModeMultiplier); // FIXME
+                drive.drive(forward, strafe, turn, slowModeMultiplier);
             } else { // field-centric control
                 double flipControl;
                 if (isBlueTeam()) flipControl = -1; // blue team needs to be flipped
                 else flipControl = 1; // red team doesn't need to be flipped
 
-                drive.driveFieldCentric(forward * flipControl, strafe * flipControl, turn, follower.pose().heading(), slowModeMultiplier); // FIXME
+                drive.driveFieldCentric(forward * flipControl, strafe * flipControl, turn, follower.pose().heading(), slowModeMultiplier);
             }
         } else {
             // we're holding so do nothing with drivetrain
