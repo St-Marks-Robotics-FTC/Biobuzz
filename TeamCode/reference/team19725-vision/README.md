@@ -115,8 +115,10 @@ T_rot(phi) = [ R_y(phi)   (I - R_y(phi)) * p0 ]
 ```
 
 which expands to translation `(-h sin(phi), 0, h (1 - cos(phi)))`. In the code the pivot
-axis is Y; **Biobuzz's hinge is a different axis** (see section 5.2), so do not reuse the
-literal matrix.
+axis is Y of the Limelight/FTC frame. **Biobuzz's hinge is the same physical line**: Biobuzz
+converts `y_pedro = 72 - x_ll` and `x_pedro = y_ll + 72`, so a hinge at `x_ll = 0`, parallel to
+`y_ll`, is Pedro's `y = visionHivePivotY = 72`, parallel to Pedro X. Only the axis names
+change; the matrix is the same one.
 
 The code recovers `phi` from the physical constraint that the robot is on the floor
 (`z = 0`). Writing `A = x'`, `B = z' - h`, `C = -h`, the constraint is
@@ -203,9 +205,10 @@ Implementation details worth noticing:
 - The coordinate conversion `x = y_ll + 72`, `y = 72 - x_ll` is exactly the 2D rotation
   `R(-90 deg)` plus translation `(72, 72)`, and `heading = yaw_ll - pi/2`. It is currently
   written as four scalar expressions.
-- The HIVE correction assumes the hinge axis is parallel to field X: it reconstructs only
-  `y` from the pivot geometry and deliberately leaves `x` and `yaw` alone. That is correct
-  only if the axis is exactly X-aligned and the robot is level.
+- The HIVE correction uses the same hinge as 19725 (parallel to Pedro X): it rebuilds `y`
+  from the pivot geometry and leaves `x` alone. Leaving `x` alone is exactly right for an
+  exact hinge, because a rotation about a line cannot change a point's coordinate along that
+  line (19725 also does `correctedYIn = rawYIn`). What it does **not** do is correct yaw.
 - `new VisionResult(...)` stores `new Pose(x, newY)` (raw x) even though the HIVE-corrected
   y is used. Any change to the correction must keep that contract explicit.
 - `Fusion` computes `visionHeading` but never uses it; `getPose()` returns the Pinpoint
@@ -246,10 +249,11 @@ The upper-left 2x2 block is `R(-pi/2)`, so the heading becomes
 Keeping it as a matrix makes the red/blue mirror and any future 90-degree field
 rotation a composition, not a new set of scalar signs.
 
-**HIVE hinge correction for Biobuzz.** The current code corrects `y` in the
-`y-z` plane and leaves `x` and `yaw` alone, which is the special case of an axis
-parallel to field X through `(0, pivotY, pivotHeight)`. The general transform for
-that axis is
+**HIVE hinge correction for Biobuzz.** The current code rebuilds `y` in the
+`y-z` plane and leaves `x` alone, which is the exact solution for an axis
+parallel to Pedro X through `(0, pivotY, pivotHeight)`; 19725's code does the same for
+its along-hinge coordinate. The two things 19725 adds are the yaw correction and the pitch
+cross-check. The general transform for that axis is
 
 ```
 R_x(phi) = [ 1   0        0      ]
@@ -270,8 +274,8 @@ The ground constraint `(T_rot(phi) * p').z = 0` gives the same scalar equation
 test: the matrix code must produce the same `phi` as `fit_hive.py` on the
 collected data.
 
-Once `phi` is known, do not copy 19725's y-only correction. Apply the full inverse
-and extract yaw from the corrected rotation:
+Once `phi` is known, rebuild `y` as today and also correct yaw from the inverse
+rotation:
 
 ```
 p = T_rot(-phi) * p'
@@ -279,7 +283,9 @@ R = R_x(-phi) * R'
 yaw = atan2(R10, R00)
 ```
 
-This is where the omitted X and yaw corrections come from.
+`x` is unchanged for an exact X-parallel hinge. The yaw correction is second order in
+the tilt: zero when the robot faces along or across the hinge, and about 1 deg at 15 deg
+tilt or 4 deg at 30 deg tilt when facing 45 deg (computed numerically from `R' = R_x(phi) R`).
 
 ### Stage 0 — Encode existing conversions as transforms (no behavior change)
 
@@ -303,9 +309,9 @@ utility from `Vision.update` and delete the duplicated scalar expressions.
 
 **Acceptance:** identical poses to the current code on the collected CSV, test suite green.
 
-### Stage 1 — Full SE(3) HIVE correction
+### Stage 1 — HIVE correction including yaw and a pitch cross-check
 
-Replace the y-only reconstruction with a general pivot transform:
+Keep the current `y` reconstruction (it already matches 19725's position math), and:
 
 1. Define the hinge axis unit vector `u` and a point on it `p0` in Pedro field inches.
    For Biobuzz, determine `u` from the field CAD or by fitting the collector data; the
@@ -319,14 +325,15 @@ Replace the y-only reconstruction with a general pivot transform:
 5. Gate with the attitude cross-check from `MT1Localizer` (`pitch' ~= asin(sin(phi)cos(yaw'))`)
    in addition to the existing distance/tag gates.
 
-Why this is better: the current code's "don't screw with X" is only valid for an exactly
-X-aligned hinge. A few degrees of axis misalignment, or a robot yawed while seeing the
-HIVE, leaks the tilt into X and heading. The full transform corrects all three and makes
-the sign conventions auditable.
+Why this is worth doing: if the hinge is exactly parallel to Pedro X, `x` is already
+correct, so the real gains are (a) yaw, which the current code takes uncorrected from the
+tilted attitude (up to a few degrees at large tilt), and (b) the pitch cross-check, which
+rejects degenerate frames. If the fitted axis turns out not to be X-parallel, the full
+transform also corrects `x`; the collector data will show it.
 
 **Acceptance:** replay the collector CSV through old and new models; the y residual must
-not regress, and the x/yaw residual must improve on the spots where the old model is
-biased. Document the fitted axis and pivot.
+not regress, and the yaw residual must improve at large tilt. `x` should be unchanged
+unless the fitted axis is not X-parallel. Document the fitted axis and pivot.
 
 ### Stage 2 — Replace two scalar filters with a 3-state EKF
 
@@ -419,9 +426,14 @@ commit.
    physical frame, or the filter will fuse the same picture twice.
 6. **Units.** 19725 uses inches/radians at the FTC boundary; Limelight reports meters and
    degrees. Biobuzz is inches. Convert at the boundary only.
-7. **Do not translate a 2D correction into a 3D one halfway.** Either keep the scalar model
-   (stage 0) or correct the full pose (stage 1); mixing corrected y with raw x and raw yaw
-   is what the current code does and is the main source of edge-case bias.
+7. **Do not translate a 2D correction into a 3D one halfway.** The current code corrects
+   `y` but takes yaw from the tilted attitude; the effect is small (a few degrees at
+   large tilt) but it is the one real inconsistency.
+8. **Near the hinge line the solve has two valid answers.** With `h = 43.95 in` and a 30
+   deg tilt, a robot within `h * tan(30 deg) ~ 25 in` of the hinge line is reported on the
+   wrong side: true `x_ll = +10` comes back as `-10` from both 19725's solver (smaller
+   `|phi|` wins) and Biobuzz's (`signum(relativeY)`). Disambiguate with the previous
+   accepted side or the odometry pose.
 
 ---
 
