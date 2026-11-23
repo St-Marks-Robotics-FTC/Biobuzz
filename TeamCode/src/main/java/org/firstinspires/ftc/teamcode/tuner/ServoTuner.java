@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.Tunables;
+import org.firstinspires.ftc.teamcode.io.IoThread;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
 
 @TeleOp(name="ServoTuner", group="Tuner")
@@ -28,16 +28,17 @@ public class ServoTuner extends OpMode {
 
     private Transfer transfer;
     private Flower flower;
-    private HWScheduler scheduler;
+    private IoThread io;
 
     private TelemetryManager telemetryM;
     private double JOG_AMOUNT = 0.01; // large adjustments should be made with the joystick anyways
 
     @Override
     public void init() {
-        scheduler = new HWScheduler(hardwareMap);
-        transfer = new Transfer(scheduler);
-        flower = new Flower(scheduler);
+        io = new IoThread(hardwareMap);
+        transfer = new Transfer(io);
+        flower = new Flower(io);
+        io.start();
 
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry(); // set up our Panels telemetry manager
 
@@ -72,6 +73,7 @@ public class ServoTuner extends OpMode {
 
     @Override
     public void loop() {
+        io.awaitNewCycle();
         if (gamepad1.rightBumperWasPressed()) isLocked = !isLocked;
 
         if (!isLocked) {
@@ -107,8 +109,11 @@ public class ServoTuner extends OpMode {
                 throw new RuntimeException("make sure to select a tuning mode before starting!");
         }
 
-        scheduler.update(0); // write servo position
-
         telemetryM.update(telemetry);
+    }
+
+    @Override
+    public void stop() {
+        if (io != null) io.stop();
     }
 }

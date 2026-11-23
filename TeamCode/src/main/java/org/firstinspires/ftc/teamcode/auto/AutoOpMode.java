@@ -15,6 +15,7 @@ import org.firstinspires.ftc.teamcode.auto.core.Sequencer;
 import org.firstinspires.ftc.teamcode.auto.core.Step;
 import org.firstinspires.ftc.teamcode.auto.core.Steps;
 import org.firstinspires.ftc.teamcode.auto.steps.AutoContext;
+import org.firstinspires.ftc.teamcode.io.IoThread;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsys.Vision;
 
@@ -37,6 +38,7 @@ public abstract class AutoOpMode extends OpMode {
     /** Builds the whole routine once at init; build every path here so a bad pose fails early. **/
     protected abstract Step buildRoute(AutoContext ctx);
 
+    private IoThread io;
     private Robot robot;
     private Vision vision;
     private Follower follower;
@@ -51,13 +53,14 @@ public abstract class AutoOpMode extends OpMode {
         loopTimer = new Timer();
         autoTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-        robot = new Robot(hardwareMap);
-        robot.scheduler.setAutoLoopLength(); // make sure we use the longer auto loops
+        io = new IoThread(hardwareMap);
+        robot = new Robot(io);
         vision = new Vision(hardwareMap, isBlueTeam());
         telemetryM.debug("Creating follower... (this may take a while)");
         telemetryM.update(telemetry);
-        follower = Constants.create(hardwareMap);
+        follower = Constants.create(io);
         follower.setPose(startPose());
+        io.start();
         ctx = new AutoContext(robot, follower, vision);
 
         Step route = buildRoute(ctx);
@@ -85,13 +88,13 @@ public abstract class AutoOpMode extends OpMode {
 
     @Override
     public void loop() {
+        io.awaitNewCycle(); // fresh readings; the loop runs at the I/O cycle rate
         loopTimer.reset();
         vision.update();
         follower.update();
         ctx.updateFlywheel(); // re-run PIDF every loop so RPM actually converges on target
         robot.update(); // advances the shooting state machine and intake power-save
         if (sequencer.update() == Sequencer.Status.FINISHED) requestOpModeStop();
-        robot.scheduler.update(loopTimer.nanoseconds()); // write hardware first: skipping this budget starves every device
         updateHandoff();
 
         if (autoTimer.milliseconds() > AUTO_CUTOFF_MILLIS && sequencer.status() == Sequencer.Status.RUNNING) {
@@ -103,6 +106,7 @@ public abstract class AutoOpMode extends OpMode {
             sendTelemetry(false);
         }
         telemetryM.addData("loop time (millis)", loopTimer.get(TimeUnit.MILLISECONDS));
+        telemetryM.addData("I/O cycle (ms)", io.lastCycleMillis());
         telemetryM.addData("target RPM", ctx.targetRPM());
         telemetryM.addData("RPM", robot.flywheel.getRPM());
         telemetryM.update(telemetry);
@@ -114,6 +118,7 @@ public abstract class AutoOpMode extends OpMode {
             ctx.shutOff();
             ctx.updateFlywheel();
         }
+        if (io != null) io.stop(); // stop the I/O thread, then flush the shut-off commands above
         updateHandoff();
     }
 

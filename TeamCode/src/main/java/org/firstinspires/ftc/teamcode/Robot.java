@@ -3,21 +3,19 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.utils.Timer;
-import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
+import org.firstinspires.ftc.teamcode.io.HubDevice;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ReadPeriod;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.subsys.Flywheel;
 import org.firstinspires.ftc.teamcode.subsys.Intake;
 import org.firstinspires.ftc.teamcode.subsys.Transfer;
 
 public class Robot {
-    public LynxModule controlHub;
-    public LynxModule expansionHub;
-    public HWScheduler scheduler;
+    private static final long VOLTAGE_READ_PERIOD_MS = 100; // battery voltage moves slowly; each read costs a Lynx command
+
+    private final HubDevice expansionHub;
     public Flywheel flywheel;
     public Intake intake;
     public Transfer transfer;
@@ -36,31 +34,21 @@ public class Robot {
 
     private LaunchState launchState = LaunchState.LOCKED;
 
-    public Robot(HardwareMap hw) {
-        // initialize everything here
+    /** builds every subsystem's devices on {@code io}; call before {@code io.start()} **/
+    public Robot(IoThread io) {
+        expansionHub = new HubDevice(io, "Expansion Hub 2", ReadPeriod.millis(VOLTAGE_READ_PERIOD_MS)); // I believe this starts at 2
 
-        controlHub = hw.get(LynxModule.class, "Control Hub");
-        expansionHub = hw.get(LynxModule.class, "Expansion Hub 2"); // I believe this starts at 2
-
-        controlHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        expansionHub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-
-        scheduler = new HWScheduler(hw); // subsystems register their devices with this
-
-        flywheel = new Flywheel(scheduler);
-        intake = new Intake(scheduler);
-        transfer = new Transfer(scheduler);
-        flower = new Flower(scheduler);
+        flywheel = new Flywheel(io);
+        intake = new Intake(io);
+        transfer = new Transfer(io);
+        flower = new Flower(io);
 
         launchTimer = new Timer();
     }
 
-    public double getSystemCurrent() { // return system current in amps
-        return (controlHub.getCurrent(CurrentUnit.AMPS) + expansionHub.getCurrent(CurrentUnit.AMPS));
-    }
-
+    /** newest battery voltage read by the I/O thread (at most 100 ms old) **/
     public double getExpansionHubVoltage() {
-        return expansionHub.getInputVoltage(VoltageUnit.VOLTS);
+        return expansionHub.inputVoltage().value();
     }
 
     public void startLaunch() {

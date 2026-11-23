@@ -1,15 +1,14 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
 import com.pedropathing.utils.Timer;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Tunables;
-import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.hwScheduler.SServo;
+import org.firstinspires.ftc.teamcode.io.IoThread;
+import org.firstinspires.ftc.teamcode.io.ServoDevice;
+import org.firstinspires.ftc.teamcode.io.WritePolicy;
 
 public class Flower {
-    private SServo flowerServo;
+    private final ServoDevice flowerServo;
 
     private enum State {
         UP,
@@ -22,14 +21,11 @@ public class Flower {
     private Flower.State state = Flower.State.UP;
     private Timer shakeTimer;
 
-    public Flower(HWScheduler scheduler) {
-        flowerServo = new SServo("flowerServo", 1, scheduler.hw());
-        scheduler.addDevice(flowerServo);
+    public Flower(IoThread io) {
+        // start up; the I/O thread writes it when it starts, so the servo moves during init
+        flowerServo = new ServoDevice(io, "flowerServo", Tunables.flowerUp, WritePolicy.DEFAULT);
 
         shakeTimer = new Timer();
-
-        flowerServo.setPosition(Tunables.flowerUp); // start up
-        flowerServo.forceUpdate(); // move on init
     }
 
     public void toggle() {

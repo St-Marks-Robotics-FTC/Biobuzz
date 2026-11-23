@@ -23,21 +23,21 @@ import static org.firstinspires.ftc.teamcode.Tunables.*;
 public class Foo {
     public enum State {OFF, FORWARD, REVERSE} // or OPEN/CLOSED for servos
 
-    private final DcMotor motor; // or Servo
+    private final MotorDevice motor; // or ServoDevice; see skill ftc-io-thread
     private State state = State.OFF;
 
-    public Foo(HardwareMap hw) {
-        motor = hw.get(DcMotor.class, "lowercasename"); // hardware map name matches README's config
+    public Foo(IoThread io) {
+        motor = new MotorDevice(io, "lowercasename", new MotorDevice.Config().direction(DcMotorSimple.Direction.FORWARD)); // name matches the robot config
     }
 
     public State getState() { return state; }
 
-    public void forward() { state = State.FORWARD; motor.setPower(1.0); } // setter mutates state AND commands hardware
+    public void forward() { state = State.FORWARD; motor.setPower(1.0); } // setter mutates state AND records the command (I/O thread writes it)
 }
 ```
 
-Minimal one-line comments, no large blocks. Constructor takes `HardwareMap hw`, looks up by exact lowercase name. Setters are verbs (`forward()/reverse()/off()`, `open()/close()`), never JavaBean-style, always state+hardware together.
+Minimal one-line comments, no large blocks. Constructor takes `IoThread io` (never `HardwareMap`), builds devices by exact lowercase name before `io.start()`. Setters are verbs (`forward()/reverse()/off()`, `open()/close()`), never JavaBean-style, always state+command together. Readings (`motor.encoder()`, `motor.current()`) are timestamped snapshots from the I/O thread.
 
 ## Verify
 
-No automated tests in this repo. `./gradlew :TeamCode:compileDebugJavaWithJavac -q` after any Tunables/subsys change.
+Unit tests exist only for pure `io/` scheduling logic (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew :TeamCode:testDebugUnitTest --offline`). `./gradlew :TeamCode:compileDebugJavaWithJavac -q` after any Tunables/subsys change.

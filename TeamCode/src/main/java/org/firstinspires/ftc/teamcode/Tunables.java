@@ -19,7 +19,6 @@ public class Tunables {
     public static double manualStartingRPM = 3050;
     public static double adjustRPM = 50;
     public static double shootHeadingMargin = Math.toRadians(1);
-    public static boolean teleBrake = true;
 
     /** Robot Dimensions **/
 
@@ -166,11 +165,11 @@ public class Tunables {
     public static double maxScoringRelativeY = 48;
     public static double minScoringRelativeY = 10;
 
-    /** hardware scheduler tunables (used in HWScheduler.java) **/
+    /** I/O thread tunables (used in io/IoThread.java) **/
 
-    public static long teleTargetLoopLength = 20; // target loop length in ms
-    public static long autoTargetLoopLength = 25; // autos generally have longer loops
+    public static long ioWriteBudgetMs = 10; // per I/O cycle: lower-score writes wait for the next cycle once this is spent
+    public static long ioStallTimeoutMs = 500; // crash the OpMode if the I/O thread finishes no cycle for this long
 
-    public static double stalenessReduction = 1; // how important staleness is. higher values are less important
-    public static boolean softScheduling = true; // if true (or isDebugging is true): update device once max staleness has been exceeded
+    public static double stalenessReduction = 1; // ms of waiting that doubles a pending write's score; higher values make waiting matter less
+    public static boolean softScheduling = true; // if true: write a device past its max staleness even when the write budget is spent
 }
