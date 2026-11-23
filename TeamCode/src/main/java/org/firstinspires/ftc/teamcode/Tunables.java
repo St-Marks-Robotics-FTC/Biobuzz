@@ -105,6 +105,7 @@ public class Tunables {
     public static double visionJumpMargin = 4; // in, allowed frame noise
     public static int visionJumpRejectsBeforeReset = 5; // jump-rejected frames before vision re-acquires a moved robot
     public static int minTagCount = 2; // minimum amount of tags seen in a frame necessary to update our botpose
+    public static double visionPitchCheckTolDeg = 10; // deg, max gap between camera pitch and the pitch the solved HIVE tilt predicts
 
     /** field tunables (used in Field.java) **/
 

@@ -82,6 +82,7 @@ public class Vision {
     private HiveState lastHiveState = HiveState.UNKNOWN;
     private VisionResult lastResult;
     private int jumpRejects = 0;
+    private double lastPitchErrorDeg = Double.NaN; // pitch reality-check error of the last frame that reached the check
 
     private final Timer staleTimer; // how stale lastBotPose is
 
@@ -182,6 +183,15 @@ public class Vision {
             return null; // hive is at an impossible tilt
         }
 
+        // Reality check: the tilt we just solved from position also predicts the camera's own pitch.
+        // A flat robot seen through a hinged map reports pitch = predictedFlatRobotPitch(...).
+        // If the two disagree, one of them is wrong (e.g. the near-hinge wrong root), so drop the frame.
+        double rawYaw = botpose3D.getOrientation().getYaw(AngleUnit.RADIANS);
+        double rawPitch = botpose3D.getOrientation().getPitch(AngleUnit.RADIANS);
+        double predictedPitch = predictedFlatRobotPitch(-hiveTilt, rawYaw);
+        lastPitchErrorDeg = Math.toDegrees(Math.abs(AngleUnit.normalizeRadians(rawPitch - predictedPitch)));
+        if (lastPitchErrorDeg > Tunables.visionPitchCheckTolDeg) return null;
+
         double realY = pivotY + trueRelativeY;
 
         // subtract fitted limelight - pedro error (see Tunables)
@@ -249,6 +259,38 @@ public class Vision {
 
     public HiveState getLastHiveState() {
         return lastHiveState;
+    }
+
+    public double getLastPitchErrorDeg() {
+        return lastPitchErrorDeg;
+    }
+
+    /**
+     * Pitch (radians) the Limelight reports for a robot standing flat on the floor, when its field map
+     * is rotated by phi about the hinge (the Limelight Y axis).
+     *
+     * The hinge is a rotation matrix. Rotating the flat robot's nose direction by it:
+     *
+     *   [ cos(phi)  0  sin(phi) ]   [ cos(yaw) ]
+     *   [ 0         1  0        ] * [ sin(yaw) ]
+     *   [-sin(phi)  0  cos(phi) ]   [ 0        ]
+     *
+     * and reading the nose's height (z) gives the pitch: pitch = asin(sin(phi) * cos(yaw)).
+     *
+     * Precondition: robot is flat on the floor. phi = -hiveTilt. Blind spot: yaw = +-90 deg (facing along
+     * the hinge) predicts pitch 0 for any phi, so this check cannot catch a wrong root there.
+     */
+    static double predictedFlatRobotPitch(double phi, double yaw) {
+        double c = Math.cos(phi);
+        double s = Math.sin(phi);
+        double[][] hinge = {
+                { c, 0, s },
+                { 0, 1, 0 },
+                { -s, 0, c }
+        };
+        double[] nose = { Math.cos(yaw), Math.sin(yaw), 0 };
+        double noseZ = hinge[2][0] * nose[0] + hinge[2][1] * nose[1] + hinge[2][2] * nose[2];
+        return -Math.asin(noseZ);
     }
 
     // last accepted frame (may be a few milliseconds old); null until the first accepted frame
