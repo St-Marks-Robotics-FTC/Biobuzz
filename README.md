@@ -19,6 +19,10 @@ Using Panels interferes with Pedro Pathing's auto tuner so in order to tune Pedr
 
 Input our Panels presets by going to [panels-configs.md](doc/panels-configs.md)
 
+## Sloth Fast Load
+
+use [this guide](https://github.com/Dairy-Foundation/Sloth#standard-sdk-project)
+
 # hardware map
 
 INSTEAD OF ENTERING IN THE HARDWARE MAP MANUALLY FOLLOW [THE GUIDE](doc/configs/CONFIGS.md) TO IMPORT AUTOMATICALLY
