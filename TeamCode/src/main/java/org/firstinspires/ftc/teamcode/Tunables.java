@@ -81,8 +81,9 @@ public class Tunables {
     public static long refuelDurationMillis = 150; // how long to intake while driving through the refuel line
     public static double flowerIntakeSpeed = 0.3; // 0-1 speed to intake flower (lower=slower)
     public static double maxTravelToRefuelTime = 750; // timeout for travel to picking up balls (if it gets stuck on a ball)
-    public static double crossFieldHoldFrom = 0.05; // fraction of cross field path spent holding initial heading before turning to cross field heading.
-    public static double crossFieldHoldUntil = 0.8; // fraction (0-1] of a cross-field path spent holding 90/270 heading before turning to the final heading; read when paths are built at init
+    public static double crossFieldHoldFrom = 0.05; // fraction (0-1) of a cross-field path spent holding the initial heading before turning to the 90/270 heading
+    public static double crossFieldTurnDone = 0.2; // fraction of a cross-field path at which the turn to 90/270 finishes; must be > crossFieldHoldFrom and < crossFieldHoldUntil
+    public static double crossFieldHoldUntil = 0.8; // fraction (0-1) of a cross-field path at which the 90/270 hold ends and the turn to the final heading begins; read when paths are built at init
     public static double flowerApproachSpeed = 0.5;
 
     /** vision tunables (used in subsys/Vision.java) **/
