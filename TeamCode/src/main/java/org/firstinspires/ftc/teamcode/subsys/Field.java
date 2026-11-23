@@ -60,9 +60,12 @@ public class Field {
                 (centerDistInFront >= Tunables.minScoringRelativeY) &&
                 (centerDistInFront <= Tunables.maxScoringRelativeY);
 
-        double idealRPM = getGuudRPM(robotPose, aimPost);
+        double pollenIdealRPM = getPollenRPM(robotPose, aimPost);
+        double nectarIdealRPM = getNectarRPM(robotPose, aimPost);
 
-        return new ScoringData(canScore, dToGoal, angleToGoal, idealRPM);
+        double turretAngle = angleToGoal - robotPose.heading(); // account for robot heading
+
+        return new ScoringData(canScore, dToGoal, angleToGoal, turretAngle, pollenIdealRPM, nectarIdealRPM);
     }
 
     private Goal getGoal(boolean isAudienceUp) {
@@ -83,7 +86,7 @@ public class Field {
         }
     }
 
-    public double getGuudRPM(Pose robotPose, Pose goalPose) {
+    public double getPollenRPM(Pose robotPose, Pose goalPose) {
         // from Desmos: https://www.desmos.com/calculator/gy5epbwyah
         // 11-18-2026
 
@@ -105,6 +108,10 @@ public class Field {
         }
 
         return mathRPM * Tunables.autoRPMMultiplier + Tunables.autoRPMAddition;
+    }
+
+    public double getNectarRPM(Pose robotPose, Pose goalPose) {
+        return 0; // TODO: fill me out
     }
 
     private class Goal {
@@ -142,34 +149,51 @@ public class Field {
         }
     }
     public class ScoringData {
-        private boolean canScore; // whether
+        private boolean canScoreNectar; // whether
         private double distance; // distance to goal in inches
-        private double angle; // angle to goal in radians
-        private double idealRPM; // ideal RPM for auto shoot
+        private double goalAngle; // angle to goal in radians
+        private double turretAngle; // ideal turret angle for shooting
+        private double pollenIdealRPM; // ideal RPM for pollen auto shoot
+        private double nectarIdealRPM; // ideal RPM for nectar auto shoot
 
-        public ScoringData(boolean canScore, double distance, double angle, double idealRPM) {
-            this.canScore = canScore;
+        public ScoringData(boolean canScoreNectar, double distance, double goalAngle, double turretAngle, double pollenIdealRPM, double nectarIdealRPM) {
+            this.canScoreNectar = canScoreNectar;
             this.distance = distance;
-            this.angle = angle;
-            this.idealRPM = idealRPM;
+            this.goalAngle = goalAngle;
+            this.turretAngle = turretAngle;
+            this.pollenIdealRPM = pollenIdealRPM;
+            this.nectarIdealRPM = nectarIdealRPM;
         }
 
-        public boolean canScore() { return canScore; }
+        public boolean canScoreNectar() { return canScoreNectar; }
 
         public double distance() {
             return distance;
         }
 
-        public double angle() {
-            return angle;
+        public double goalAngle() {
+            return goalAngle;
         }
 
-        public double idealRPM() {
-            return idealRPM;
+        public double turretAngle() {
+            return turretAngle;
+        }
+
+        public double pollenIdealRPM() {
+            return pollenIdealRPM;
+        }
+
+        public double nectarIdealRPM() {
+            return nectarIdealRPM;
         }
 
         public String toString() {
-            return "canScore: " + canScore + " d: " + distance + " a: " + angle;
+            return "canScoreNectar: " + canScoreNectar +
+                    " d: " + distance +
+                    " goalAngle: " + goalAngle +
+                    " turretAngle: " + turretAngle +
+                    " pollenIdealRPM: " + pollenIdealRPM +
+                    " nectarIdealRPM: " + nectarIdealRPM;
         }
     }
 }

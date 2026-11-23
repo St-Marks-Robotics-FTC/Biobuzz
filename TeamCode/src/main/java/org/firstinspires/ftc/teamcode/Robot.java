@@ -9,32 +9,25 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
+import org.firstinspires.ftc.teamcode.subsys.Field;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
-import org.firstinspires.ftc.teamcode.subsys.Flywheel;
-import org.firstinspires.ftc.teamcode.subsys.Intake;
-import org.firstinspires.ftc.teamcode.subsys.Transfer;
+import org.firstinspires.ftc.teamcode.subsys.Turret;
+import org.firstinspires.ftc.teamcode.subsys.launch.Flywheel;
+import org.firstinspires.ftc.teamcode.subsys.launch.Intake;
+import org.firstinspires.ftc.teamcode.subsys.launch.Launch;
+import org.firstinspires.ftc.teamcode.subsys.launch.Transfer;
 
 public class Robot {
     public LynxModule controlHub;
     public LynxModule expansionHub;
     public HWScheduler scheduler;
-    public Flywheel flywheel;
-    public Intake intake;
-    public Transfer transfer;
+
+    public Launch pollenLaunch;
+    public Launch nectarLaunch;
+    public Turret pollenTurret;
 
     public Flower flower;
 
-    private Timer launchTimer;
-
-    private enum LaunchState {
-        LOCKED,
-        START_LAUNCH,
-        STOPPING_INTAKE,
-        OPENING_TRANSFER,
-        SHOOTING
-    }
-
-    private LaunchState launchState = LaunchState.LOCKED;
 
     public Robot(HardwareMap hw) {
         // initialize everything here
@@ -47,12 +40,24 @@ public class Robot {
 
         scheduler = new HWScheduler(hw); // subsystems register their devices with this
 
-        flywheel = new Flywheel(scheduler);
-        intake = new Intake(scheduler);
-        transfer = new Transfer(scheduler);
-        flower = new Flower(scheduler);
+        pollenLaunch = new Launch(scheduler, "pollen");
+        nectarLaunch = new Launch(scheduler, "nectar");
 
-        launchTimer = new Timer();
+        pollenTurret = new Turret(scheduler);
+        flower = new Flower(scheduler);
+    }
+
+    public void updateAutoShoot(Field.ScoringData scoringData) {
+        double voltage = getExpansionHubVoltage();
+
+        pollenLaunch.flywheel.update(scoringData.pollenIdealRPM(), voltage);
+        nectarLaunch.flywheel.update(scoringData.nectarIdealRPM(), voltage);
+
+        pollenLaunch.update();
+        nectarLaunch.update();
+        pollenTurret.updateAngle(scoringData.turretAngle());
+
+        flower.update();
     }
 
     public double getSystemCurrent() { // return system current in amps
@@ -61,56 +66,5 @@ public class Robot {
 
     public double getExpansionHubVoltage() {
         return expansionHub.getInputVoltage(VoltageUnit.VOLTS);
-    }
-
-    public void startLaunch() {
-        launchState = LaunchState.START_LAUNCH;
-    }
-
-    public void update() {
-        switch (launchState) {
-            case LOCKED:
-                // do nothing
-                break;
-            case START_LAUNCH:
-                launchTimer.reset();
-                intake.off();
-                launchState = LaunchState.STOPPING_INTAKE;
-            case STOPPING_INTAKE:
-                if (launchTimer.milliseconds() >= Tunables.launchIntakeStopTime) {
-                    // we've waited for intake to slow down so we can now open transfer without killing the servo
-                    transfer.open();
-                    launchState = LaunchState.OPENING_TRANSFER;
-                    launchTimer.reset();
-                }
-                break;
-            case OPENING_TRANSFER:
-                if (launchTimer.milliseconds() >= Tunables.launchTransferOpeningTime) {
-                    // we've waited for transfer to open so we can now start our intake at launching power
-                    intake.forward();
-                    launchState = LaunchState.SHOOTING;
-                    launchTimer.reset();
-                }
-                break;
-            case SHOOTING:
-                if (launchTimer.milliseconds() >= Tunables.launchShootingTime) {
-                    // we've waited for all the balls to come through
-                    stopLaunch();
-                }
-                break;
-        }
-
-        intake.update(isLaunching());
-        flower.update();
-    }
-
-    public void stopLaunch() {
-        intake.forward();
-        transfer.close();
-        launchState = LaunchState.LOCKED;
-    }
-
-    public boolean isLaunching() {
-        return launchState != LaunchState.LOCKED;
     }
 }

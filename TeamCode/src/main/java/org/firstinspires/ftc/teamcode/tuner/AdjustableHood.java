@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.subsys.Flywheel;
+import org.firstinspires.ftc.teamcode.subsys.launch.Flywheel;
 
 @Configurable
 @TeleOp(name="AdjustableHood", group="Tuner")

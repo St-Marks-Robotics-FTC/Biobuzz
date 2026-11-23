@@ -8,10 +8,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
-import org.firstinspires.ftc.teamcode.subsys.Transfer;
+import org.firstinspires.ftc.teamcode.subsys.launch.Transfer;
 
 @TeleOp(name="ServoTuner", group="Tuner")
 public class ServoTuner extends OpMode {

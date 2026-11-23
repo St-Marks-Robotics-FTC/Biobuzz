@@ -1,6 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsys;
-
-import com.qualcomm.robotcore.hardware.HardwareMap;
+package org.firstinspires.ftc.teamcode.subsys.launch;
 
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
@@ -18,8 +16,8 @@ public class Transfer {
 
     private State state = State.CLOSED;
 
-    public Transfer(HWScheduler scheduler) {
-        servo = new SServo("transferServo", PRIORITY_MULTIPLIER, scheduler.hw());
+    public Transfer(HWScheduler scheduler, String ballType) {
+        servo = new SServo(ballType + "TransferServo", PRIORITY_MULTIPLIER, scheduler.hw());
         scheduler.addDevice(servo);
 
         servo.setPosition(Tunables.transferClosed); // start closed

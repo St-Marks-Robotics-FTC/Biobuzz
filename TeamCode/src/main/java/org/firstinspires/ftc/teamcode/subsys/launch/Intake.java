@@ -1,8 +1,7 @@
-package org.firstinspires.ftc.teamcode.subsys;
+package org.firstinspires.ftc.teamcode.subsys.launch;
 
 import com.pedropathing.utils.Timer;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
@@ -34,8 +33,8 @@ public class Intake {
 
     private SMotor motor; // writes go through the scheduler, reads go straight to motor.m
 
-    public Intake(HWScheduler scheduler) {
-        motor = new SMotor("intakeMotor", PRIORITY_MULTIPLIER, scheduler.hw());
+    public Intake(HWScheduler scheduler, String ballType) {
+        motor = new SMotor(ballType + "IntakeMotor", PRIORITY_MULTIPLIER, scheduler.hw());
         scheduler.addDevice(motor);
 
         // one-time config, so it doesn't need to be scheduled

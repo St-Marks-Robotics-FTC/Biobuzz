@@ -1,13 +1,13 @@
-package org.firstinspires.ftc.teamcode.subsys;
+package org.firstinspires.ftc.teamcode.subsys.launch;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Tunables;
 import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.teamcode.hwScheduler.SMotor;
+import org.firstinspires.ftc.teamcode.subsys.PIDF;
 
 public class Flywheel {
     public static final int MOTOR_TICKS_PER_MOTOR_REV = 28; // encoder ticks per motor revolution
@@ -21,9 +21,9 @@ public class Flywheel {
     private PIDF pidf;
     private double lastSetRPM = 0;
 
-    public Flywheel(HWScheduler scheduler) {
+    public Flywheel(HWScheduler scheduler, String ballType) {
         // launch motors (all are DcMotorEx for current monitoring)
-        launchMotor = new SMotor("launchMotor", priorityMultiplier, scheduler.hw());
+        launchMotor = new SMotor(ballType + "FlywheelMotor", priorityMultiplier, scheduler.hw());
         scheduler.addDevice(launchMotor);
 
         // set up hardware (one-time config, so it doesn't need to be scheduled)

@@ -243,6 +243,7 @@ public abstract class BozoTeleOp extends OpMode {
         // always output these to telemetry
         telemetryM.addData("desired RPM", robot.flywheel.getLastSetRPM());
         telemetryM.addData("loop time (before telemetry)", loopTime);
+        telemetryM.addLine("wils is a bum");
 
         // only output debug values if we're debugging - these kill our loop times
         if (Tunables.isDebugging) {
