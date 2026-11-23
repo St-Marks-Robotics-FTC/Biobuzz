@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.hwScheduler.HWScheduler;
 import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 import org.firstinspires.ftc.teamcode.subsys.Field;
 import org.firstinspires.ftc.teamcode.subsys.Flower;
+import org.firstinspires.ftc.teamcode.subsys.Light;
 import org.firstinspires.ftc.teamcode.subsys.Turret;
 import org.firstinspires.ftc.teamcode.subsys.launch.Flywheel;
 import org.firstinspires.ftc.teamcode.subsys.launch.Intake;
@@ -25,6 +26,7 @@ public class Robot {
     public Launch pollenLaunch;
     public Launch nectarLaunch;
     public Turret pollenTurret;
+    public Light light;
 
     public Flower flower;
 
@@ -45,6 +47,7 @@ public class Robot {
 
         pollenTurret = new Turret(scheduler);
         flower = new Flower(scheduler);
+        light = new Light(scheduler);
     }
 
     public void updateAutoShoot(Field.ScoringData scoringData) {

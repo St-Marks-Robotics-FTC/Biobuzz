@@ -76,7 +76,7 @@ make sure to connect every motor to the correct port with the correct polarity; 
 | servo port   | servo type | verbatim name |
 |:-------------|------------|:--------------|
 | `0`          | Servo      | `flowerServo` |
-| `1`          | Servo      | `hoodServo`   |
+| `1`          | Servo      | `light`       |
 | `2`          | *unused*   | *unused*      |
 | `3`          | *unused*   | *unused*      |
 | `4`          | *unused*   | *unused*      |
