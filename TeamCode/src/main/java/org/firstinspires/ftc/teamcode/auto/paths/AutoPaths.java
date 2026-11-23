@@ -119,15 +119,28 @@ public final class AutoPaths {
         return path.with(Constants.foresightConfig.maxPathSpeed.at(speed));
     }
 
-    /** Holds 90 deg (driving +y) or 270 deg (-y) until {@link BozoAuto#CROSS_FIELD_HOLD_UNTIL}, then turns to {@code to}. Needs from.y != to.y. **/
+    /**
+     * Heading override for a cross-field path: keep {@code from}'s heading until {@link BozoAuto#CROSS_FIELD_HOLD_FROM},
+     * turn to 90 deg (driving +y) or 270 deg (-y) by {@link BozoAuto#CROSS_FIELD_TURN_DONE}, hold it until
+     * {@link BozoAuto#CROSS_FIELD_HOLD_UNTIL}, then turn to {@code to}'s heading by t=1.
+     * Precondition: {@code from.y() != to.y()} and 0 < HoldFrom < TurnDone < HoldUntil < 1.
+     * @throws IllegalStateException if the tunable fractions are not strictly increasing
+     **/
     private static Path crossFieldHeading(Path path, Pose from, Pose to) {
+        if (!(0 < BozoAuto.CROSS_FIELD_HOLD_FROM
+                && BozoAuto.CROSS_FIELD_HOLD_FROM < BozoAuto.CROSS_FIELD_TURN_DONE
+                && BozoAuto.CROSS_FIELD_TURN_DONE < BozoAuto.CROSS_FIELD_HOLD_UNTIL
+                && BozoAuto.CROSS_FIELD_HOLD_UNTIL < 1)) {
+            throw new IllegalStateException("cross-field tunables must satisfy 0 < HoldFrom < TurnDone < HoldUntil < 1, got "
+                    + BozoAuto.CROSS_FIELD_HOLD_FROM + ", " + BozoAuto.CROSS_FIELD_TURN_DONE + ", " + BozoAuto.CROSS_FIELD_HOLD_UNTIL);
+        }
         Pose startingHeading = new Pose(from.x(), from.y(), from.heading());
 
         double hold = Math.toRadians(to.y() > from.y() ? 90 : 270); // TEMP: we go backwards to avoid picking up nectar
         Pose holdPose = new Pose(from.x(), from.y(), hold);
         return path.heading(Interpolator.piecewise()
                 .until(BozoAuto.CROSS_FIELD_HOLD_FROM, Interpolator.constant(startingHeading))
-                .until(BozoAuto.CROSS_FIELD_HOLD_UNTIL, Interpolator.linear(startingHeading, holdPose))
+                .until(BozoAuto.CROSS_FIELD_TURN_DONE, Interpolator.linear(startingHeading, holdPose))
                 .until(BozoAuto.CROSS_FIELD_HOLD_UNTIL, Interpolator.constant(holdPose))
                 .until(1.0, Interpolator.linear(holdPose, to)));
     }
