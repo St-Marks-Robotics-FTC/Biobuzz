@@ -53,6 +53,7 @@ public abstract class AutoOpMode extends OpMode {
         autoTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         io = new IoThread(hardwareMap);
+        io.setAutoScheduling(); // auto always soft-schedules writes
         robot = new Robot(io);
         vision = new Vision(hardwareMap, isBlueTeam());
         telemetryM.debug("Creating follower... (this may take a while)");

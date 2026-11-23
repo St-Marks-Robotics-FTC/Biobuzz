@@ -52,6 +52,7 @@ public final class IoThread implements IoRegistry {
     private WriteScheduler scheduler; // created in start(), once the device list is final
 
     private Lifecycle lifecycle = Lifecycle.NEW; // guarded by this
+    private boolean autoScheduling = false; // guarded by this; set before start, then only read by the I/O thread
     private Thread thread;
     private OpModeManagerImpl opModeManager;
     private volatile boolean haltRequested = false;
@@ -80,6 +81,16 @@ public final class IoThread implements IoRegistry {
         this.hw = hw;
         this.hubs = hw.getAll(LynxModule.class);
         for (LynxModule hub : hubs) hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+    }
+
+    /**
+     * Forces soft scheduling on regardless of {@link Tunables#softScheduling}, so overdue writes always go through
+     * even when the write budget is spent. Autonomous OpModes call this for consistent timing.
+     * @throws IllegalStateException if the I/O thread already started
+     */
+    public synchronized void setAutoScheduling() {
+        if (lifecycle != Lifecycle.NEW) throw new IllegalStateException("cannot change scheduling: I/O thread is " + lifecycle + ", expected NEW");
+        autoScheduling = true;
     }
 
     /** raw hardware map for device constructors; subsystems must go through devices */
@@ -217,7 +228,7 @@ public final class IoThread implements IoRegistry {
         }
 
         long budgetNanos = IO_WRITE_BUDGET_MS * 1_000_000L;
-        scheduler.runBudgeted(budgetNanos, STALENESS_REDUCTION, SOFT_SCHEDULING);
+        scheduler.runBudgeted(budgetNanos, STALENESS_REDUCTION, autoScheduling || SOFT_SCHEDULING);
         long end = System.nanoTime();
 
         lastReadNanos = readEnd - start;
