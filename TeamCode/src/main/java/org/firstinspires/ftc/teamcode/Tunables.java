@@ -82,6 +82,7 @@ public class Tunables {
     public static long refuelDurationMillis = 150; // how long to intake while driving through the refuel line
     public static double flowerIntakeSpeed = 0.3; // 0-1 speed to intake flower (lower=slower)
     public static double maxTravelToRefuelTime = 1500; // timeout for travel to picking up balls (if it gets stuck on a ball)
+    public static double crossFieldHoldFrom = 0.1; // fraction of cross field path spent holding initial heading before turning to cross field heading.
     public static double crossFieldHoldUntil = 0.8; // fraction (0-1] of a cross-field path spent holding 90/270 heading before turning to the final heading; read when paths are built at init
     public static double flowerApproachSpeed = .25;
 

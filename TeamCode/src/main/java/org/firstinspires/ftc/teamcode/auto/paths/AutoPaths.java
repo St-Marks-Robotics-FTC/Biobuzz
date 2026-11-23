@@ -121,9 +121,13 @@ public final class AutoPaths {
 
     /** Holds 90 deg (driving +y) or 270 deg (-y) until {@link Tunables#crossFieldHoldUntil}, then turns to {@code to}. Needs from.y != to.y. **/
     private static Path crossFieldHeading(Path path, Pose from, Pose to) {
-        double hold = Math.toRadians(to.y() > from.y() ? 270 : 90); // TEMP: we go backwards to avoid picking up nectar
+        Pose startingHeading = new Pose(from.x(), from.y(), from.heading());
+
+        double hold = Math.toRadians(to.y() > from.y() ? 90 : 270); // TEMP: we go backwards to avoid picking up nectar
         Pose holdPose = new Pose(from.x(), from.y(), hold);
         return path.heading(Interpolator.piecewise()
+                .until(Tunables.crossFieldHoldFrom, Interpolator.constant(startingHeading))
+                .until(Tunables.crossFieldHoldUntil, Interpolator.linear(startingHeading, holdPose))
                 .until(Tunables.crossFieldHoldUntil, Interpolator.constant(holdPose))
                 .until(1.0, Interpolator.linear(holdPose, to)));
     }
