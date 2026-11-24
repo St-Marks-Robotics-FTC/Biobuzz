@@ -78,12 +78,12 @@ public class Vision {
         SCORING_UP
     }
 
-    public class VisionResult {
-        private Pose pose;
-        private int tagCount;
-        private double[] stdDev;
-        private double avgTagDistance; // average distance from the camera to the tags it used, in inches
-        private long acquisitionTime; // acquisition time from System.currentTimeMillis()
+    public static class VisionResult {
+        private final Pose pose;
+        private final int tagCount;
+        private final double[] stdDev;
+        private final double avgTagDistance; // average distance from the camera to the tags it used, in inches
+        private final long acquisitionTime; // acquisition time from System.currentTimeMillis()
 
         public VisionResult(Pose pose, int tagCount, double[] stdDev, double avgTagDistance, long acquisitionTime) {
             this.pose = pose;
@@ -119,7 +119,7 @@ public class Vision {
     }
 
     private boolean started = false;
-    private boolean isBlueTeam;
+    private final boolean isBlueTeam;
 
     /** vars that change from update() **/
 
@@ -155,7 +155,7 @@ public class Vision {
     public double getStaleness() { return System.currentTimeMillis() - lastCaptureTimeMs; }
 
     public void update() {
-        /**
+        /*
          *         pivot ●
          *               |\
          *               | \

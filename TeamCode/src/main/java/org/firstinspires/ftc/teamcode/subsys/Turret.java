@@ -16,8 +16,8 @@ public class Turret {
     public static double SERVO_MAX_RIGHT  = 0;
 
     // turret angles (radians)
-    public static double TURRET_MAX_LEFT = 0;
-    public static double TURRET_MAX_RIGHT = 0;
+    public static double TURRET_MAX_LEFT = Math.toRadians(0);
+    public static double TURRET_MAX_RIGHT = Math.toRadians(0);
 
     /** end configurables **/
 

@@ -30,7 +30,7 @@ public class Flower {
 
     /** Must match the position commanded in the constructor; goUp/goDown skip the write when the state already matches. */
     private Flower.State state = Flower.State.UP;
-    private Timer shakeTimer;
+    private final Timer shakeTimer;
 
     public Flower(IoThread io) {
         // start up; the I/O thread writes it when it starts, so the servo moves during init

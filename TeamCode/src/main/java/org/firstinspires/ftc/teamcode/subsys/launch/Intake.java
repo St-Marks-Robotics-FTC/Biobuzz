@@ -40,8 +40,8 @@ public class Intake {
     }
 
     private State state = State.OFF;
-    private Timer powerSaveWaitTimer;
-    private Timer powerSaveCheckTimer;
+    private final Timer powerSaveWaitTimer;
+    private final Timer powerSaveCheckTimer;
     private PowerSaveTrigger powerSaveTrigger = PowerSaveTrigger.NOT_TRIGGERED;
     double lastIntakeHoldPower = HOLD_POWER;
 

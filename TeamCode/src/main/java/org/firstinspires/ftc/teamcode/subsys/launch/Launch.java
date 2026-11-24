@@ -22,7 +22,7 @@ public class Launch {
     }
 
     private LaunchState launchState = LaunchState.LOCKED;
-    private Timer launchTimer;
+    private final Timer launchTimer;
 
     public Flywheel flywheel;
     public Intake intake;

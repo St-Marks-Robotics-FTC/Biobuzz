@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsys;
 
+import androidx.annotation.NonNull;
+
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.util.Range;
@@ -133,11 +135,11 @@ public class Field {
         return 0; // TODO: fill me out
     }
 
-    private class Goal {
-        private boolean isBlue;
-        private Pose leftPose;
-        private Pose rightPose;
-        private Pose centerPose;
+    private static class Goal {
+        private final boolean isBlue;
+        private final Pose leftPose;
+        private final Pose rightPose;
+        private final Pose centerPose;
 
         Goal(boolean isBlue, Pose leftPose, Pose rightPose, Pose centerPose) {
             this.isBlue = isBlue;
@@ -161,19 +163,20 @@ public class Field {
             return centerPose;
         }
 
+        @NonNull
         public String toString() {
             String teamName = isBlue ? "Blue" : "Red";
             return "Team: " + teamName + " Center Pose: " + centerPose.toString() + " Left Pose: " + leftPose.toString() + " Right Pose: " + rightPose.toString();
 
         }
     }
-    public class ScoringData {
-        private boolean canScoreNectar; // whether
-        private double distance; // distance to goal in inches
-        private double goalAngle; // angle to goal in radians
-        private double turretAngle; // ideal turret angle for shooting
-        private double pollenIdealRPM; // ideal RPM for pollen auto shoot
-        private double nectarIdealRPM; // ideal RPM for nectar auto shoot
+    public static class ScoringData {
+        private final boolean canScoreNectar; // whether
+        private final double distance; // distance to goal in inches
+        private final double goalAngle; // angle to goal in radians
+        private final double turretAngle; // ideal turret angle for shooting
+        private final double pollenIdealRPM; // ideal RPM for pollen auto shoot
+        private final double nectarIdealRPM; // ideal RPM for nectar auto shoot
 
         public ScoringData(boolean canScoreNectar, double distance, double goalAngle, double turretAngle, double pollenIdealRPM, double nectarIdealRPM) {
             this.canScoreNectar = canScoreNectar;
@@ -206,6 +209,7 @@ public class Field {
             return nectarIdealRPM;
         }
 
+        @NonNull
         public String toString() {
             return "canScoreNectar: " + canScoreNectar +
                     " d: " + distance +
