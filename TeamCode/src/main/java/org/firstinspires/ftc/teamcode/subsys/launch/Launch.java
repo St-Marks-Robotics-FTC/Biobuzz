@@ -8,8 +8,8 @@ public class Launch {
     /** configurables **/
 
     public static double INTAKE_STOP_TIME = 80; // time to wait for intake to stop before opening transfer
-    public static double TRANSFER_OPENING_TIME = 150;
-    public static double SHOOTING_TIME = 650;
+    public static double TRANSFER_OPENING_TIME = 75;
+    public static double SHOOTING_TIME = 700;
 
     /** end configurables **/
 

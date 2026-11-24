@@ -40,7 +40,7 @@ public class ReadPeriodTest {
         assertTrue(ReadPeriod.millis(100).isDue(true, LAST, LAST + 100 * MS));
     }
 
-    // If this fails: a live Tunables interval is read once at construction instead of every cycle
+    // If this fails: a live configurable interval is read once at construction instead of every cycle
     @Test
     public void liveIntervalFollowsSupplier() {
         long[] interval = {100};

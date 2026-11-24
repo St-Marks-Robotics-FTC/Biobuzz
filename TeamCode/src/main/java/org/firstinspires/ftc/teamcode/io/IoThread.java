@@ -35,7 +35,7 @@ public final class IoThread implements IoRegistry {
     public static long IO_WRITE_BUDGET_MS = 10; // per I/O cycle: lower-score writes wait for the next cycle once this is spent
     public static long IO_STALL_TIMEOUT_MS = 500; // crash the OpMode if the I/O thread finishes no cycle for this long
     public static double STALENESS_REDUCTION = 1; // ms of waiting that doubles a pending write's score; higher values make waiting matter less
-    public static boolean SOFT_SCHEDULING = true; // if true: write a device past its max staleness even when the write budget is spent
+    public static boolean SOFT_SCHEDULING = false; // if true: write a device past its max staleness even when the write budget is spent
 
     /** end configurables **/
 
@@ -84,7 +84,7 @@ public final class IoThread implements IoRegistry {
     }
 
     /**
-     * Forces soft scheduling on regardless of {@link Tunables#softScheduling}, so overdue writes always go through
+     * Forces soft scheduling on regardless of {@link #SOFT_SCHEDULING}, so overdue writes always go through
      * even when the write budget is spent. Autonomous OpModes call this for consistent timing.
      * @throws IllegalStateException if the I/O thread already started
      */

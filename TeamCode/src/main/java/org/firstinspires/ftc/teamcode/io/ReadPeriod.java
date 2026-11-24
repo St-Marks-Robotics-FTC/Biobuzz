@@ -40,7 +40,7 @@ public final class ReadPeriod {
 
     /**
      * read when at least {@code millis.getAsLong()} have passed since the previous read; the supplier is
-     * re-read every cycle so it can point at a live {@code Tunables} field. A value &lt;= 0 reads every cycle.
+     * re-read every cycle so it can point at a live configurable field. A value &lt;= 0 reads every cycle.
      */
     public static ReadPeriod millis(LongSupplier millis) {
         if (millis == null) throw new IllegalArgumentException("interval supplier is null");

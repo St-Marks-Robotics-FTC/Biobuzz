@@ -22,8 +22,8 @@ public class Field {
     public static double AUTO_RPM_SWITCHOFF_ANGLE = 0.965251;
 
     public static double MAX_SCORING_ABS_RELATIVE_X = 36;
-    public static double MAX_SCORING_RELATIVE_Y = 48;
-    public static double MIN_SCORING_RELATIVE_Y = 10;
+    public static double MAX_SCORING_RELATIVE_Y = 54;
+    public static double MIN_SCORING_RELATIVE_Y = 30;
 
     /** end configurables **/
 
